@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#7A4E18" />
+  <title>Swarnaprashan @ Mahamaya Clinic</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header class="topbar">
+    <div>
+      <h1>SWARNAPRASHAN @ MAHAMAYA CLINIC</h1>
+      <p>Ancient Wisdom • Modern Diagnosis • Holistic Healing</p>
+    </div>
+    <button id="logoutBtn" class="ghost hidden">Logout</button>
+  </header>
+
+  <main>
+    <section id="loginView" class="view login-wrap">
+      <div class="login-card">
+        <div class="logo-circle">ॐ</div>
+        <h2>Welcome</h2>
+        <p class="muted">Secure access for doctors, clinical staff and parents.</p>
+
+        <label>Login role</label>
+        <select id="role">
+          <option value="doctor">Doctor</option>
+          <option value="staff">Clinical Staff</option>
+          <option value="parent">Parent / Guardian</option>
+          <option value="admin">Super Admin</option>
+        </select>
+
+        <label>Mobile number / User ID</label>
+        <input id="userId" value="demo" placeholder="Enter user ID" />
+
+        <label>Password</label>
+        <input id="password" type="password" value="1234" placeholder="Enter password" />
+
+        <button id="loginBtn" class="primary full">Login</button>
+        <p class="hint">Demo login: <strong>demo</strong> / <strong>1234</strong></p>
+      </div>
+    </section>
+
+    <section id="appView" class="view hidden">
+      <nav class="tabs">
+        <button class="tab active" data-page="dashboard">Dashboard</button>
+        <button class="tab" data-page="children">Children</button>
+        <button class="tab" data-page="growth">Growth</button>
+        <button class="tab" data-page="appointments">Appointments</button>
+        <button class="tab" data-page="learn">Learn</button>
+      </nav>
+
+      <section id="dashboard" class="page active">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">स्वस्थ बचपन, श्रेष्ठ कल</span>
+            <h2 id="welcomeText">Welcome</h2>
+            <p>एक संस्कार—स्वस्थ, समर्थ एवं स्वर्णिम भविष्य का आधार</p>
+          </div>
+          <div class="next-event">
+            <span>Next Swarnaprashan</span>
+            <strong id="nextDate">15 August 2026</strong>
+            <small id="nextTime">Clinic timing: 09:00–20:00</small>
+            <button class="secondary" onclick="openPage('appointments')">Book Appointment</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span>Registered Children</span><strong id="childCount">0</strong></div>
+          <div class="stat"><span>Appointments</span><strong id="appointmentCount">0</strong></div>
+          <div class="stat"><span>Growth Entries</span><strong id="growthCount">0</strong></div>
+          <div class="stat"><span>Upcoming Doses</span><strong>1</strong></div>
+        </div>
+
+        <div class="grid">
+          <article class="card action-card" onclick="openPage('children')">
+            <h3>Register Your Child</h3>
+            <p>Create child profile, birth history, allergy and clinical details.</p>
+          </article>
+          <article class="card action-card" onclick="openPage('growth')">
+            <h3>Growth & Development</h3>
+            <p>Track height, weight and BMI with comparative graphs.</p>
+          </article>
+          <article class="card action-card" onclick="openPage('appointments')">
+            <h3>Swarnaprashan Booking</h3>
+            <p>Book and manage monthly appointments.</p>
+          </article>
+          <article class="card action-card" onclick="openPage('learn')">
+            <h3>Health, Habits & Sanskar</h3>
+            <p>Age-wise health education, stories and playful activities.</p>
+          </article>
+        </div>
+
+        <div class="card clinic-card">
+          <h3>Mahamaya Clinic</h3>
+          <p>Advanced Ayurveda, Spine & Orthopaedic Centre</p>
+          <div class="clinic-actions">
+            <button class="secondary" onclick="showToast('Clinic location module will open Google Maps in the production app.')">Clinic Location</button>
+            <button class="secondary" onclick="showToast('WhatsApp integration will be connected in Phase 2.')">WhatsApp</button>
+            <button class="secondary" onclick="showToast('Main Mahamaya Clinic website/app integration is reserved.')">Main Clinic App</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="children" class="page">
+        <div class="page-head">
+          <div><h2>Children Profiles</h2><p>Register and manage complete child health information.</p></div>
+        </div>
+
+        <form id="childForm" class="card form-grid">
+          <h3 class="span-2">Basic Information</h3>
+          <label>Child name<input name="name" required /></label>
+          <label>Date of birth<input name="dob" type="date" required /></label>
+          <label>Sex
+            <select name="sex"><option>Male</option><option>Female</option><option>Other</option></select>
+          </label>
+          <label>Class<input name="className" /></label>
+          <label>Parent / Guardian name<input name="guardian" required /></label>
+          <label>Contact / WhatsApp<input name="contact" required /></label>
+          <label class="span-2">Address<textarea name="address"></textarea></label>
+
+          <h3 class="span-2">Birth & Medical History</h3>
+          <label>Mode of delivery
+            <select name="delivery"><option>Normal vaginal delivery</option><option>LSCS</option><option>Assisted delivery</option></select>
+          </label>
+          <label>Gestational maturity
+            <select name="maturity"><option>Term</option><option>Preterm</option><option>Post-term</option></select>
+          </label>
+          <label>Birth weight (kg)<input name="birthWeight" type="number" step="0.01" /></label>
+          <label>Congenital / Acquired disease<input name="disease" /></label>
+          <label>Vaccination status
+            <select name="vaccination"><option>Up to date</option><option>Partially vaccinated</option><option>Delayed</option><option>Unknown</option></select>
+          </label>
+          <label>Food / Drug allergy<input name="allergy" /></label>
+          <label>ADR details<input name="adr" /></label>
+          <label>Swarnaprashan started on<input name="startDate" type="date" /></label>
+          <label>Developmental delay<input name="development" /></label>
+          <label>Sensory / Motor deficit<input name="deficit" /></label>
+          <label>Teething status<input name="teething" /></label>
+          <label>Present health issue<input name="healthIssue" /></label>
+          <button class="primary span-2" type="submit">Save Child Profile</button>
+        </form>
+
+        <div id="childrenList" class="list"></div>
+      </section>
+
+      <section id="growth" class="page">
+        <div class="page-head">
+          <div><h2>Growth Monitoring</h2><p>Record height, weight and BMI; compare 3, 6 and 12 months.</p></div>
+        </div>
+
+        <form id="growthForm" class="card form-grid">
+          <label>Child
+            <select id="growthChild" name="childId" required></select>
+          </label>
+          <label>Date<input name="date" type="date" required /></label>
+          <label>Height (cm)<input name="height" type="number" step="0.1" required /></label>
+          <label>Weight (kg)<input name="weight" type="number" step="0.1" required /></label>
+          <label>BMI<input id="bmiPreview" name="bmi" readonly /></label>
+          <label>Remarks<input name="remarks" /></label>
+          <button class="primary span-2" type="submit">Add Growth Record</button>
+        </form>
+
+        <div class="card">
+          <div class="chart-head">
+            <h3>Growth Trend</h3>
+            <select id="chartChild"></select>
+          </div>
+          <canvas id="growthChart" width="900" height="360"></canvas>
+          <div class="chart-legend">
+            <span>Height (cm)</span><span>Weight (kg)</span><span>BMI</span>
+          </div>
+          <button id="shareGrowthBtn" class="secondary">Prepare WhatsApp Summary</button>
+        </div>
+
+        <div id="growthTableWrap" class="card"></div>
+      </section>
+
+      <section id="appointments" class="page">
+        <div class="page-head">
+          <div><h2>Appointment Booking</h2><p>Book Swarnaprashan and child health consultations.</p></div>
+        </div>
+
+        <form id="appointmentForm" class="card form-grid">
+          <label>Child<select id="appointmentChild" name="childId"></select></label>
+          <label>Service
+            <select name="service">
+              <option>Swarnaprashan</option>
+              <option>Child Health Consultation</option>
+              <option>Growth Assessment</option>
+              <option>Vaccination Review</option>
+              <option>Developmental Assessment</option>
+            </select>
+          </label>
+          <label>Date<input name="date" type="date" required /></label>
+          <label>Time<input name="time" type="time" required /></label>
+          <label>Doctor
+            <select name="doctor"><option>Dr Rajesh Sao</option><option>Dr Ravi Chandrakar</option></select>
+          </label>
+          <label>Concern<input name="concern" /></label>
+          <button class="primary span-2" type="submit">Confirm Appointment</button>
+        </form>
+        <div id="appointmentList" class="list"></div>
+      </section>
+
+      <section id="learn" class="page">
+        <div class="page-head">
+          <div><h2>Learning, Health & Sanskar</h2><p>Age-filtered educational content for children and parents.</p></div>
+        </div>
+        <div class="grid">
+          <article class="card"><h3>Swarnaprashan क्या है?</h3><p>Overview, traditional context, administration process and FAQs.</p><button class="secondary" onclick="showToast('Content editor will be enabled in Phase 2.')">Open</button></article>
+          <article class="card"><h3>Healthy Child Tips</h3><p>Nutrition, sleep, exercise, screen-time and hygiene guidance.</p><button class="secondary" onclick="showToast('Age-wise content library is reserved.')">Open</button></article>
+          <article class="card"><h3>Good Habits & Sanskar</h3><p>Prayer, gratitude, discipline, reading, kindness and daily routine.</p><button class="secondary" onclick="showToast('Daily habit tracker will be added next.')">Open</button></article>
+          <article class="card"><h3>Stories & Activities</h3><p>Spiritual, historical and moral stories filtered by child age.</p><button class="secondary" onclick="showToast('Stories and playful activities module is reserved.')">Open</button></article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>Prototype MVP • Data is stored locally in this browser</footer>
+  <script src="app.js"></script>
+</body>
+</html>
