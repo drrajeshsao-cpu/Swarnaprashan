@@ -199,3 +199,103 @@ $('#settingsForm').onsubmit=e=>{
 };
 
 function renderAll(){updateStats();childOptions();renderChildren();renderAppointments();renderGrowth();renderVaccinations();renderSettings()}
+
+
+const learnContent = {
+  swarnaprashan: {
+    title: 'Swarnaprashan क्या है?',
+    body: `
+      <h3>परिचय</h3>
+      <p>Swarnaprashan आयुर्वेद में वर्णित बाल स्वास्थ्य से संबंधित एक पारंपरिक प्रक्रिया है। इसे प्रशिक्षित आयुर्वेद चिकित्सक की देखरेख में, बच्चे की आयु, स्वास्थ्य स्थिति और उपयुक्तता का मूल्यांकन करके दिया जाना चाहिए।</p>
+
+      <h3>इसका उद्देश्य</h3>
+      <ul>
+        <li>बालक के समग्र स्वास्थ्य की देखभाल में सहायक पारंपरिक आयुर्वेदिक समर्थन</li>
+        <li>स्वस्थ दिनचर्या, पोषण और नियमित स्वास्थ्य निगरानी को बढ़ावा देना</li>
+        <li>Parents को growth, development और preventive child care के प्रति जागरूक करना</li>
+      </ul>
+
+      <h3>कब दिया जाता है?</h3>
+      <p>कई संस्थान इसे Pushya Nakshatra के दिन देते हैं। वास्तविक तिथि और clinic timing dashboard पर admin द्वारा update की जाएगी।</p>
+
+      <h3>कैसे दिया जाता है?</h3>
+      <p>यह केवल registered medical practitioner की सलाह और supervision में दिया जाना चाहिए। Dose बच्चे की आयु, वजन, formulation और clinical judgement पर निर्भर करती है।</p>
+
+      <h3>कब टालना चाहिए?</h3>
+      <ul>
+        <li>तेज बुखार या acute illness</li>
+        <li>बार-बार vomiting या severe diarrhoea</li>
+        <li>ज्ञात गंभीर allergy</li>
+        <li>Doctor द्वारा postponement की सलाह</li>
+      </ul>
+
+      <h3>महत्वपूर्ण</h3>
+      <p>यह routine vaccination, पौष्टिक भोजन, sleep, hygiene या आवश्यक medical treatment का विकल्प नहीं है।</p>
+    `
+  },
+  healthTips: {
+    title: 'Healthy Child Tips',
+    body: `
+      <h3>Daily Health Routine</h3>
+      <ul>
+        <li>आयु-अनुसार संतुलित भोजन</li>
+        <li>पर्याप्त पानी और नियमित नींद</li>
+        <li>प्रतिदिन outdoor physical activity</li>
+        <li>Screen time पर नियंत्रण</li>
+        <li>हाथ धोना और dental hygiene</li>
+      </ul>
+      <h3>Parent Monitoring</h3>
+      <p>Height, weight, BMI, vaccination, school performance और behavioural changes का समय-समय पर record रखें।</p>
+    `
+  },
+  habits: {
+    title: 'Good Habits & Sanskar',
+    body: `
+      <h3>अच्छी आदतें</h3>
+      <ul>
+        <li>समय पर उठना और सोना</li>
+        <li>माता-पिता और बड़ों का सम्मान</li>
+        <li>दैनिक प्रार्थना या शांत बैठना</li>
+        <li>Reading habit</li>
+        <li>कृतज्ञता और दयालुता</li>
+        <li>अपना सामान व्यवस्थित रखना</li>
+      </ul>
+      <h3>बचने योग्य आदतें</h3>
+      <ul>
+        <li>अत्यधिक mobile और television</li>
+        <li>अनियमित भोजन</li>
+        <li>देर रात तक जागना</li>
+        <li>बिना supervision के internet use</li>
+      </ul>
+    `
+  },
+  stories: {
+    title: 'Stories & Activities',
+    body: `
+      <h3>Age 3–6 years</h3>
+      <p>छोटी नैतिक कहानियाँ, colouring, picture matching और gratitude activity.</p>
+      <h3>Age 7–10 years</h3>
+      <p>Panchatantra, Krishna stories, healthy food quiz और memory games.</p>
+      <h3>Age 11–14 years</h3>
+      <p>Historical personalities, discipline stories, journaling और yoga challenge.</p>
+      <h3>Age 15–18 years</h3>
+      <p>Self-discipline, digital wellbeing, goal setting और responsibility activities.</p>
+    `
+  }
+};
+
+window.openLearnTopic = key => {
+  const item = learnContent[key];
+  if (!item) return;
+  $('#learnModalTitle').textContent = item.title;
+  $('#learnModalBody').innerHTML = item.body;
+  $('#learnModal').classList.remove('hidden');
+};
+
+window.closeLearnModal = () => {
+  $('#learnModal').classList.add('hidden');
+};
+
+$('#learnModal').addEventListener('click', e => {
+  if (e.target.id === 'learnModal') closeLearnModal();
+});

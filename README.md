@@ -1,4 +1,4 @@
-# Swarnaprashan @ Mahamaya Clinic — Phase 2
+# Swarnaprashan @ Mahamaya Clinic — Phase 3
 
 ## New in this version
 - Working WhatsApp links using configured number
@@ -30,3 +30,12 @@ Replace the old repository files with these files, then commit and push.
 
 ## Production limitations
 This is still a browser-based prototype using localStorage. Before real patient use, add a secure backend, database, OTP login, encryption, audit logs, privacy controls and backups.
+
+
+## New in Phase 3
+- Learn cards are now clickable
+- Swarnaprashan information opens in a modal
+- Healthy child tips open in a modal
+- Good habits and Sanskar open in a modal
+- Stories and activities open in a modal
+- Added user-friendly Open buttons

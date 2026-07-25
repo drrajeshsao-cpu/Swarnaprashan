@@ -250,10 +250,26 @@
           <div><h2>Learning, Health & Sanskar</h2><p>Age-filtered educational content for children and parents.</p></div>
         </div>
         <div class="grid">
-          <article class="card"><h3>Swarnaprashan क्या है?</h3><p>Traditional context, administration process, safety and FAQs.</p></article>
-          <article class="card"><h3>Healthy Child Tips</h3><p>Nutrition, sleep, exercise, screen-time and hygiene guidance.</p></article>
-          <article class="card"><h3>Good Habits & Sanskar</h3><p>Prayer, gratitude, discipline, reading, kindness and daily routine.</p></article>
-          <article class="card"><h3>Stories & Activities</h3><p>Spiritual, historical and moral stories filtered by child age.</p></article>
+          <article class="card action-card" onclick="openLearnTopic('swarnaprashan')">
+            <h3>Swarnaprashan क्या है?</h3>
+            <p>परिचय, उद्देश्य, सामान्य प्रक्रिया, सावधानियाँ और FAQs.</p>
+            <button class="secondary">Open</button>
+          </article>
+          <article class="card action-card" onclick="openLearnTopic('healthTips')">
+            <h3>Healthy Child Tips</h3>
+            <p>पोषण, नींद, व्यायाम, स्क्रीन-टाइम और स्वच्छता मार्गदर्शन.</p>
+            <button class="secondary">Open</button>
+          </article>
+          <article class="card action-card" onclick="openLearnTopic('habits')">
+            <h3>Good Habits & Sanskar</h3>
+            <p>प्रार्थना, कृतज्ञता, अनुशासन, पढ़ने की आदत और दयालुता.</p>
+            <button class="secondary">Open</button>
+          </article>
+          <article class="card action-card" onclick="openLearnTopic('stories')">
+            <h3>Stories & Activities</h3>
+            <p>आयु-अनुसार आध्यात्मिक, ऐतिहासिक और नैतिक कहानियाँ.</p>
+            <button class="secondary">Open</button>
+          </article>
         </div>
       </section>
 
@@ -287,7 +303,18 @@
     </section>
   </main>
 
-  <footer>Phase 2 Prototype • Data is stored locally in this browser</footer>
+
+  <div id="learnModal" class="modal hidden">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2 id="learnModalTitle">Topic</h2>
+        <button class="close-btn" onclick="closeLearnModal()">×</button>
+      </div>
+      <div id="learnModalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <footer>Phase 3 Prototype • Data is stored locally in this browser</footer>
   <script src="app.js"></script>
 </body>
 </html>
