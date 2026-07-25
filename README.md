@@ -1,37 +1,32 @@
-# Swarnaprashan @ Mahamaya Clinic — MVP Prototype
+# Swarnaprashan @ Mahamaya Clinic — Phase 2
 
-## Included in Phase 1
-- Role-based demo login
-- Responsive dashboard
-- Child profile registration
-- Birth, medical, allergy, vaccination and Swarnaprashan fields
-- Height, weight and BMI entry
-- Browser-based growth chart
-- Appointment booking
-- Learning, health and Sanskar module placeholders
-- Local browser storage
-- PWA manifest
+## New in this version
+- Working WhatsApp links using configured number
+- Direct clinic call button
+- Google Maps location link configuration
+- Main clinic website/app link configuration
+- Admin Settings page
+- Editable next Swarnaprashan date and timing
+- Google Calendar add button
+- Vaccination tracker
+- Expanded lifestyle and clinical advice fields
+- WhatsApp sharing for child summary, growth and appointments
+- Role-based visibility for admin settings
 
 ## Demo Login
 - User ID: demo
 - Password: 1234
 
-## Run
-Open `index.html` in a browser.
+## Important setup after upload
+Login as Super Admin, open Settings, then enter:
+1. WhatsApp number with country code, e.g. 918770143788
+2. Clinic phone number
+3. Google Maps share URL
+4. Main clinic website/app URL
+5. Next Swarnaprashan date and timing
 
-For best local testing:
-1. Open a terminal in this folder.
-2. Run: `python -m http.server 8000`
-3. Open: `http://localhost:8000`
+## GitHub upload
+Replace the old repository files with these files, then commit and push.
 
-## Important
-This is a frontend prototype. Production deployment will require:
-- Secure backend and database
-- OTP authentication
-- Role-based permissions
-- Encrypted child health data
-- WhatsApp Business API
-- PDF reports
-- WHO growth reference integration
-- Government vaccination schedule content
-- Audit logs and backups
+## Production limitations
+This is still a browser-based prototype using localStorage. Before real patient use, add a secure backend, database, OTP login, encryption, audit logs, privacy controls and backups.

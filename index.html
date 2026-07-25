@@ -28,10 +28,10 @@
 
         <label>Login role</label>
         <select id="role">
+          <option value="admin">Super Admin</option>
           <option value="doctor">Doctor</option>
           <option value="staff">Clinical Staff</option>
           <option value="parent">Parent / Guardian</option>
-          <option value="admin">Super Admin</option>
         </select>
 
         <label>Mobile number / User ID</label>
@@ -50,8 +50,10 @@
         <button class="tab active" data-page="dashboard">Dashboard</button>
         <button class="tab" data-page="children">Children</button>
         <button class="tab" data-page="growth">Growth</button>
+        <button class="tab" data-page="vaccination">Vaccination</button>
         <button class="tab" data-page="appointments">Appointments</button>
         <button class="tab" data-page="learn">Learn</button>
+        <button class="tab admin-only" data-page="settings">Settings</button>
       </nav>
 
       <section id="dashboard" class="page active">
@@ -63,9 +65,12 @@
           </div>
           <div class="next-event">
             <span>Next Swarnaprashan</span>
-            <strong id="nextDate">15 August 2026</strong>
-            <small id="nextTime">Clinic timing: 09:00–20:00</small>
-            <button class="secondary" onclick="openPage('appointments')">Book Appointment</button>
+            <strong id="nextDate">Not configured</strong>
+            <small id="nextTime">Clinic timing: not configured</small>
+            <div class="button-row">
+              <button class="secondary" onclick="openPage('appointments')">Book Appointment</button>
+              <button class="secondary" id="calendarBtn">Add to Calendar</button>
+            </div>
           </div>
         </div>
 
@@ -73,7 +78,7 @@
           <div class="stat"><span>Registered Children</span><strong id="childCount">0</strong></div>
           <div class="stat"><span>Appointments</span><strong id="appointmentCount">0</strong></div>
           <div class="stat"><span>Growth Entries</span><strong id="growthCount">0</strong></div>
-          <div class="stat"><span>Upcoming Doses</span><strong>1</strong></div>
+          <div class="stat"><span>Vaccination Records</span><strong id="vaccineCount">0</strong></div>
         </div>
 
         <div class="grid">
@@ -85,6 +90,10 @@
             <h3>Growth & Development</h3>
             <p>Track height, weight and BMI with comparative graphs.</p>
           </article>
+          <article class="card action-card" onclick="openPage('vaccination')">
+            <h3>Vaccination Tracker</h3>
+            <p>Record due, completed and missed vaccination details.</p>
+          </article>
           <article class="card action-card" onclick="openPage('appointments')">
             <h3>Swarnaprashan Booking</h3>
             <p>Book and manage monthly appointments.</p>
@@ -93,15 +102,20 @@
             <h3>Health, Habits & Sanskar</h3>
             <p>Age-wise health education, stories and playful activities.</p>
           </article>
+          <article class="card action-card admin-only" onclick="openPage('settings')">
+            <h3>Admin Settings</h3>
+            <p>Update Swarnaprashan date, WhatsApp, clinic location and app links.</p>
+          </article>
         </div>
 
         <div class="card clinic-card">
           <h3>Mahamaya Clinic</h3>
           <p>Advanced Ayurveda, Spine & Orthopaedic Centre</p>
           <div class="clinic-actions">
-            <button class="secondary" onclick="showToast('Clinic location module will open Google Maps in the production app.')">Clinic Location</button>
-            <button class="secondary" onclick="showToast('WhatsApp integration will be connected in Phase 2.')">WhatsApp</button>
-            <button class="secondary" onclick="showToast('Main Mahamaya Clinic website/app integration is reserved.')">Main Clinic App</button>
+            <button class="secondary" id="locationBtn">Clinic Location</button>
+            <button class="secondary" id="whatsappBtn">WhatsApp</button>
+            <button class="secondary" id="mainAppBtn">Main Clinic App</button>
+            <button class="secondary" id="callBtn">Call Clinic</button>
           </div>
         </div>
       </section>
@@ -142,6 +156,16 @@
           <label>Sensory / Motor deficit<input name="deficit" /></label>
           <label>Teething status<input name="teething" /></label>
           <label>Present health issue<input name="healthIssue" /></label>
+
+          <h3 class="span-2">Advice & Lifestyle</h3>
+          <label>Medicines advised<textarea name="medicines"></textarea></label>
+          <label>Pathya<textarea name="pathya"></textarea></label>
+          <label>Apathya<textarea name="apathya"></textarea></label>
+          <label>Yoga / Exercise<textarea name="yoga"></textarea></label>
+          <label>Meditation<textarea name="meditation"></textarea></label>
+          <label>Good habits to add<textarea name="goodHabits"></textarea></label>
+          <label>Bad habits to avoid<textarea name="badHabits"></textarea></label>
+          <label>Learning / Memory remarks<textarea name="learning"></textarea></label>
           <button class="primary span-2" type="submit">Save Child Profile</button>
         </form>
 
@@ -150,34 +174,49 @@
 
       <section id="growth" class="page">
         <div class="page-head">
-          <div><h2>Growth Monitoring</h2><p>Record height, weight and BMI; compare 3, 6 and 12 months.</p></div>
+          <div><h2>Growth Monitoring</h2><p>Record height, weight and BMI; compare multiple visits.</p></div>
         </div>
 
         <form id="growthForm" class="card form-grid">
-          <label>Child
-            <select id="growthChild" name="childId" required></select>
-          </label>
+          <label>Child<select id="growthChild" name="childId" required></select></label>
           <label>Date<input name="date" type="date" required /></label>
-          <label>Height (cm)<input name="height" type="number" step="0.1" required /></label>
-          <label>Weight (kg)<input name="weight" type="number" step="0.1" required /></label>
+          <label>Height (cm)<input id="heightInput" name="height" type="number" step="0.1" required /></label>
+          <label>Weight (kg)<input id="weightInput" name="weight" type="number" step="0.1" required /></label>
           <label>BMI<input id="bmiPreview" name="bmi" readonly /></label>
           <label>Remarks<input name="remarks" /></label>
           <button class="primary span-2" type="submit">Add Growth Record</button>
         </form>
 
         <div class="card">
-          <div class="chart-head">
-            <h3>Growth Trend</h3>
-            <select id="chartChild"></select>
-          </div>
+          <div class="chart-head"><h3>Growth Trend</h3><select id="chartChild"></select></div>
           <canvas id="growthChart" width="900" height="360"></canvas>
-          <div class="chart-legend">
-            <span>Height (cm)</span><span>Weight (kg)</span><span>BMI</span>
-          </div>
-          <button id="shareGrowthBtn" class="secondary">Prepare WhatsApp Summary</button>
+          <div class="chart-legend"><span>Height</span><span>Weight</span><span>BMI</span></div>
+          <button id="shareGrowthBtn" class="secondary">Share Growth Summary on WhatsApp</button>
         </div>
 
         <div id="growthTableWrap" class="card"></div>
+      </section>
+
+      <section id="vaccination" class="page">
+        <div class="page-head">
+          <div><h2>Vaccination Tracker</h2><p>Record due, completed, delayed or missed vaccines.</p></div>
+        </div>
+
+        <form id="vaccinationForm" class="card form-grid">
+          <label>Child<select id="vaccineChild" name="childId" required></select></label>
+          <label>Vaccine name<input name="vaccineName" required placeholder="e.g. BCG, OPV, Pentavalent" /></label>
+          <label>Due date<input name="dueDate" type="date" /></label>
+          <label>Date administered<input name="givenDate" type="date" /></label>
+          <label>Status
+            <select name="status"><option>Completed</option><option>Due</option><option>Delayed</option><option>Missed</option></select>
+          </label>
+          <label>Batch number<input name="batch" /></label>
+          <label>Vaccination centre<input name="centre" /></label>
+          <label>Remarks<input name="remarks" /></label>
+          <button class="primary span-2" type="submit">Save Vaccination Record</button>
+        </form>
+
+        <div id="vaccinationList" class="list"></div>
       </section>
 
       <section id="appointments" class="page">
@@ -198,12 +237,11 @@
           </label>
           <label>Date<input name="date" type="date" required /></label>
           <label>Time<input name="time" type="time" required /></label>
-          <label>Doctor
-            <select name="doctor"><option>Dr Rajesh Sao</option><option>Dr Ravi Chandrakar</option></select>
-          </label>
+          <label>Doctor<select name="doctor"><option>Dr Rajesh Sao</option><option>Dr Ravi Chandrakar</option></select></label>
           <label>Concern<input name="concern" /></label>
           <button class="primary span-2" type="submit">Confirm Appointment</button>
         </form>
+
         <div id="appointmentList" class="list"></div>
       </section>
 
@@ -212,16 +250,44 @@
           <div><h2>Learning, Health & Sanskar</h2><p>Age-filtered educational content for children and parents.</p></div>
         </div>
         <div class="grid">
-          <article class="card"><h3>Swarnaprashan क्या है?</h3><p>Overview, traditional context, administration process and FAQs.</p><button class="secondary" onclick="showToast('Content editor will be enabled in Phase 2.')">Open</button></article>
-          <article class="card"><h3>Healthy Child Tips</h3><p>Nutrition, sleep, exercise, screen-time and hygiene guidance.</p><button class="secondary" onclick="showToast('Age-wise content library is reserved.')">Open</button></article>
-          <article class="card"><h3>Good Habits & Sanskar</h3><p>Prayer, gratitude, discipline, reading, kindness and daily routine.</p><button class="secondary" onclick="showToast('Daily habit tracker will be added next.')">Open</button></article>
-          <article class="card"><h3>Stories & Activities</h3><p>Spiritual, historical and moral stories filtered by child age.</p><button class="secondary" onclick="showToast('Stories and playful activities module is reserved.')">Open</button></article>
+          <article class="card"><h3>Swarnaprashan क्या है?</h3><p>Traditional context, administration process, safety and FAQs.</p></article>
+          <article class="card"><h3>Healthy Child Tips</h3><p>Nutrition, sleep, exercise, screen-time and hygiene guidance.</p></article>
+          <article class="card"><h3>Good Habits & Sanskar</h3><p>Prayer, gratitude, discipline, reading, kindness and daily routine.</p></article>
+          <article class="card"><h3>Stories & Activities</h3><p>Spiritual, historical and moral stories filtered by child age.</p></article>
+        </div>
+      </section>
+
+      <section id="settings" class="page">
+        <div class="page-head">
+          <div><h2>Admin Settings</h2><p>Configure live links and next Swarnaprashan information.</p></div>
+        </div>
+
+        <form id="settingsForm" class="card form-grid">
+          <h3 class="span-2">Clinic Contact & Links</h3>
+          <label>Primary WhatsApp number<input name="whatsapp" placeholder="919999999999" /></label>
+          <label>Clinic phone number<input name="phone" placeholder="919999999999" /></label>
+          <label class="span-2">Google Maps location URL<input name="locationUrl" placeholder="Paste Google Maps share link" /></label>
+          <label class="span-2">Main clinic website/app URL<input name="mainAppUrl" placeholder="https://..." /></label>
+
+          <h3 class="span-2">Next Swarnaprashan</h3>
+          <label>Date<input name="nextDate" type="date" /></label>
+          <label>Clinic timing<input name="nextTime" placeholder="09:00–20:00" /></label>
+          <label>Nakshatra start<input name="nakshatraStart" placeholder="00:00" /></label>
+          <label>Nakshatra end<input name="nakshatraEnd" placeholder="23:59" /></label>
+          <label class="span-2">Appointment message<textarea name="appointmentMessage"></textarea></label>
+
+          <button class="primary span-2" type="submit">Save Settings</button>
+        </form>
+
+        <div class="card">
+          <h3>Important</h3>
+          <p>Enter complete URLs beginning with <strong>https://</strong>. WhatsApp number should include country code, for example <strong>918770143788</strong>.</p>
         </div>
       </section>
     </section>
   </main>
 
-  <footer>Prototype MVP • Data is stored locally in this browser</footer>
+  <footer>Phase 2 Prototype • Data is stored locally in this browser</footer>
   <script src="app.js"></script>
 </body>
 </html>
