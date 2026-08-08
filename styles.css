@@ -147,3 +147,118 @@ nav button.active::before{background:var(--tab)}
  .camera-actions{display:grid;grid-template-columns:1fr}
  .camera-actions button{width:100%}
 }
+
+
+/* V9 Responsive Branded Pro */
+:root{
+  --sidebar-w:284px;
+  --tap:46px;
+}
+body{font-synthesis-weight:none}
+button{min-height:var(--tap)}
+.main{max-width:1600px;width:100%;margin:0 auto}
+.card,.wizard-card,.reportpaper{contain:layout paint}
+input,select,textarea,button{touch-action:manipulation}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(247,244,237,.94);backdrop-filter:blur(10px);padding:10px 0}
+.top-actions{align-items:center}
+.sidebar{width:var(--sidebar-w)}
+nav button{min-height:46px}
+.children-table{min-width:920px}
+.tablewrap{scrollbar-width:thin}
+.reportpaper{overflow-wrap:anywhere}
+.rx-saved-list{margin-top:12px}
+.prescription-attachments{background:linear-gradient(180deg,#fffdf8,#fff)}
+.prescription-attachments h4{margin:0 0 4px}
+.mobile-nav-toggle{display:none}
+
+/* Tablet */
+@media (max-width: 1180px){
+  .app{grid-template-columns:230px minmax(0,1fr)}
+  .sidebar{width:230px;padding:16px 10px}
+  .brand strong{font-size:16px}
+  .brand span{font-size:11px}
+  nav button{font-size:13px;padding:10px 11px}
+  .main{padding:22px}
+  .hero{grid-template-columns:1fr 240px}
+  .hero h2{font-size:28px}
+  .formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Mobile */
+@media (max-width: 760px){
+  body{background:#fff}
+  .app{display:block}
+  .sidebar{
+    position:static;width:100%;height:auto;border-right:0;border-bottom:1px solid var(--line);
+    padding:10px 12px;background:#fff
+  }
+  .brand{padding:2px 4px 10px;margin-bottom:6px}
+  .brandmark{width:42px;height:42px;border-radius:12px}
+  .brand strong{font-size:16px}
+  .brand span{font-size:10px}
+  nav{
+    display:flex;flex-direction:row;overflow-x:auto;gap:7px;padding:3px 0 8px;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch
+  }
+  nav button{
+    flex:0 0 auto;white-space:nowrap;min-height:40px;padding:9px 12px;font-size:12px;border:1px solid #eee7dd;
+    scroll-snap-align:start;background:#fff
+  }
+  nav button::before{display:none}
+  nav button.active{transform:none}
+  .side-note{display:none}
+  .main{padding:12px}
+  .topbar{
+    position:static;display:block;padding:6px 0 10px;margin-bottom:8px;background:transparent;backdrop-filter:none
+  }
+  .topbar h1{font-size:24px}
+  .topbar p{font-size:12px}
+  .top-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .top-actions input{grid-column:1 / -1;width:100%}
+  .top-actions button{width:100%;padding:10px 8px;font-size:12px}
+  .hero{grid-template-columns:1fr;padding:18px;border-radius:18px}
+  .hero h2{font-size:24px}
+  .hero p{font-size:13px}
+  .hero-mini{grid-template-columns:repeat(3,1fr)}
+  .hero-mini b{font-size:16px}
+  .hero-mini span{font-size:9px}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
+  .kpi{padding:14px}.kpi b{font-size:24px}
+  .grid2,.formgrid,.metricrow,.scalegrid,.upload-grid{grid-template-columns:1fr}
+  .card,.wizard-card,.reportpaper{padding:14px;border-radius:15px;margin:10px 0}
+  .cardhead{align-items:flex-start;flex-direction:column}
+  .children-table{min-width:840px}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .row-actions{min-width:220px}
+  .sticky-actions{
+    bottom:6px;padding:8px;gap:7px;border-radius:13px
+  }
+  .sticky-actions button{padding:9px 10px;font-size:12px}
+  .steps{grid-template-columns:repeat(3,1fr);gap:5px}
+  .step{font-size:9px;padding:8px 4px}
+  .camera-dialog{width:100%;max-height:94vh;overflow:auto}
+  .letterhead-top{display:block}
+  .doctor-strip{grid-template-columns:1fr}
+  .reportpaper{font-size:12px}
+  .metricrow{gap:7px}
+  .avatar-xl{width:108px;height:108px}
+}
+
+/* very small phones */
+@media (max-width: 430px){
+  .top-actions{grid-template-columns:1fr}
+  .top-actions input{grid-column:auto}
+  .hero-mini{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  button{font-size:13px}
+}
+
+/* Desktop enhancement */
+@media (min-width: 1400px){
+  .app{grid-template-columns:300px minmax(0,1fr)}
+  .sidebar{width:300px}
+  .main{padding:30px 42px}
+  .hero{grid-template-columns:minmax(0,1fr) 330px}
+  .card{padding:22px}
+}

@@ -1,6 +1,6 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan Digital Clinical Suite",
-  "short_name": "Swarnaprashan",
+  "name": "Mahamaya Clinic Swarnaprashan Digital Health Suite",
+  "short_name": "Mahamaya Swarna",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f7f4ed",
@@ -12,5 +12,6 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "description": "Professional Swarnaprashan clinical tracking, growth analytics, digital prescription, documents and parent reports."
 }

@@ -1,26 +1,29 @@
-SWARNAPRASHAN PRO V8.2 — DIRECT CAMERA CAPTURE
+MAHAMAYA CLINIC — SWARNAPRASHAN DIGITAL HEALTH SUITE V9
 
-Key fix
-- 'Take Photo Now' now opens the browser camera directly using getUserMedia.
-- Live camera preview is shown inside the app.
-- Capture Photo button creates the image immediately.
-- Switch Camera supports front/rear cameras where available.
-- Works for:
-  1. Baby Identity Photo
-  2. Investigation / Clinical Photo
-  3. Monthly Follow-up Photo
-  4. Documents / Manual Swarnaprashan Card
-- Gallery/File/PDF remains available as fallback.
+Brand:
+MAHAMAYA CLINIC
+Swarnaprashan Digital Prescription / Digital Health Suite
 
-Important
-Browser will ask for camera permission on first use.
-GitHub Pages is HTTPS, so camera APIs are allowed when browser/device permissions permit them.
+Doctors:
+1. Dr. Rajesh Sao, M.D. (Ayurveda)
+   Consultant Physician • Ayurveda
+2. Dr. Ravi Chandrakar, B.A.M.S.
+   Consultant Physician • Ayurveda
 
-Also retains:
-- V8.1 blank PDF print fix
-- dual-doctor letterhead
-- sequential child photo registry
-- Save & Next clinical workflow
-- analytics, vaccination, documents, backup and WhatsApp.
+Address:
+In front of India 1 ATM, Sheetla Chowk, Bhatagaon, Raipur
 
-Deploy root files, commit, wait for Pages, then Ctrl+F5.
+V9 Improvements:
+- Fully responsive for mobile, tablet, laptop and desktop.
+- Faster, touch-friendly controls and professional spacing.
+- Mobile horizontal navigation for quick section access.
+- Better typography and screen-size specific layouts.
+- Existing baby photo identity, direct camera, gallery and PDF/file upload retained.
+- Dedicated manual/previous prescription upload added directly on Reports & Prescription page.
+- Prescription attachments support live camera, gallery, files and PDFs.
+- Save/Print PDF/Share/WhatsApp retained.
+- Dual doctor premium prescription letterhead retained.
+- Growth analytics, vaccination, clinical workspace, documents and backup retained.
+
+Deploy:
+Replace root repository files with this package, commit, wait for GitHub Pages, then Ctrl+F5.

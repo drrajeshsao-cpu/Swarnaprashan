@@ -295,7 +295,41 @@ async function removeDoc(id){if(confirm('Delete this document?')){await delDoc(i
 function openQuickUpload(){showView('documents')}
 
 // Reports
-function renderReports(){options($('#reportChild'));$('#generateReport').onclick=generateSelectedReport;$('#printReport').onclick=printParentReport;$('#shareReport').onclick=shareReport;$('#waReport').onclick=waReport}
+let rxPickedFiles=[];
+function renderReports(){
+  options($('#reportChild'));
+  $('#generateReport').onclick=generateSelectedReport;
+  $('#printReport').onclick=printParentReport;
+  $('#shareReport').onclick=shareReport;
+  $('#waReport').onclick=waReport;
+  rxPickedFiles=[];
+  $('#rxDirectCamera').onclick=()=>startDirectCamera('Manual Prescription / Card Photo',async(file)=>{rxPickedFiles.push(file);renderRxPicked()});
+  $('#rxFileInput').onchange=e=>{rxPickedFiles.push(...e.target.files);renderRxPicked()};
+  $('#saveRxAttachments').onclick=saveRxAttachments;
+  $('#reportChild').onchange=drawRxAttachments;
+  drawRxAttachments();
+}
+function renderRxPicked(){
+  $('#rxPickedFiles').innerHTML=rxPickedFiles.map(f=>`<span class="file-chip">${esc(f.name)} • ${(f.size/1024).toFixed(0)} KB</span>`).join('');
+}
+async function saveRxAttachments(){
+  const childId=$('#reportChild').value;
+  if(!childId){alert('Please select a child first.');return}
+  if(!rxPickedFiles.length){alert('Capture or select at least one prescription file.');return}
+  const note=$('#rxAttachNote').value;
+  for(const f of rxPickedFiles){
+    await putDoc({id:uid(),childId,type:'Manual / Previous Prescription',date:new Date().toISOString().slice(0,10),note,name:f.name,mime:f.type,size:f.size,blob:f});
+  }
+  rxPickedFiles=[];renderRxPicked();$('#rxFileInput').value='';$('#rxAttachNote').value='';
+  alert('Prescription attachment(s) saved.');
+  drawRxAttachments();
+}
+async function drawRxAttachments(){
+  const childId=$('#reportChild')?.value||'';
+  if(!$('#rxSavedAttachments'))return;
+  const docs=(await getDocs()).filter(d=>(!childId||d.childId===childId)&&d.type==='Manual / Previous Prescription').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  $('#rxSavedAttachments').innerHTML=docs.map(d=>`<div class="docitem"><b>${esc(d.name)}</b><div class="docmeta">${fmt(d.date)} ${d.note?'• '+esc(d.note):''}</div><div class="actionrow"><button class="ghost" onclick="app.openDoc('${d.id}')">Open</button><button class="ghost" onclick="app.downloadDoc('${d.id}')">Download</button></div></div>`).join('')||'<p class="muted">No manual prescription attachment saved for the selected child.</p>';
+}
 async function generateSelectedReport(){const id=$('#reportChild').value;if(!id){alert('Select child');return}const c=child(id),fs=fups(id),latest=fs.at(-1),cases=db.cases.filter(x=>x.childId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))),cs=cases.at(-1),docs=(await getDocs()).filter(x=>x.childId===id),first=fs[0];let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
 $('#reportPaper').innerHTML=`${letterhead(fmt(latest?.date||cs?.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(latest?.date||cs?.date)}</div>`)}
 <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name)}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Follow-ups</span><b>${fs.length}</b></div><div class="metric"><span>Clinical Entries</span><b>${cases.length}</b></div></div></div>

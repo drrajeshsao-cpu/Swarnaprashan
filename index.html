@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#5f4327">
-<title>Mahamaya Clinic • Swarnaprashan Pro</title>
+<title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brandmark">स्व</div>
-      <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan Digital Clinical Suite</span></div>
+      <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan Digital Health Suite</span></div>
     </div>
     <nav id="nav">
       <button data-view="dashboard" class="active">⌂ Dashboard</button>
@@ -200,6 +200,24 @@
       <button class="ghost" id="printReport">Print / Save PDF</button>
       <button class="ghost" id="shareReport">Share</button>
       <button class="ghost" id="waReport">WhatsApp</button>
+    </div>
+    <div class="section prescription-attachments">
+      <div class="cardhead">
+        <div><h4>Manual Prescription / Previous Card / Prescription Photo</h4><p class="muted">Attach a scanned prescription, camera photo, gallery image or PDF directly from the prescription page.</p></div>
+        <span class="pill">Optional</span>
+      </div>
+      <div class="upload-grid">
+        <button type="button" id="rxDirectCamera" class="uploadbox direct-camera-btn">📷 Capture Prescription<br><span>Live camera preview → Capture</span></button>
+        <label class="uploadbox">🖼 Gallery / 📎 File / PDF
+          <input id="rxFileInput" type="file" multiple accept="image/*,.pdf,.doc,.docx">
+        </label>
+      </div>
+      <div id="rxPickedFiles" class="selected-files"></div>
+      <div class="formgrid">
+        <label>Attachment Note<input id="rxAttachNote" placeholder="e.g. Manual prescription dated 08-08-2026"></label>
+      </div>
+      <button id="saveRxAttachments" class="ghost">Save Prescription Attachments</button>
+      <div id="rxSavedAttachments" class="rx-saved-list"></div>
     </div>
   </div>
   <div id="reportPaper" class="reportpaper"></div>
