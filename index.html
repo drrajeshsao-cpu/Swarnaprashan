@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=10.2.0">
+<link rel="stylesheet" href="styles.css?v=10.3.0">
 </head>
 <body>
 <div id="authGate" class="auth-gate">
@@ -41,7 +41,10 @@
         <label>Password<input id="loginPassword" type="password" placeholder="Enter password"></label>
       </div>
       <div class="actionrow auth-actions">
-        <button id="loginBtn">Login</button><button id="oneTapRajeshBtn" class="ghost">Quick Login • Dr Rajesh</button>
+        <button id="loginBtn">Login</button><button id="oneTapRajeshBtn" class="ghost"
+      onclick="window.__mahamayaQuickLogin && window.__mahamayaQuickLogin()">
+      Quick Login • Dr Rajesh
+    </button>
         <button id="demoUsersBtn" class="ghost">View Demo Users</button>
         <button id="forgotBtn" class="ghost">Forgot Password</button>
         <button id="resetLoginBtn" class="ghost emergency-login-btn">Reset Login Access</button>
@@ -348,6 +351,104 @@
   </div>
 </div>
 
-<script src="app.js?v=10.2.0"></script>
+
+<script>
+(function(){
+  const SESSION_KEY='mahamaya_swarnaprashan_session_v1';
+
+  function setStatus(msg, ok){
+    const el=document.getElementById('loginStatus');
+    if(!el) return;
+    el.textContent=msg;
+    el.classList.toggle('ok',!!ok);
+    el.classList.toggle('error',!ok);
+  }
+
+  function openApp(session){
+    try{ localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }catch(e){}
+    const gate=document.getElementById('authGate');
+    const shell=document.getElementById('appShell');
+    if(gate) gate.style.display='none';
+    if(shell) shell.classList.remove('auth-hidden');
+    const badge=document.getElementById('currentUserBadge');
+    if(badge) badge.textContent=(session.name||'Dr Rajesh')+' • '+(session.role||'Doctor');
+
+    // Ask the main app to open dashboard if it is available.
+    if(window.app && typeof window.app.showView==='function'){
+      try{ window.app.showView('dashboard'); }catch(e){}
+    }
+  }
+
+  window.__mahamayaQuickLogin=function(){
+    const session={
+      id:'builtin-drrajesh',
+      name:'Dr Rajesh Sao',
+      loginId:'drrajesh',
+      role:'Doctor',
+      at:Date.now()
+    };
+    setStatus('Quick login successful. Opening dashboard…', true);
+    openApp(session);
+
+    // If the main JS loaded a little later, run once more.
+    setTimeout(function(){
+      if(window.app && typeof window.app.showView==='function'){
+        try{ window.app.showView('dashboard'); }catch(e){}
+      }
+    }, 400);
+  };
+
+  window.__mahamayaManualLogin=function(){
+    const id=(document.getElementById('loginIdentifier')?.value||'').trim().toLowerCase();
+    const pw=document.getElementById('loginPassword')?.value||'';
+    const valid =
+      (id==='drrajesh' && pw==='rajesh123') ||
+      (id==='dr.raju2010@gmail.com' && pw==='rajesh123') ||
+      (id==='drravi' && pw==='ravi123') ||
+      (id==='superadmin' && pw==='admin123');
+
+    if(!valid){
+      setStatus('Login failed. Use Quick Login • Dr Rajesh.', false);
+      alert('Login failed. Tap Quick Login • Dr Rajesh.');
+      return;
+    }
+    const name=id==='drravi'?'Dr Ravi Chandrakar':id==='superadmin'?'Super Admin':'Dr Rajesh Sao';
+    const role=id==='superadmin'?'Super Admin':'Doctor';
+    setStatus('Login successful. Opening dashboard…', true);
+    openApp({id:'builtin-'+id,name,loginId:id,role,at:Date.now()});
+    setTimeout(function(){
+      if(window.app && typeof window.app.showView==='function'){
+        try{ window.app.showView('dashboard'); }catch(e){}
+      }
+    }, 400);
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const login=document.getElementById('loginBtn');
+    if(login){
+      login.onclick=function(ev){
+        ev.preventDefault();
+        window.__mahamayaManualLogin();
+      };
+    }
+
+    const quick=document.getElementById('oneTapRajeshBtn');
+    if(quick){
+      quick.onclick=function(ev){
+        ev.preventDefault();
+        window.__mahamayaQuickLogin();
+      };
+    }
+
+    // If a session already exists, immediately reveal app shell.
+    try{
+      const existing=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+      if(existing) openApp(existing);
+    }catch(e){}
+  });
+})();
+</script>
+
+<script src="app.js?v=10.3.0"></script>
 </body>
 </html>
