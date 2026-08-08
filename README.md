@@ -1,41 +1,13 @@
-# Swarnaprashan @ Mahamaya Clinic — Phase 3
+# Swarnaprashan @ Mahamaya Clinic — Professional PWA v3.0
 
-## New in this version
-- Working WhatsApp links using configured number
-- Direct clinic call button
-- Google Maps location link configuration
-- Main clinic website/app link configuration
-- Admin Settings page
-- Editable next Swarnaprashan date and timing
-- Google Calendar add button
-- Vaccination tracker
-- Expanded lifestyle and clinical advice fields
-- WhatsApp sharing for child summary, growth and appointments
-- Role-based visibility for admin settings
+Mobile-first clinic prototype with child registry, Swarnaprashan visit records, safety screening, growth monitoring, vaccination tracking, scheduling, parent education and JSON backup/restore.
 
-## Demo Login
-- User ID: demo
-- Password: 1234
+## Demo login
+- User ID: `demo`
+- Password: `1234`
 
-## Important setup after upload
-Login as Super Admin, open Settings, then enter:
-1. WhatsApp number with country code, e.g. 918770143788
-2. Clinic phone number
-3. Google Maps share URL
-4. Main clinic website/app URL
-5. Next Swarnaprashan date and timing
+## Existing data compatibility
+The app continues to use the legacy localStorage keys `sp_children`, `sp_growth`, `sp_appointments`, `sp_vaccines`, and `sp_settings`, and adds `sp_visits`.
 
-## GitHub upload
-Replace the old repository files with these files, then commit and push.
-
-## Production limitations
-This is still a browser-based prototype using localStorage. Before real patient use, add a secure backend, database, OTP login, encryption, audit logs, privacy controls and backups.
-
-
-## New in Phase 3
-- Learn cards are now clickable
-- Swarnaprashan information opens in a modal
-- Healthy child tips open in a modal
-- Good habits and Sanskar open in a modal
-- Stories and activities open in a modal
-- Added user-friendly Open buttons
+## Important
+This prototype stores data in browser localStorage. Use Backup regularly. For real multi-device clinical use, add authenticated cloud storage, access control, audit logs and privacy/security review.

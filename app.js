@@ -1,301 +1,67 @@
-const $=s=>document.querySelector(s);
-const $$=s=>document.querySelectorAll(s);
-
-const defaultSettings={
-  whatsapp:'918770143788',
-  phone:'918770143788',
-  locationUrl:'',
-  mainAppUrl:'',
-  nextDate:'',
-  nextTime:'',
-  nakshatraStart:'',
-  nakshatraEnd:'',
-  appointmentMessage:'Namaste Mahamaya Clinic, mujhe apne bachche ke liye Swarnaprashan appointment book karna hai.'
-};
-
-const db={
-  children:JSON.parse(localStorage.getItem('sp_children')||'[]'),
-  growth:JSON.parse(localStorage.getItem('sp_growth')||'[]'),
-  appointments:JSON.parse(localStorage.getItem('sp_appointments')||'[]'),
-  vaccines:JSON.parse(localStorage.getItem('sp_vaccines')||'[]'),
-  settings:{...defaultSettings,...JSON.parse(localStorage.getItem('sp_settings')||'{}')}
-};
-
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const STORAGE={children:'sp_children',growth:'sp_growth',appointments:'sp_appointments',vaccines:'sp_vaccines',visits:'sp_visits',settings:'sp_settings'};
+const defaultSettings={whatsapp:'',phone:'',locationUrl:'',mainAppUrl:'',nextDate:'',nextTime:'',nakshatraStart:'',nakshatraEnd:'',appointmentMessage:'Namaste Mahamaya Clinic, mujhe apne bachche ke liye Swarnaprashan appointment book karna hai.'};
+const safeParse=(k,fallback)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(fallback))}catch{return fallback}};
+const db={children:safeParse(STORAGE.children,[]),growth:safeParse(STORAGE.growth,[]),appointments:safeParse(STORAGE.appointments,[]),vaccines:safeParse(STORAGE.vaccines,[]),visits:safeParse(STORAGE.visits,[]),settings:{...defaultSettings,...safeParse(STORAGE.settings,{})}};
 let currentRole='admin';
+const nowISO=()=>new Date().toISOString(), today=()=>new Date().toISOString().slice(0,10), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function save(){Object.entries(STORAGE).forEach(([key,val])=>{if(key==='settings')localStorage.setItem(val,JSON.stringify(db.settings));else localStorage.setItem(val,JSON.stringify(db[key]))})}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function formatDate(v){if(!v)return 'Not configured';const d=new Date(v+'T00:00:00');return Number.isNaN(d)?v:d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+function ageText(dob){if(!dob)return '-';const b=new Date(dob+'T00:00:00'),n=new Date();let m=(n.getFullYear()-b.getFullYear())*12+n.getMonth()-b.getMonth();if(n.getDate()<b.getDate())m--;if(m<0)return '-';return m<24?`${m} months`:`${Math.floor(m/12)}y ${m%12}m`}
+function childById(id){return db.children.find(c=>String(c.id)===String(id))}
+function setTodayDefaults(){['#visitForm [name=date]','#growthForm [name=date]'].forEach(s=>{const e=$(s);if(e&&!e.value)e.value=today()})}
+function makeChildId(){const n=db.children.length+1;return `MMC-SP-${new Date().getFullYear()}-${String(n).padStart(4,'0')}`}
+function openPage(id){$$('.page').forEach(p=>p.classList.remove('active'));const page=$('#'+id);if(!page)return;page.classList.add('active');$$('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===id));$('#moreSheet').classList.add('hidden');if(id==='children')renderChildren();if(id==='visits')renderVisits();if(id==='growth')renderGrowth();if(id==='vaccination')renderVaccines();if(id==='appointments')renderAppointments();if(id==='backup')renderBackupSummary();if(id==='settings')loadSettings();setTodayDefaults();window.scrollTo({top:0,behavior:'smooth'})}
+window.openPage=openPage; window.focusNewChild=()=>setTimeout(()=>$('#childForm input[name=name]')?.focus(),100);
+$$('.tab,.bottom-tab[data-page],#moreSheet [data-page]').forEach(b=>b.addEventListener('click',()=>openPage(b.dataset.page)));
+$('#moreBtn').onclick=()=>$('#moreSheet').classList.toggle('hidden');
 
-function save(){
-  localStorage.setItem('sp_children',JSON.stringify(db.children));
-  localStorage.setItem('sp_growth',JSON.stringify(db.growth));
-  localStorage.setItem('sp_appointments',JSON.stringify(db.appointments));
-  localStorage.setItem('sp_vaccines',JSON.stringify(db.vaccines));
-  localStorage.setItem('sp_settings',JSON.stringify(db.settings));
-}
-function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
-window.showToast=showToast;
-
-function openPage(id){
-  $$('.page').forEach(p=>p.classList.remove('active'));
-  $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));
-  $('#'+id).classList.add('active');
-  if(id==='growth')renderGrowth();
-  if(id==='children')renderChildren();
-  if(id==='appointments')renderAppointments();
-  if(id==='vaccination')renderVaccinations();
-  if(id==='settings')loadSettingsForm();
-}
-window.openPage=openPage;
-
-$('#loginBtn').onclick=()=>{
-  if($('#userId').value==='demo'&&$('#password').value==='1234'){
-    currentRole=$('#role').value;
-    $('#loginView').classList.add('hidden');
-    $('#appView').classList.remove('hidden');
-    $('#logoutBtn').classList.remove('hidden');
-    $('#welcomeText').textContent='Welcome, '+$('#role').selectedOptions[0].text;
-    $$('.admin-only').forEach(el=>el.classList.toggle('hidden',currentRole!=='admin'));
-    renderAll();showToast('Login successful');
-  } else showToast('Use demo / 1234 for this prototype');
-};
+$('#loginBtn').onclick=()=>{if($('#userId').value==='demo'&&$('#password').value==='1234'){currentRole=$('#role').value;$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');$('#logoutBtn').classList.remove('hidden');$$('.admin-only').forEach(x=>x.classList.toggle('hidden',currentRole!=='admin'));$('#welcomeText').textContent=`Welcome, ${$('#role').selectedOptions[0].text}`;renderAll();toast('Login successful')}else toast('Use demo / 1234 for this prototype')};
 $('#logoutBtn').onclick=()=>location.reload();
-$$('.tab').forEach(t=>t.onclick=()=>openPage(t.dataset.page));
 
-function updateStats(){
-  $('#childCount').textContent=db.children.length;
-  $('#appointmentCount').textContent=db.appointments.length;
-  $('#growthCount').textContent=db.growth.length;
-  $('#vaccineCount').textContent=db.vaccines.length;
-}
-function childOptions(){
-  const opts=db.children.length?db.children.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''):'<option value="">Register a child first</option>';
-  ['#growthChild','#chartChild','#appointmentChild','#vaccineChild'].forEach(id=>$(id).innerHTML=opts);
-}
-function formatDate(dateStr){
-  if(!dateStr)return 'Not configured';
-  return new Date(dateStr+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-}
-function renderSettings(){
-  $('#nextDate').textContent=formatDate(db.settings.nextDate);
-  const n=db.settings.nakshatraStart||db.settings.nakshatraEnd?` • Nakshatra ${db.settings.nakshatraStart||'?'}–${db.settings.nakshatraEnd||'?'}`:'';
-  $('#nextTime').textContent='Clinic timing: '+(db.settings.nextTime||'not configured')+n;
-}
+function childOptions(){const opt=db.children.length?db.children.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} • ${esc(c.id)}</option>`).join(''):'<option value="">Register a child first</option>';['#visitChild','#growthChild','#chartChild','#vaccineChild','#appointmentChild'].forEach(s=>{const el=$(s);if(el){const old=el.value;el.innerHTML=opt;if([...el.options].some(o=>o.value===old))el.value=old}})}
+function updateStats(){childOptions();$('#childCount').textContent=db.children.length;$('#visitCount').textContent=db.visits.length;$('#appointmentCount').textContent=db.appointments.filter(a=>a.date>=today()&&a.status!=='Cancelled').length;$('#growthCount').textContent=db.growth.length;$('#nextDate').textContent=formatDate(db.settings.nextDate);const nt=[db.settings.nextTime,db.settings.nakshatraStart||db.settings.nakshatraEnd?`Nakshatra ${db.settings.nakshatraStart||'?'}–${db.settings.nakshatraEnd||'?'}`:''].filter(Boolean).join(' • ');$('#nextTime').textContent=nt||'Clinic timing: not configured';renderRecent();renderWorklist()}
+function renderRecent(){const rows=[...db.children].sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'')).slice(0,5);$('#recentChildren').innerHTML=rows.length?rows.map(c=>compactChild(c)).join(''):'<div class="empty">No child registered yet.</div>'}
+function renderWorklist(){const rows=[...db.appointments].filter(a=>a.date>=today()&&a.status!=='Cancelled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,5);$('#worklist').innerHTML=rows.length?rows.map(a=>{const c=childById(a.childId);return `<div class="compact-item"><div><strong>${esc(c?.name||'Child')}</strong><small>${esc(formatDate(a.date))} • ${esc(a.time)} • ${esc(a.service)}</small></div><span class="badge">${esc(a.status)}</span></div>`}).join(''):'<div class="empty">No upcoming appointments.</div>'}
+function compactChild(c){return `<div class="compact-item"><div><strong>${esc(c.name)}</strong><small>${esc(c.id)} • ${esc(c.contact||'-')} • ${esc(ageText(c.dob))}</small></div><button class="link-btn" onclick="openChild('${esc(c.id)}')">Open</button></div>`}
+function findChildren(q){q=q.trim().toLowerCase();if(!q)return [];return db.children.filter(c=>[c.name,c.id,c.contact,c.guardian,c.address].some(v=>String(v||'').toLowerCase().includes(q)))}
+function runSearch(inputSel,resultSel){const rows=findChildren($(inputSel).value);$(resultSel).innerHTML=rows.length?rows.slice(0,10).map(compactChild).join(''):'<div class="empty">No matching child found.</div>'}
+$('#dashboardSearchBtn').onclick=()=>runSearch('#dashboardSearch','#dashboardSearchResults');$('#dashboardSearch').addEventListener('keydown',e=>{if(e.key==='Enter')runSearch('#dashboardSearch','#dashboardSearchResults')});
+function globalSearch(){const q=$('#globalSearch').value.trim();openPage('children');$('#childSearch').value=q;renderChildren()}
+$('#globalSearchBtn').onclick=globalSearch;$('#globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter')globalSearch()});
 
-function openConfigured(url,missingMsg){
-  if(!url){showToast(missingMsg);return}
-  window.open(url,'_blank','noopener');
-}
-$('#whatsappBtn').onclick=()=>{
-  const num=(db.settings.whatsapp||'').replace(/\D/g,'');
-  if(!num){showToast('Add WhatsApp number in Settings.');return}
-  window.open(`https://wa.me/${num}?text=${encodeURIComponent(db.settings.appointmentMessage)}`,'_blank','noopener');
-};
-$('#locationBtn').onclick=()=>openConfigured(db.settings.locationUrl,'Add Google Maps URL in Settings.');
-$('#mainAppBtn').onclick=()=>openConfigured(db.settings.mainAppUrl,'Add main clinic app/website URL in Settings.');
-$('#callBtn').onclick=()=>{
-  const num=(db.settings.phone||'').replace(/[^\d+]/g,'');
-  if(!num){showToast('Add clinic phone number in Settings.');return}
-  location.href='tel:'+num;
-};
-$('#calendarBtn').onclick=()=>{
-  if(!db.settings.nextDate){showToast('Configure next Swarnaprashan date first.');return}
-  const date=db.settings.nextDate.replaceAll('-','');
-  const title=encodeURIComponent('Swarnaprashan @ Mahamaya Clinic');
-  const details=encodeURIComponent('Swarnaprashan appointment at Mahamaya Clinic');
-  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}`,'_blank','noopener');
-};
+$('#childForm').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target).entries());o.id=makeChildId();o.createdAt=o.updatedAt=nowISO();db.children.push(o);save();e.target.reset();renderAll();toast(`Child registered: ${o.id}`)};
+$('#childSearch').oninput=renderChildren;$('#childSort').onchange=renderChildren;
+function renderChildren(){let rows=[...db.children],q=$('#childSearch')?.value.trim().toLowerCase()||'';if(q)rows=rows.filter(c=>[c.name,c.id,c.contact,c.guardian,c.address].some(v=>String(v||'').toLowerCase().includes(q)));const sort=$('#childSort')?.value||'recent';if(sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name));else if(sort==='dob')rows.sort((a,b)=>(a.dob||'').localeCompare(b.dob||''));else rows.sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));$('#childrenList').innerHTML=rows.length?rows.map(c=>`<div class="list-item"><div class="section-head"><div><h4>${esc(c.name)} <span class="badge">${esc(c.id)}</span></h4><p>${esc(ageText(c.dob))} • ${esc(c.sex)} • Guardian: ${esc(c.guardian||'-')}</p><p>Mobile: ${esc(c.contact||'-')} • Allergy: ${esc(c.allergy||'None reported')}</p></div><button class="secondary" onclick="openChild('${esc(c.id)}')">Open Record</button></div></div>`).join(''):'<div class="list-item empty">No child found.</div>'}
+window.openChild=id=>{const c=childById(id);if(!c)return;const visits=db.visits.filter(v=>v.childId===id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));const growth=db.growth.filter(g=>g.childId===id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('#childModalTitle').textContent=`${c.name} • ${c.id}`;$('#childModalBody').innerHTML=`<div class="stats"><div class="stat"><span>Age</span><strong style="font-size:20px">${esc(ageText(c.dob))}</strong></div><div class="stat"><span>Visits</span><strong>${visits.length}</strong></div><div class="stat"><span>Growth</span><strong>${growth.length}</strong></div><div class="stat"><span>Vaccination</span><strong style="font-size:18px">${esc(c.vaccination||'-')}</strong></div></div><h3>Profile</h3><p><b>Guardian:</b> ${esc(c.guardian||'-')}<br><b>Mobile:</b> ${esc(c.contact||'-')}<br><b>DOB:</b> ${esc(formatDate(c.dob))}<br><b>Allergy:</b> ${esc(c.allergy||'None reported')}<br><b>Known disease:</b> ${esc(c.disease||'-')}<br><b>Current issue:</b> ${esc(c.healthIssue||'-')}</p><h3>Latest Swarnaprashan</h3>${visits.length?`<p>${esc(formatDate(visits[0].date))} • ${esc(visits[0].fitness)} • Dose: ${esc(visits[0].dose||'-')} • Next: ${esc(formatDate(visits[0].nextDue))}</p>`:'<p>No visit recorded.</p>'}<div class="button-row"><button class="primary" onclick="prepareVisit('${esc(c.id)}')">Record Visit</button><button class="secondary" onclick="shareChild('${esc(c.id)}')">WhatsApp Summary</button><button class="secondary" onclick="printChild('${esc(c.id)}')">Print</button></div>`;$('#childModal').classList.remove('hidden')};
+window.closeChildModal=()=>$('#childModal').classList.add('hidden');window.prepareVisit=id=>{closeChildModal();openPage('visits');$('#visitChild').value=id};
+window.shareChild=id=>{const c=childById(id);if(!c)return;const latest=[...db.visits].filter(v=>v.childId===id).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];const text=`Mahamaya Clinic — Child Summary\nChild: ${c.name}\nID: ${c.id}\nDOB: ${c.dob||'-'}\nVaccination: ${c.vaccination||'-'}\nAllergy: ${c.allergy||'None reported'}${latest?`\nLatest Swarnaprashan: ${latest.date}\nNext due: ${latest.nextDue||'-'}`:''}`;const num=(c.contact||db.settings.whatsapp||'').replace(/\D/g,'');window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`,'_blank','noopener')};
+window.printChild=id=>{openChild(id);setTimeout(()=>window.print(),100)};
 
-$('#childForm').onsubmit=e=>{
-  e.preventDefault();
-  const obj=Object.fromEntries(new FormData(e.target).entries());
-  obj.id='MMC-SP-'+new Date().getFullYear()+'-'+String(db.children.length+1).padStart(4,'0');
-  db.children.push(obj);save();e.target.reset();renderAll();showToast('Child profile saved');
-};
+$('#visitForm').onsubmit=e=>{e.preventDefault();if(!db.children.length)return toast('Register a child first');const o=Object.fromEntries(new FormData(e.target).entries());o.id=Date.now();o.createdAt=nowISO();db.visits.push(o);const c=childById(o.childId);if(c)c.updatedAt=nowISO();save();e.target.reset();setTodayDefaults();renderAll();openPage('visits');toast('Swarnaprashan visit saved')};$('#visitSearch').oninput=renderVisits;
+function renderVisits(){let rows=[...db.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||'')),q=$('#visitSearch')?.value.trim().toLowerCase()||'';if(q)rows=rows.filter(v=>{const c=childById(v.childId);return [c?.name,c?.id,v.batch,v.date,v.formulation].some(x=>String(x||'').toLowerCase().includes(q))});$('#visitList').innerHTML=rows.length?rows.map(v=>{const c=childById(v.childId),cls=v.fitness==='Fit for administration'?'ok':v.fitness==='Deferred'?'danger':'warn';return `<div class="list-item"><div class="section-head"><div><h4>${esc(c?.name||'Child')} <span class="badge ${cls}">${esc(v.fitness)}</span></h4><p>${esc(formatDate(v.date))} • Dose: ${esc(v.dose||'-')} • Batch: ${esc(v.batch||'-')}</p><p>Observation: ${esc(v.observation||'-')} • Next due: ${esc(formatDate(v.nextDue))}</p></div><button class="secondary" onclick="shareVisit('${v.id}')">Share</button></div></div>`}).join(''):'<div class="list-item empty">No Swarnaprashan visits recorded.</div>'}
+window.shareVisit=id=>{const v=db.visits.find(x=>String(x.id)===String(id)),c=childById(v?.childId);if(!v||!c)return;const text=`Swarnaprashan Visit Summary\nMahamaya Clinic\nChild: ${c.name}\nID: ${c.id}\nDate: ${v.date}\nClinical fitness: ${v.fitness}\nDose: ${v.dose||'-'}\nObservation: ${v.observation||'-'}\nNext due: ${v.nextDue||'-'}`;const num=(c.contact||db.settings.whatsapp||'').replace(/\D/g,'');window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`,'_blank','noopener')};
 
-function renderChildren(){
-  $('#childrenList').innerHTML=db.children.length?db.children.map(c=>`
-  <div class="list-item">
-    <h4>${c.name} <span class="badge">${c.id}</span></h4>
-    <p>${c.sex} • DOB: ${c.dob||'-'} • Guardian: ${c.guardian||'-'}</p>
-    <p>Vaccination: ${c.vaccination||'-'} • Allergy: ${c.allergy||'None reported'}</p>
-    <div class="button-row">
-      <button class="secondary" onclick="shareChild('${c.id}')">WhatsApp Summary</button>
-    </div>
-  </div>`).join(''):'<div class="list-item">No child registered yet.</div>';
-}
-window.shareChild=id=>{
-  const c=db.children.find(x=>x.id===id); if(!c)return;
-  const num=(c.contact||db.settings.whatsapp||'').replace(/\D/g,'');
-  const text=`Mahamaya Clinic Child Summary%0AChild: ${c.name}%0ADOB: ${c.dob||'-'}%0AVaccination: ${c.vaccination||'-'}%0AAllergy: ${c.allergy||'None reported'}`;
-  window.open(`https://wa.me/${num}?text=${text}`,'_blank','noopener');
-};
+function calcBMI(){const h=parseFloat($('#heightInput').value),w=parseFloat($('#weightInput').value);$('#bmiPreview').value=h&&w?(w/((h/100)**2)).toFixed(2):''}$('#heightInput').oninput=calcBMI;$('#weightInput').oninput=calcBMI;
+$('#growthForm').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target).entries());o.id=Date.now();db.growth.push(o);save();e.target.reset();$('#bmiPreview').value='';setTodayDefaults();renderAll();openPage('growth');toast('Growth record added')};$('#chartChild').onchange=renderGrowth;
+function renderGrowth(){childOptions();const cid=$('#chartChild').value||db.children[0]?.id||'';const rows=db.growth.filter(g=>g.childId===cid).sort((a,b)=>(a.date||'').localeCompare(b.date||''));$('#growthTableWrap').innerHTML=rows.length?`<table class="table"><thead><tr><th>Date</th><th>Height</th><th>Weight</th><th>BMI</th><th>Remarks</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(formatDate(r.date))}</td><td>${esc(r.height)} cm</td><td>${esc(r.weight)} kg</td><td>${esc(r.bmi)}</td><td>${esc(r.remarks||'-')}</td></tr>`).join('')}</tbody></table>`:'<p class="empty">No growth records for this child.</p>';drawChart(rows)}
+function drawChart(rows){const c=$('#growthChart'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#e4e1da';for(let y=40;y<c.height-30;y+=50){ctx.beginPath();ctx.moveTo(55,y);ctx.lineTo(c.width-20,y);ctx.stroke()}if(!rows.length){ctx.fillStyle='#75808a';ctx.font='18px Arial';ctx.fillText('Add serial measurements to view the trend.',180,180);return}const series=[['height','#8a5a20'],['weight','#3d6f67'],['bmi','#8a3f54']],vals=rows.flatMap(r=>series.map(s=>parseFloat(r[s[0]])||0)),max=Math.max(...vals,10);series.forEach(([key,color])=>{ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();rows.forEach((r,i)=>{const x=60+i*((c.width-100)/Math.max(rows.length-1,1)),y=c.height-40-(parseFloat(r[key])||0)/(max*1.1)*(c.height-80);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()})}
+$('#shareGrowthBtn').onclick=()=>{const c=childById($('#chartChild').value),rows=db.growth.filter(g=>g.childId===c?.id).sort((a,b)=>(a.date||'').localeCompare(b.date||''));if(!c||!rows.length)return toast('No growth record available');const r=rows.at(-1),text=`Growth Summary — ${c.name}\nDate: ${r.date}\nHeight: ${r.height} cm\nWeight: ${r.weight} kg\nBMI: ${r.bmi}\nMahamaya Clinic`;window.open(`https://wa.me/${(c.contact||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`,'_blank','noopener')};
 
-function calcBMI(){
-  const h=parseFloat($('#heightInput').value),w=parseFloat($('#weightInput').value);
-  $('#bmiPreview').value=h&&w?(w/((h/100)**2)).toFixed(2):'';
-}
-$('#heightInput').oninput=calcBMI;$('#weightInput').oninput=calcBMI;
+$('#vaccinationForm').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target).entries());o.id=Date.now();db.vaccines.push(o);save();e.target.reset();renderAll();openPage('vaccination');toast('Vaccination record saved')};
+function renderVaccines(){const rows=[...db.vaccines].sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));$('#vaccinationList').innerHTML=rows.length?rows.map(v=>{const c=childById(v.childId);return `<div class="list-item"><h4>${esc(v.vaccineName)} <span class="badge">${esc(v.status)}</span></h4><p>${esc(c?.name||'Child')} • Due: ${esc(formatDate(v.dueDate))} • Given: ${esc(formatDate(v.givenDate))}</p><p>Batch: ${esc(v.batch||'-')} • Centre: ${esc(v.centre||'-')}</p></div>`}).join(''):'<div class="list-item empty">No vaccination records.</div>'}
 
-$('#growthForm').onsubmit=e=>{
-  e.preventDefault();const obj=Object.fromEntries(new FormData(e.target).entries());
-  obj.id=Date.now();db.growth.push(obj);save();e.target.reset();$('#bmiPreview').value='';renderAll();openPage('growth');showToast('Growth record added');
-};
-$('#chartChild').onchange=renderGrowth;
+$('#appointmentForm').onsubmit=e=>{e.preventDefault();if(!db.children.length)return toast('Register a child first');const o=Object.fromEntries(new FormData(e.target).entries());o.id=Date.now();o.status='Confirmed';db.appointments.push(o);save();e.target.reset();renderAll();openPage('appointments');toast('Appointment confirmed')};
+function renderAppointments(){const rows=[...db.appointments].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));$('#appointmentList').innerHTML=rows.length?rows.map(a=>{const c=childById(a.childId);return `<div class="list-item"><h4>${esc(a.service)} <span class="badge">${esc(a.status)}</span></h4><p>${esc(c?.name||'Child')} • ${esc(formatDate(a.date))} at ${esc(a.time)}</p><p>${esc(a.doctor||'-')} • ${esc(a.concern||'No concern added')}</p><button class="secondary" onclick="shareAppointment('${a.id}')">WhatsApp</button></div>`}).join(''):'<div class="list-item empty">No appointments.</div>'}
+window.shareAppointment=id=>{const a=db.appointments.find(x=>String(x.id)===String(id)),c=childById(a?.childId);if(!a||!c)return;const text=`Appointment Confirmed\nChild: ${c.name}\nService: ${a.service}\nDate: ${a.date}\nTime: ${a.time}\nDoctor: ${a.doctor}\nMahamaya Clinic`;window.open(`https://wa.me/${(c.contact||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`,'_blank','noopener')};
 
-function renderGrowth(){
-  childOptions();
-  const cid=$('#chartChild').value||db.children[0]?.id||'';
-  const rows=db.growth.filter(g=>g.childId===cid).sort((a,b)=>a.date.localeCompare(b.date));
-  $('#growthTableWrap').innerHTML=`<h3>Measurement History</h3>${rows.length?`<table class="table"><thead><tr><th>Date</th><th>Height</th><th>Weight</th><th>BMI</th><th>Remarks</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.date}</td><td>${r.height} cm</td><td>${r.weight} kg</td><td>${r.bmi}</td><td>${r.remarks||'-'}</td></tr>`).join('')}</tbody></table>`:'<p>No growth records for this child.</p>'}`;
-  drawChart(rows);
-}
-function drawChart(rows){
-  const c=$('#growthChart'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
-  ctx.strokeStyle='#e3dacb';ctx.lineWidth=1;
-  for(let y=40;y<c.height-30;y+=50){ctx.beginPath();ctx.moveTo(55,y);ctx.lineTo(c.width-20,y);ctx.stroke()}
-  if(!rows.length){ctx.fillStyle='#756b60';ctx.font='20px Arial';ctx.fillText('Add growth records to view the trend.',250,180);return}
-  const series=[['height','#8a5a20'],['weight','#3d6f67'],['bmi','#8a3f54']];
-  const vals=rows.flatMap(r=>series.map(s=>parseFloat(r[s[0]])||0));const max=Math.max(...vals,10);
-  series.forEach(([key,color])=>{ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();rows.forEach((r,i)=>{const x=60+i*((c.width-100)/Math.max(rows.length-1,1));const y=c.height-40-(parseFloat(r[key])||0)/(max*1.1)*(c.height-80);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});
-}
-$('#shareGrowthBtn').onclick=()=>{
-  const cid=$('#chartChild').value; const c=db.children.find(x=>x.id===cid); if(!c){showToast('Select a child.');return}
-  const rows=db.growth.filter(g=>g.childId===cid).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!rows.length){showToast('No growth record available.');return}
-  const latest=rows[rows.length-1],num=(c.contact||db.settings.whatsapp||'').replace(/\D/g,'');
-  const text=`Growth Summary - ${c.name}%0ADate: ${latest.date}%0AHeight: ${latest.height} cm%0AWeight: ${latest.weight} kg%0ABMI: ${latest.bmi}%0AFrom Mahamaya Clinic`;
-  window.open(`https://wa.me/${num}?text=${text}`,'_blank','noopener');
-};
+function loadSettings(){const f=$('#settingsForm');Object.entries(db.settings).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v||''})}$('#settingsForm').onsubmit=e=>{e.preventDefault();db.settings={...db.settings,...Object.fromEntries(new FormData(e.target).entries())};save();renderAll();toast('Settings saved')};
+$('#calendarBtn').onclick=()=>{if(!db.settings.nextDate)return toast('Configure next date in Settings');const d=db.settings.nextDate.replaceAll('-',''),title=encodeURIComponent('Swarnaprashan @ Mahamaya Clinic');window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${d}/${d}`,'_blank','noopener')};
 
-$('#vaccinationForm').onsubmit=e=>{
-  e.preventDefault();const obj=Object.fromEntries(new FormData(e.target).entries());
-  obj.id=Date.now();db.vaccines.push(obj);save();e.target.reset();renderAll();openPage('vaccination');showToast('Vaccination record saved');
-};
-function renderVaccinations(){
-  const sorted=[...db.vaccines].sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
-  $('#vaccinationList').innerHTML=sorted.length?sorted.map(v=>{const c=db.children.find(x=>x.id===v.childId);return `<div class="list-item"><h4>${v.vaccineName} <span class="badge">${v.status}</span></h4><p>${c?.name||'Child'} • Due: ${v.dueDate||'-'} • Given: ${v.givenDate||'-'}</p><p>Batch: ${v.batch||'-'} • Centre: ${v.centre||'-'}</p></div>`}).join(''):'<div class="list-item">No vaccination records yet.</div>';
-}
+function renderBackupSummary(){$('#backupSummary').innerHTML=`<div><b>${db.children.length}</b><br><small>Children</small></div><div><b>${db.visits.length}</b><br><small>Visits</small></div><div><b>${db.growth.length}</b><br><small>Growth</small></div><div><b>${db.appointments.length}</b><br><small>Appointments</small></div>`}$('#exportBtn').onclick=()=>{const payload={app:'Swarnaprashan @ Mahamaya Clinic',version:'3.0',exportedAt:nowISO(),data:db};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Swarnaprashan-backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href);toast('Backup downloaded')};$('#restoreInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const p=JSON.parse(await f.text()),d=p.data||p;if(!confirm('Restore this backup and replace current local data?'))return;['children','growth','appointments','vaccines','visits'].forEach(k=>db[k]=Array.isArray(d[k])?d[k]:[]);db.settings={...defaultSettings,...(d.settings||{})};save();renderAll();toast('Backup restored')}catch{toast('Invalid backup file')}e.target.value=''};
 
-$('#appointmentForm').onsubmit=e=>{
-  e.preventDefault();if(!db.children.length){showToast('Register a child first');return}
-  const obj=Object.fromEntries(new FormData(e.target).entries());obj.id=Date.now();obj.status='Confirmed';db.appointments.push(obj);save();e.target.reset();renderAll();openPage('appointments');showToast('Appointment confirmed');
-};
-function renderAppointments(){
-  $('#appointmentList').innerHTML=db.appointments.length?db.appointments.map(a=>{const c=db.children.find(x=>x.id===a.childId);return `<div class="list-item"><h4>${a.service} <span class="badge">${a.status}</span></h4><p>${c?.name||'Child'} • ${a.date} at ${a.time}</p><p>${a.doctor} • ${a.concern||'No concern added'}</p><button class="secondary" onclick="shareAppointment('${a.id}')">Share on WhatsApp</button></div>`}).join(''):'<div class="list-item">No appointments booked.</div>';
-}
-window.shareAppointment=id=>{
-  const a=db.appointments.find(x=>String(x.id)===String(id)),c=db.children.find(x=>x.id===a?.childId);if(!a||!c)return;
-  const num=(c.contact||db.settings.whatsapp||'').replace(/\D/g,'');
-  const text=`Appointment Confirmed%0AChild: ${c.name}%0AService: ${a.service}%0ADate: ${a.date}%0ATime: ${a.time}%0ADoctor: ${a.doctor}%0AMahamaya Clinic`;
-  window.open(`https://wa.me/${num}?text=${text}`,'_blank','noopener');
-};
-
-function loadSettingsForm(){
-  const f=$('#settingsForm');
-  Object.entries(db.settings).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v||''});
-}
-$('#settingsForm').onsubmit=e=>{
-  e.preventDefault();
-  db.settings={...db.settings,...Object.fromEntries(new FormData(e.target).entries())};
-  save();renderSettings();showToast('Settings saved successfully');
-};
-
-function renderAll(){updateStats();childOptions();renderChildren();renderAppointments();renderGrowth();renderVaccinations();renderSettings()}
-
-
-const learnContent = {
-  swarnaprashan: {
-    title: 'Swarnaprashan क्या है?',
-    body: `
-      <h3>परिचय</h3>
-      <p>Swarnaprashan आयुर्वेद में वर्णित बाल स्वास्थ्य से संबंधित एक पारंपरिक प्रक्रिया है। इसे प्रशिक्षित आयुर्वेद चिकित्सक की देखरेख में, बच्चे की आयु, स्वास्थ्य स्थिति और उपयुक्तता का मूल्यांकन करके दिया जाना चाहिए।</p>
-
-      <h3>इसका उद्देश्य</h3>
-      <ul>
-        <li>बालक के समग्र स्वास्थ्य की देखभाल में सहायक पारंपरिक आयुर्वेदिक समर्थन</li>
-        <li>स्वस्थ दिनचर्या, पोषण और नियमित स्वास्थ्य निगरानी को बढ़ावा देना</li>
-        <li>Parents को growth, development और preventive child care के प्रति जागरूक करना</li>
-      </ul>
-
-      <h3>कब दिया जाता है?</h3>
-      <p>कई संस्थान इसे Pushya Nakshatra के दिन देते हैं। वास्तविक तिथि और clinic timing dashboard पर admin द्वारा update की जाएगी।</p>
-
-      <h3>कैसे दिया जाता है?</h3>
-      <p>यह केवल registered medical practitioner की सलाह और supervision में दिया जाना चाहिए। Dose बच्चे की आयु, वजन, formulation और clinical judgement पर निर्भर करती है।</p>
-
-      <h3>कब टालना चाहिए?</h3>
-      <ul>
-        <li>तेज बुखार या acute illness</li>
-        <li>बार-बार vomiting या severe diarrhoea</li>
-        <li>ज्ञात गंभीर allergy</li>
-        <li>Doctor द्वारा postponement की सलाह</li>
-      </ul>
-
-      <h3>महत्वपूर्ण</h3>
-      <p>यह routine vaccination, पौष्टिक भोजन, sleep, hygiene या आवश्यक medical treatment का विकल्प नहीं है।</p>
-    `
-  },
-  healthTips: {
-    title: 'Healthy Child Tips',
-    body: `
-      <h3>Daily Health Routine</h3>
-      <ul>
-        <li>आयु-अनुसार संतुलित भोजन</li>
-        <li>पर्याप्त पानी और नियमित नींद</li>
-        <li>प्रतिदिन outdoor physical activity</li>
-        <li>Screen time पर नियंत्रण</li>
-        <li>हाथ धोना और dental hygiene</li>
-      </ul>
-      <h3>Parent Monitoring</h3>
-      <p>Height, weight, BMI, vaccination, school performance और behavioural changes का समय-समय पर record रखें।</p>
-    `
-  },
-  habits: {
-    title: 'Good Habits & Sanskar',
-    body: `
-      <h3>अच्छी आदतें</h3>
-      <ul>
-        <li>समय पर उठना और सोना</li>
-        <li>माता-पिता और बड़ों का सम्मान</li>
-        <li>दैनिक प्रार्थना या शांत बैठना</li>
-        <li>Reading habit</li>
-        <li>कृतज्ञता और दयालुता</li>
-        <li>अपना सामान व्यवस्थित रखना</li>
-      </ul>
-      <h3>बचने योग्य आदतें</h3>
-      <ul>
-        <li>अत्यधिक mobile और television</li>
-        <li>अनियमित भोजन</li>
-        <li>देर रात तक जागना</li>
-        <li>बिना supervision के internet use</li>
-      </ul>
-    `
-  },
-  stories: {
-    title: 'Stories & Activities',
-    body: `
-      <h3>Age 3–6 years</h3>
-      <p>छोटी नैतिक कहानियाँ, colouring, picture matching और gratitude activity.</p>
-      <h3>Age 7–10 years</h3>
-      <p>Panchatantra, Krishna stories, healthy food quiz और memory games.</p>
-      <h3>Age 11–14 years</h3>
-      <p>Historical personalities, discipline stories, journaling और yoga challenge.</p>
-      <h3>Age 15–18 years</h3>
-      <p>Self-discipline, digital wellbeing, goal setting और responsibility activities.</p>
-    `
-  }
-};
-
-window.openLearnTopic = key => {
-  const item = learnContent[key];
-  if (!item) return;
-  $('#learnModalTitle').textContent = item.title;
-  $('#learnModalBody').innerHTML = item.body;
-  $('#learnModal').classList.remove('hidden');
-};
-
-window.closeLearnModal = () => {
-  $('#learnModal').classList.add('hidden');
-};
-
-$('#learnModal').addEventListener('click', e => {
-  if (e.target.id === 'learnModal') closeLearnModal();
-});
+const learnContent={swarnaprashan:{title:'Swarnaprashan: What Parents Should Know',body:`<h3>Clinical context</h3><p>Swarnaprashan is a traditional Ayurvedic practice used in child-health settings. It should be administered only after age-appropriate clinical assessment and under a qualified practitioner’s supervision.</p><h3>When to defer or review</h3><ul><li>Acute fever or significant illness</li><li>Persistent vomiting or severe diarrhoea</li><li>Known serious allergy or previous adverse reaction</li><li>Any situation in which the treating clinician advises postponement</li></ul><h3>Important</h3><p>It does not replace routine vaccination, adequate nutrition, hygiene, sleep, growth monitoring or necessary medical treatment.</p>`},healthTips:{title:'Healthy Child Basics',body:`<h3>Daily foundations</h3><ul><li>Age-appropriate balanced diet</li><li>Adequate sleep and hydration</li><li>Daily physical activity and outdoor play</li><li>Dental and hand hygiene</li><li>Reasonable screen limits</li></ul><p>Record serial height and weight and discuss meaningful changes with a clinician.</p>`},habits:{title:'Good Habits & Sanskar',body:`<h3>Helpful habits</h3><ul><li>Consistent sleep-wake routine</li><li>Reading and quiet reflection</li><li>Respect, gratitude and responsibility</li><li>Keeping personal belongings organized</li><li>Balanced digital use</li></ul>`},stories:{title:'Learning Activities',body:`<h3>Age 3–6</h3><p>Short stories, colouring and picture matching.</p><h3>Age 7–10</h3><p>Panchatantra/Krishna stories, healthy-food quizzes and memory games.</p><h3>Age 11–14</h3><p>Journaling, yoga challenges and discipline stories.</p><h3>Age 15–18</h3><p>Goal setting, digital wellbeing and responsibility tasks.</p>`}};
+window.openLearnTopic=k=>{const x=learnContent[k];if(!x)return;$('#learnModalTitle').textContent=x.title;$('#learnModalBody').innerHTML=x.body;$('#learnModal').classList.remove('hidden')};window.closeLearnModal=()=>$('#learnModal').classList.add('hidden');$('#learnModal').onclick=e=>{if(e.target.id==='learnModal')closeLearnModal()};$('#childModal').onclick=e=>{if(e.target.id==='childModal')closeChildModal()};
+function renderAll(){childOptions();updateStats();renderChildren();renderVisits();renderGrowth();renderVaccines();renderAppointments();renderBackupSummary();loadSettings();setTodayDefaults()}
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
