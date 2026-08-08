@@ -304,3 +304,11 @@ nav button{min-height:46px}
 .login-status.ok{background:#edf8f1;border-color:#cce8d6;color:#2d7755}
 .login-status.error{background:#fff2f0;border-color:#efcbc6;color:#9a4740}
 #oneTapRajeshBtn{border-color:#c99b48;background:#fff9ec;font-weight:900}
+
+/* V10.4 child save feedback */
+#childSaveStatus{margin-top:14px}
+.profile-editor .actionrow{position:sticky;bottom:6px;background:rgba(255,255,255,.97);padding:10px;border:1px solid var(--line);border-radius:14px;z-index:20}
+@media(max-width:760px){
+  .profile-editor .actionrow{display:grid;grid-template-columns:1fr 1fr}
+  .profile-editor .actionrow button{width:100%}
+}

@@ -1,24 +1,21 @@
-MAHAMAYA CLINIC — SWARNAPRASHAN V10.3 INLINE LOGIN FIX
+MAHAMAYA CLINIC — SWARNAPRASHAN V10.4 CHILD SAVE FIX
 
-Purpose:
-This build fixes the case where the visible Quick Login button had no response.
+Root cause fixed:
+The child registration UI displayed a native camera file input with id c_photo_camera,
+but JavaScript tried to attach a click handler to a missing element c_direct_camera.
+That JavaScript error stopped the rest of the child form handlers from being attached,
+including Save Child Profile.
 
-How:
-- Quick Login now has its own inline JavaScript in index.html.
-- It does NOT depend on app.js event binding.
-- It writes the login session directly and opens the app shell immediately.
-- Manual built-in login also has an inline fallback.
-- CSS/JS cache version bumped to 10.3.0.
+V10.4 fixes:
+- Child profile uses a real, matching Open Camera Now button (c_direct_camera).
+- Gallery upload works.
+- Save Child Profile handler is always attached.
+- Clear save status and success alert.
+- Saved child immediately appears in Children Registry.
+- Registry scrolls into view after save on mobile.
+- Duplicate Registration ID check.
+- Photo IndexedDB failures are reported instead of silently stopping.
+- Children list still renders even if a photo cannot be read.
+- Cache-busting updated to 10.4.0.
 
-Use:
-1. Upload ALL root files from this ZIP.
-2. Commit.
-3. Wait 1–2 minutes.
-4. Close the installed app completely and reopen it.
-5. Tap Quick Login • Dr Rajesh.
-
-Built-in manual login:
-drrajesh / rajesh123
-
-Important:
-This is still a static GitHub Pages prototype. For real secure patient data, Firebase Auth/backend authentication is required.
+Deploy ALL files from this ZIP to GitHub root, wait 1–2 minutes, close/reopen the PWA or refresh browser.
