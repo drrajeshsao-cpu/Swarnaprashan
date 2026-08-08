@@ -1,9 +1,16 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan Clinical Tracker",
-  "short_name": "Swarnaprashan",
+  "name": "Mahamaya Clinic Swarnaprashan Pro",
+  "short_name": "Swarnaprashan Pro",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f6f3ec",
-  "theme_color": "#624526",
-  "icons": []
+  "background_color": "#f7f4ed",
+  "theme_color": "#6a4928",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

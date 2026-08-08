@@ -3,163 +3,205 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mahamaya Clinic Swarnaprashan</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6a4928" />
+  <title>Mahamaya Clinic • Swarnaprashan Pro</title>
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">स्व</div>
-        <div>
-          <h1>Mahamaya Clinic</h1>
-          <p>Swarnaprashan Clinical Tracker</p>
-        </div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brandmark">स्व</div>
+      <div><b>Mahamaya Clinic</b><span>Swarnaprashan Pro</span></div>
+    </div>
+    <nav id="nav">
+      <button data-view="dashboard" class="active">⌂ Dashboard</button>
+      <button data-view="clinical">✚ Clinical Workspace</button>
+      <button data-view="children">👶 Children</button>
+      <button data-view="followup">↻ Monthly Follow-up</button>
+      <button data-view="analytics">◫ Growth & Analytics</button>
+      <button data-view="documents">▣ Documents / Manual Card</button>
+      <button data-view="reports">▤ Reports & Prescription</button>
+      <button data-view="education">♡ Diet • Pathya • Lifestyle</button>
+      <button data-view="backup">⤓ Backup / Restore</button>
+      <button data-view="settings">⚙ Settings</button>
+    </nav>
+    <div class="side-note">Clinical data is saved in this browser. Use Backup regularly.</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Premium longitudinal Swarnaprashan clinical tracking</p></div>
+      <div class="top-actions">
+        <input id="globalSearch" placeholder="Search child / mobile / ID" />
+        <button id="topNewChild">+ New Child</button>
+        <button id="topNewCase">+ Clinical Entry</button>
       </div>
-      <nav id="nav">
-        <button data-view="dashboard" class="active">Dashboard</button>
-        <button data-view="children">Children</button>
-        <button data-view="monthly">Monthly Follow-up</button>
-        <button data-view="growth">Growth & BMI</button>
-        <button data-view="assessment">Clinical Assessment</button>
-        <button data-view="reports">Reports & Prescription</button>
-        <button data-view="education">Diet • Pathya • Lifestyle</button>
-        <button data-view="backup">Backup / Restore</button>
-        <button data-view="settings">Settings</button>
-      </nav>
-    </aside>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
 
-    <main class="content">
-      <header class="topbar">
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-          <p id="pageSubtitle">Longitudinal child development, Swarnaprashan and parent-ready reporting</p>
-        </div>
-        <div class="top-actions">
-          <input id="globalSearch" placeholder="Search child name / mobile / ID" />
-          <button id="quickAddChild">+ New Child</button>
-          <button id="quickVisit">+ Monthly Visit</button>
-        </div>
-      </header>
-
-      <section id="view"></section>
-    </main>
-  </div>
-
-  <template id="dashboardTpl">
-    <div class="hero">
-      <div>
-        <span class="eyebrow">स्वर्णप्राशन • Growth • Development • Ayurveda Assessment</span>
-        <h3>Professional longitudinal tracking for every child</h3>
-        <p>Track month-by-month dose, growth, vitals, health, appetite, bowel/bladder, sleep, learning, memory, play and school performance in one clinical timeline.</p>
-      </div>
+<template id="dashboardTpl">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">स्वर्णप्राशन • Growth • Development • Clinical Documentation</span>
+      <h2>One complete digital Swarnaprashan record for every child.</h2>
+      <p>Registration → Examination → Investigations → Treatment → Prescription → Print/PDF/Share, with month-by-month follow-up and graphical analysis.</p>
       <div class="hero-actions">
-        <button onclick="app.showView('children')">Register Child</button>
-        <button class="secondary" onclick="app.showView('monthly')">Record Monthly Follow-up</button>
+        <button onclick="app.startClinical()">Start Clinical Workspace</button>
+        <button class="ghost" onclick="app.openQuickUpload()">Quick Manual Card Upload</button>
       </div>
     </div>
-    <div class="kpi-grid" id="kpis"></div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-head"><h4>Recent Children</h4><button onclick="app.showView('children')">View All</button></div>
-        <div id="recentChildren"></div>
+    <div class="hero-mini">
+      <div><b>6-step</b><span>guided workflow</span></div>
+      <div><b>PDF</b><span>parent-ready reports</span></div>
+      <div><b>Graphs</b><span>longitudinal analysis</span></div>
+    </div>
+  </div>
+  <div id="kpis" class="kpis"></div>
+  <div class="grid2">
+    <div class="card"><div class="cardhead"><h3>Recent Children</h3><button class="linkbtn" onclick="app.showView('children')">View all</button></div><div id="recentChildren"></div></div>
+    <div class="card"><div class="cardhead"><h3>Follow-up Due</h3><button class="linkbtn" onclick="app.showView('followup')">Record visit</button></div><div id="dueChildren"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="cardhead"><h3>Improvement Snapshot</h3><select id="dashChild"></select></div><div id="dashSnapshot"></div></div>
+    <div class="card"><div class="cardhead"><h3>Quick Documents</h3><button class="linkbtn" onclick="app.openQuickUpload()">Upload card</button></div><div id="dashDocs"></div></div>
+  </div>
+</template>
+
+<template id="clinicalTpl">
+  <div class="clinical-shell">
+    <div class="wizard-card">
+      <div class="wizard-title">
+        <div><span class="eyebrow">Guided Clinical Workflow</span><h2 id="wizardPatientTitle">New Swarnaprashan Clinical Entry</h2></div>
+        <div class="status-badge" id="draftStatus">Draft auto-saved</div>
       </div>
-      <div class="card">
-        <div class="card-head"><h4>Upcoming / Due Follow-up</h4><button onclick="app.showView('monthly')">Record Visit</button></div>
-        <div id="dueList"></div>
+      <div id="wizardSteps" class="steps"></div>
+    </div>
+    <div id="wizardBody"></div>
+    <div class="sticky-actions">
+      <button class="ghost" id="saveDraftBtn">Save Draft</button>
+      <div class="spacer"></div>
+      <button class="ghost" id="prevStepBtn">← Previous</button>
+      <button id="saveNextBtn">Save & Next →</button>
+    </div>
+  </div>
+</template>
+
+<template id="childrenTpl">
+  <div class="card">
+    <div class="cardhead">
+      <div><h3>Children Registry</h3><p class="muted">Search, open clinical workspace or create a parent report.</p></div>
+      <button id="registerChildBtn">+ Register Child</button>
+    </div>
+    <input id="childSearch" placeholder="Search name / mobile / registration ID" />
+    <div id="childrenList" class="tablewrap"></div>
+  </div>
+  <div id="childEditor"></div>
+</template>
+
+<template id="followupTpl">
+  <div class="card">
+    <div class="cardhead"><div><h3>Monthly Swarnaprashan Follow-up</h3><p class="muted">Dose, growth, vitals, health, cognition, activity and Ayurvedic assessment.</p></div><span class="pill">Longitudinal</span></div>
+    <div id="followupForm"></div>
+  </div>
+  <div class="card">
+    <div class="cardhead"><h3>Visit Timeline</h3><select id="followupChild"></select></div>
+    <div id="followupTimeline"></div>
+  </div>
+</template>
+
+<template id="analyticsTpl">
+  <div class="card">
+    <div class="cardhead">
+      <div><h3>Growth & Functional Analytics</h3><p class="muted">Automatic graphical representation from saved follow-up data.</p></div>
+      <select id="analyticsChild"></select>
+    </div>
+    <div id="analyticSummary" class="metricrow"></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Line Trend</h3><canvas id="lineChart" width="900" height="360"></canvas></div>
+    <div class="card"><h3>Column Comparison</h3><canvas id="barChart" width="900" height="360"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Functional Status Pie</h3><canvas id="pieChart" width="700" height="360"></canvas></div>
+    <div class="card"><h3>Baseline vs Latest</h3><div id="baselineLatest"></div></div>
+  </div>
+</template>
+
+<template id="documentsTpl">
+  <div class="grid2">
+    <div class="card">
+      <h3>Quick Manual Swarnaprashan Card Upload</h3>
+      <p class="muted">Useful when the clinic is busy and complete online data entry is not practical.</p>
+      <div class="formgrid">
+        <label>Child<select id="docChild"></select></label>
+        <label>Document Type<select id="docType"><option>Manual Swarnaprashan Card</option><option>Previous Prescription</option><option>Investigation Report</option><option>Growth Record</option><option>Consent / Other</option></select></label>
+        <label>Date<input id="docDate" type="date"></label>
+        <label>Notes<input id="docNote" placeholder="Optional note"></label>
       </div>
+      <label class="uploadbox">📷 Camera / 🖼 Gallery / 📎 File / PDF
+        <input id="docFiles" type="file" multiple accept="image/*,.pdf,.doc,.docx" capture="environment" />
+      </label>
+      <button id="saveDocs">Save Documents</button>
+      <p class="tiny muted">Files are stored locally in this browser using IndexedDB. Large files can use device storage.</p>
     </div>
     <div class="card">
-      <div class="card-head"><h4>Monthly Improvement Snapshot</h4><span class="muted">Select a child to see trend analysis</span></div>
-      <div id="dashboardTrend"></div>
+      <div class="cardhead"><h3>Saved Documents</h3><select id="docFilterChild"></select></div>
+      <div id="docList"></div>
     </div>
-  </template>
+  </div>
+</template>
 
-  <template id="childrenTpl">
-    <div class="section-actions">
-      <button id="addChildBtn">+ Register New Child</button>
-      <input id="childSearch" placeholder="Search child..." />
+<template id="reportsTpl">
+  <div class="card">
+    <div class="cardhead"><div><h3>Digital Swarnaprashan Prescription & Parent Progress Report</h3><p class="muted">Include selected clinical sections, graphs and uploaded-document list.</p></div><span class="pill">Print-ready</span></div>
+    <div class="formgrid">
+      <label>Child<select id="reportChild"></select></label>
+      <label>Report Type<select id="reportType"><option>Latest Visit + Longitudinal Progress</option><option>Prescription Only</option><option>Complete Clinical Summary</option></select></label>
+      <label><input type="checkbox" id="incGraphs" checked /> Include graph summary</label>
+      <label><input type="checkbox" id="incDocs" checked /> Include document list</label>
     </div>
-    <div id="childFormWrap"></div>
-    <div class="card"><div id="childrenTable"></div></div>
-  </template>
+    <div class="actionrow">
+      <button id="generateReport">Generate</button>
+      <button class="ghost" id="printReport">Print / Save PDF</button>
+      <button class="ghost" id="shareReport">Share</button>
+      <button class="ghost" id="waReport">WhatsApp</button>
+    </div>
+  </div>
+  <div id="reportPaper" class="reportpaper"></div>
+</template>
 
-  <template id="monthlyTpl">
-    <div class="card">
-      <h4>Month-by-Month Swarnaprashan Follow-up</h4>
-      <p class="muted">Dose + growth + vitals + health + Ayurvedic assessment + cognition/activity tracking.</p>
-      <div id="monthlyForm"></div>
+<template id="educationTpl">
+  <div class="card">
+    <div class="cardhead"><div><h3>Diet • Pathya • Apathya • Lifestyle</h3><p class="muted">Parent guidance can be included in the printed prescription/report.</p></div><span class="pill">Parent Education</span></div>
+    <div class="formgrid">
+      <label>Child<select id="eduChild"></select></label>
+      <label>Focus<select id="eduFocus"><option>General Swarnaprashan Support</option><option>Low Appetite</option><option>Constipation</option><option>Poor Sleep</option><option>Frequent Illness</option><option>Learning / Memory Support</option><option>Underweight / Poor Growth</option></select></label>
     </div>
-    <div class="card">
-      <div class="card-head"><h4>Visit Timeline</h4><select id="timelineChild"></select></div>
-      <div id="timelineTable"></div>
-    </div>
-  </template>
+    <button id="buildPlan">Generate Plan</button>
+  </div>
+  <div id="planPaper" class="reportpaper"></div>
+</template>
 
-  <template id="growthTpl">
-    <div class="card">
-      <div class="card-head"><h4>Growth & BMI Analysis</h4><select id="growthChild"></select></div>
-      <div id="growthSummary"></div>
-      <canvas id="growthChart" width="1100" height="360"></canvas>
+<template id="backupTpl">
+  <div class="card">
+    <h3>Backup, Restore & Export</h3>
+    <p>Download structured clinical data. Uploaded documents remain in browser IndexedDB and should be exported individually if needed.</p>
+    <div class="actionrow">
+      <button id="backupBtn">Download JSON Backup</button>
+      <label class="buttonlike">Restore JSON<input type="file" id="restoreInput" accept=".json" hidden></label>
+      <button class="ghost" id="csvBtn">Export Follow-up CSV</button>
     </div>
-  </template>
+  </div>
+</template>
 
-  <template id="assessmentTpl">
-    <div class="card">
-      <div class="card-head"><h4>Ayurvedic + Functional Assessment</h4><select id="assessmentChild"></select></div>
-      <div id="assessmentPanel"></div>
-    </div>
-  </template>
+<template id="settingsTpl">
+  <div class="card"><h3>Clinic & Prescription Settings</h3><div id="settingsForm"></div></div>
+</template>
 
-  <template id="reportsTpl">
-    <div class="card">
-      <h4>Parent Report & Digital Swarnaprashan Prescription</h4>
-      <div class="form-grid">
-        <label>Child<select id="reportChild"></select></label>
-        <label>Report Visit<select id="reportVisit"></select></label>
-      </div>
-      <div class="section-actions">
-        <button id="buildReport">Generate Report</button>
-        <button id="printReport" class="secondary">Print / Save PDF</button>
-        <button id="shareReport" class="secondary">Share</button>
-        <button id="whatsappReport" class="secondary">WhatsApp</button>
-      </div>
-    </div>
-    <div id="reportOutput" class="report-sheet"></div>
-  </template>
-
-  <template id="educationTpl">
-    <div class="card">
-      <h4>Diet • Pathya • Apathya • Lifestyle Plan</h4>
-      <div class="form-grid">
-        <label>Child<select id="eduChild"></select></label>
-        <label>Plan Type<select id="planType"><option>General Swarnaprashan Support</option><option>Low Appetite</option><option>Constipation</option><option>Poor Sleep</option><option>Frequent Illness</option><option>Learning & Memory Support</option></select></label>
-      </div>
-      <button id="generatePlan">Generate Parent Plan</button>
-    </div>
-    <div id="planOutput" class="report-sheet"></div>
-  </template>
-
-  <template id="backupTpl">
-    <div class="card">
-      <h4>Backup / Restore</h4>
-      <p>Download full JSON backup of children, visits, settings and plans. Restore on another browser/device.</p>
-      <div class="section-actions">
-        <button id="downloadBackup">Download Backup</button>
-        <label class="file-btn">Restore Backup<input type="file" id="restoreBackup" accept=".json" hidden /></label>
-        <button id="exportCsv" class="secondary">Export Visits CSV</button>
-      </div>
-    </div>
-  </template>
-
-  <template id="settingsTpl">
-    <div class="card">
-      <h4>Clinic & Prescription Settings</h4>
-      <div id="settingsForm"></div>
-    </div>
-  </template>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
