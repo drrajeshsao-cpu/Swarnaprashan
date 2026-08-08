@@ -295,3 +295,12 @@ nav button{min-height:46px}
 @media (max-width:760px){.auth-gate{padding:14px}.auth-panel{padding:16px;border-radius:20px}.auth-brand-top h1{font-size:28px}.auth-brand-top p{font-size:15px}.auth-copy h2,.auth-card-head h2{font-size:24px}.brand-mini-banner{display:none}.auth-actions button{width:100%}.top-actions #currentUserBadge{grid-column:1/-1;justify-self:start}.top-actions #logoutBtn{width:100%}}
 
 .emergency-login-btn{border-color:#d2a65a!important;background:#fff8e8!important;color:#7a4b14!important;font-weight:850!important}
+
+/* V10.2 fail-safe login */
+.login-status{
+  margin-top:12px;padding:11px 13px;border-radius:12px;
+  background:#f7f4ef;border:1px solid #e8dfd2;color:#5f6672;font-size:13px;font-weight:700;
+}
+.login-status.ok{background:#edf8f1;border-color:#cce8d6;color:#2d7755}
+.login-status.error{background:#fff2f0;border-color:#efcbc6;color:#9a4740}
+#oneTapRajeshBtn{border-color:#c99b48;background:#fff9ec;font-weight:900}

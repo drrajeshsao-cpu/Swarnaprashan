@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=10.2.0">
 </head>
 <body>
 <div id="authGate" class="auth-gate">
@@ -41,12 +41,12 @@
         <label>Password<input id="loginPassword" type="password" placeholder="Enter password"></label>
       </div>
       <div class="actionrow auth-actions">
-        <button id="loginBtn">Login</button>
+        <button id="loginBtn">Login</button><button id="oneTapRajeshBtn" class="ghost">Quick Login • Dr Rajesh</button>
         <button id="demoUsersBtn" class="ghost">View Demo Users</button>
         <button id="forgotBtn" class="ghost">Forgot Password</button>
         <button id="resetLoginBtn" class="ghost emergency-login-btn">Reset Login Access</button>
       </div>
-      <div id="demoUsersBox" class="auth-demo-box" style="display:none"></div>
+      <div id="loginStatus" class="login-status">Authentication module ready.</div><div id="demoUsersBox" class="auth-demo-box" style="display:none"></div>
       <div class="auth-footnote">Real Gmail OTP / email reset links need backend auth integration (Firebase or similar). This version includes professional local multi-user login and password recovery workflow.</div>
     </section>
   </div>
@@ -348,6 +348,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=10.2.0"></script>
 </body>
 </html>

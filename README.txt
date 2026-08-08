@@ -1,15 +1,26 @@
-MAHAMAYA CLINIC SWARNAPRASHAN V10.1 — LOGIN RECOVERY FIX
+MAHAMAYA CLINIC — SWARNAPRASHAN V10.2 FAIL-SAFE LOGIN
 
-Fixes:
-- Repairs/merges default login users on every startup.
-- Adds Reset Login Access button on the login screen.
-- Reset does NOT delete patient/clinical data; only default login accounts are repaired.
-- Dr Rajesh account also accepts dr.raju2010@gmail.com as login email.
+This build is specifically designed to eliminate the repeated login failure.
 
-Default access after reset:
+Guaranteed built-in login (works independently of saved local user records):
 - drrajesh / rajesh123
-- superadmin / admin123
+- dr.raju2010@gmail.com / rajesh123
 - drravi / ravi123
-- Dr Rajesh email login: dr.raju2010@gmail.com / rajesh123
+- superadmin / admin123
 
-If a previous broken auth record exists in browser local storage, tap Reset Login Access once.
+New:
+- Quick Login • Dr Rajesh button.
+- Login checks built-in credentials BEFORE browser localStorage.
+- Session has in-memory fallback if localStorage is unavailable/corrupted.
+- Reset Login Access repairs local accounts but is no longer required for the built-in login.
+- app.js and styles.css use cache-busting version query ?v=10.2.0.
+
+Security note:
+This is still a static GitHub Pages prototype. These built-in credentials are intentionally visible in front-end code, so this is NOT suitable as true secure authentication for real patient data. For production, replace it with Firebase Authentication / secure backend before storing real clinical records.
+
+Deploy:
+Replace repository root files with this package.
+Commit.
+Wait 1–2 minutes.
+Open the live URL and refresh.
+Tap Quick Login • Dr Rajesh.
