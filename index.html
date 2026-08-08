@@ -9,12 +9,78 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app">
+<div id="authGate" class="auth-gate">
+  <div class="auth-shell">
+    <section class="auth-panel auth-brand-panel">
+      <div class="auth-brand-top">
+        <div class="brandmark sparkle-mark auth-logo">✨</div>
+        <div>
+          <h1>MAHAMAYA CLINIC</h1>
+          <p>Swarnaprashan Digital Health Suite</p>
+        </div>
+      </div>
+      <img src="swarna-baby.png" alt="Swarnaprashan baby" class="auth-hero-img">
+      <div class="auth-copy">
+        <h2>Digital Swarnaprashan workflow in one place</h2>
+        <ul>
+          <li>Multiple login IDs with role-based local access</li>
+          <li>Login by user ID, mobile number or email</li>
+          <li>Forgot password / recovery email workflow</li>
+          <li>Clinical entry, reports, PDF, WhatsApp, camera and manual card upload</li>
+        </ul>
+      </div>
+    </section>
+    <section class="auth-panel auth-form-panel">
+      <div class="auth-card-head">
+        <span class="eyebrow">SECURE SIGN IN</span>
+        <h2>Login to Swarnaprashan Suite</h2>
+        <p class="muted">Use your login ID, mobile number or email address.</p>
+      </div>
+      <div class="formgrid auth-grid">
+        <label>Login ID / Mobile / Email<input id="loginIdentifier" placeholder="e.g. drrajesh / 9876543210 / clinic@example.com"></label>
+        <label>Password<input id="loginPassword" type="password" placeholder="Enter password"></label>
+      </div>
+      <div class="actionrow auth-actions">
+        <button id="loginBtn">Login</button>
+        <button id="demoUsersBtn" class="ghost">View Demo Users</button>
+        <button id="forgotBtn" class="ghost">Forgot Password</button>
+      </div>
+      <div id="demoUsersBox" class="auth-demo-box" style="display:none"></div>
+      <div class="auth-footnote">Real Gmail OTP / email reset links need backend auth integration (Firebase or similar). This version includes professional local multi-user login and password recovery workflow.</div>
+    </section>
+  </div>
+</div>
+
+<div id="forgotModal" class="camera-modal" aria-hidden="true">
+  <div class="camera-dialog auth-recovery-dialog">
+    <div class="camera-header">
+      <div>
+        <span class="eyebrow">PASSWORD RECOVERY</span>
+        <h3>Forgot Password</h3>
+      </div>
+      <button id="forgotCloseBtn" class="ghost camera-close">✕</button>
+    </div>
+    <div class="formgrid auth-grid">
+      <label>Login ID / Mobile / Email<input id="fpIdentifier" placeholder="Enter registered ID, mobile or email"></label>
+      <label>Recovery Email<input id="fpRecoveryEmail" placeholder="Enter recovery Gmail / email"></label>
+      <label>New Password<input id="fpNewPassword" type="password" placeholder="Create new password"></label>
+      <label>Confirm Password<input id="fpConfirmPassword" type="password" placeholder="Confirm new password"></label>
+    </div>
+    <div class="actionrow auth-actions">
+      <button id="recoverBtn">Reset Password</button>
+      <button id="forgotCancelBtn" class="ghost">Cancel</button>
+    </div>
+    <p class="tiny muted">This local recovery works only when the recovery email matches the saved user record. For real email-based reset links, connect Firebase Auth later.</p>
+  </div>
+</div>
+
+<div id="appShell" class="app auth-hidden">
   <aside class="sidebar">
     <div class="brand">
       <div class="brandmark sparkle-mark">✨</div>
       <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan Digital Health Suite</span></div>
     </div>
+    <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Branded Clinical App</b><span>Child-centric premium workflow</span></div></div>
     <nav id="nav">
       <button data-view="dashboard" class="active">⌂ Dashboard</button>
       <button data-view="clinical">✚ Clinical Workspace</button>
@@ -40,7 +106,7 @@
       <div class="top-actions">
         <input id="globalSearch" placeholder="Search child / mobile / ID">
         <button id="topNewChild">+ New Child</button>
-        <button id="topNewCase">+ Clinical Entry</button>
+        <button id="topNewCase">+ Clinical Entry</button><span id="currentUserBadge" class="pill auth-pill"></span><button id="logoutBtn" class="ghost">Logout</button>
       </div>
     </header>
     <section id="view"></section>
@@ -58,10 +124,13 @@
         <button class="ghost" onclick="app.openQuickUpload()">Quick Manual Card / Camera Upload</button>
       </div>
     </div>
-    <div class="hero-mini">
-      <div><b>6-step</b><span>Save & Next clinical flow</span></div>
-      <div><b>Camera</b><span>baby photo + reports + manual card</span></div>
-      <div><b>PDF</b><span>print-ready parent report</span></div>
+    <div class="hero-side">
+      <img src="swarna-baby.png" alt="Swarnaprashan child" class="hero-art">
+      <div class="hero-mini">
+        <div><b>6-step</b><span>Save & Next clinical flow</span></div>
+        <div><b>Camera</b><span>baby photo + reports + manual card</span></div>
+        <div><b>PDF</b><span>print-ready parent report</span></div>
+      </div>
     </div>
   </div>
   <div id="kpis" class="kpis"></div>
