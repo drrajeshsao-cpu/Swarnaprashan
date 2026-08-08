@@ -119,3 +119,11 @@ nav button.active::before{background:var(--tab)}
   .letterhead-top{flex-direction:column}
   .letter-date{text-align:left}
 }
+
+/* V8.1 print fallback */
+@media print{
+  html,body{background:#fff!important}
+  #caseReportPreview,#reportPaper{display:block!important;visibility:visible!important}
+  #caseReportPreview *,#reportPaper *{visibility:visible!important}
+  .reportpaper{position:static!important;width:100%!important}
+}

@@ -85,7 +85,7 @@ function wizardHtml(i){
  if(i===2)return`<div class="card"><h3>3. Investigations & Clinical Attachments</h3><div class="formgrid"><label>Investigation Summary<textarea id="w_invest">${esc(d.invest||'')}</textarea></label><label>Clinical Impression<textarea id="w_impression">${esc(d.impression||'')}</textarea></label><label>Red Flags / Safety Notes<textarea id="w_redflags">${esc(d.redflags||'')}</textarea></label></div><div class="upload-grid"><label class="uploadbox">📷 Camera<input id="w_camera" type="file" accept="image/*" capture="environment"></label><label class="uploadbox">🖼 Gallery / 📎 File / PDF<input id="w_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><p class="tiny muted">Files will be linked to this clinical entry when you press Save & Next.</p></div>`;
  if(i===3)return`<div class="card"><h3>4. Treatment Plan</h3><div class="formgrid"><label>Swarnaprashan Dose<input id="w_dose" value="${esc(d.dose||'')}"></label><label>Preparation / Batch<input id="w_batch" value="${esc(d.batch||'')}"></label><label>Next Follow-up<input id="w_next" type="date" value="${d.next||''}"></label><label>Other Medicines<textarea id="w_medicines">${esc(d.medicines||'')}</textarea></label><label>Diet / Pathya<textarea id="w_pathya">${esc(d.pathya||'')}</textarea></label><label>Apathya / Avoid<textarea id="w_apathya">${esc(d.apathya||'')}</textarea></label><label>Activity / Lifestyle<textarea id="w_lifestyle">${esc(d.lifestyle||'')}</textarea></label><label>School / Cognitive Advice<textarea id="w_cognitive">${esc(d.cognitive||'')}</textarea></label><label>Safety / Referral Advice<textarea id="w_safety">${esc(d.safety||'')}</textarea></label></div></div>`;
  if(i===4)return`<div class="card"><h3>5. Prescription Builder</h3><div class="formgrid"><label>Prescription Title<input id="w_rxTitle" value="${esc(d.rxTitle||'Digital Swarnaprashan Prescription')}"></label><label>Special Instructions<textarea id="w_rxInstructions">${esc(d.rxInstructions||'')}</textarea></label><label>Parent Message<textarea id="w_parentMsg">${esc(d.parentMsg||'')}</textarea></label></div><div class="section"><h4>Print Options</h4><label><input id="w_printGrowth" type="checkbox" ${d.printGrowth!==false?'checked':''}> Include growth summary</label><br><label><input id="w_printAssessment" type="checkbox" ${d.printAssessment!==false?'checked':''}> Include assessment summary</label><br><label><input id="w_printDocs" type="checkbox" ${d.printDocs!==false?'checked':''}> Include uploaded-document list</label></div></div>`;
- return`<div class="card"><h3>6. Review, Save, Print & Share</h3><div id="wizardReview"></div><div class="actionrow"><button onclick="app.generateCaseReport()">Generate Prescription</button><button class="ghost" onclick="window.print()">Print / Save PDF</button><button class="ghost" onclick="app.shareCurrent()">Share</button><button class="ghost" onclick="app.whatsappCurrent()">WhatsApp</button></div></div><div id="caseReportPreview" class="reportpaper"></div>`;
+ return`<div class="card"><h3>6. Review, Save, Print & Share</h3><div id="wizardReview"></div><div class="actionrow"><button onclick="app.generateCaseReport()">Generate Prescription</button><button class="ghost" onclick="app.printCaseReport()">Print / Save PDF</button><button class="ghost" onclick="app.shareCurrent()">Share</button><button class="ghost" onclick="app.whatsappCurrent()">WhatsApp</button></div></div><div id="caseReportPreview" class="reportpaper"></div>`;
 }
 function bindWizard(){const c=$('#w_child');if(c){options(c);c.value=wiz.data.childId||''}if(wiz.step===5){$('#wizardReview').innerHTML=reviewHtml();generateCaseReport(false)}}
 async function collectWizard(){
@@ -230,7 +230,7 @@ async function removeDoc(id){if(confirm('Delete this document?')){await delDoc(i
 function openQuickUpload(){showView('documents')}
 
 // Reports
-function renderReports(){options($('#reportChild'));$('#generateReport').onclick=generateSelectedReport;$('#printReport').onclick=()=>window.print();$('#shareReport').onclick=shareReport;$('#waReport').onclick=waReport}
+function renderReports(){options($('#reportChild'));$('#generateReport').onclick=generateSelectedReport;$('#printReport').onclick=printParentReport;$('#shareReport').onclick=shareReport;$('#waReport').onclick=waReport}
 async function generateSelectedReport(){const id=$('#reportChild').value;if(!id){alert('Select child');return}const c=child(id),fs=fups(id),latest=fs.at(-1),cases=db.cases.filter(x=>x.childId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))),cs=cases.at(-1),docs=(await getDocs()).filter(x=>x.childId===id),first=fs[0];let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
 $('#reportPaper').innerHTML=`${letterhead(fmt(latest?.date||cs?.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(latest?.date||cs?.date)}</div>`)}
 <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name)}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Follow-ups</span><b>${fs.length}</b></div><div class="metric"><span>Clinical Entries</span><b>${cases.length}</b></div></div></div>
@@ -275,7 +275,63 @@ function renderSettings(){
  };
 }
 
+function printHtmlContent(html, title='Mahamaya Clinic Swarnaprashan'){
+  if(!html || !html.trim()){
+    alert('Please generate the prescription/report first.');
+    return;
+  }
+  const w=window.open('','_blank','width=1000,height=800');
+  if(!w){alert('Pop-up blocked. Please allow pop-ups for this site and try again.');return}
+  const printCss=`
+    @page{size:A4 portrait;margin:12mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Segoe UI,sans-serif;color:#172033;margin:0;background:#fff;font-size:12px;line-height:1.45}
+    .reportpaper{padding:0;margin:0;border:0;box-shadow:none}
+    .letterhead{border-bottom:2px solid #c79a45;padding-bottom:10px;margin-bottom:14px}
+    .letterhead-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+    .clinic-identity{display:flex;gap:12px;align-items:center}
+    .letter-logo{width:48px;height:48px;border-radius:12px;background:#6a431c;color:#fff;display:grid;place-items:center;font-size:23px;font-weight:900}
+    .clinic-name{font-size:24px;font-weight:900;color:#6a431c}
+    .rx-title{font-size:15px;font-weight:800;margin-top:3px}
+    .letter-date{text-align:right;font-size:11px}
+    .doctor-strip{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px}
+    .doctor-card{padding:8px 10px;border:1px solid #e8dfd1;border-radius:9px}
+    .doctor-card b{display:block;font-size:12px}
+    .doctor-card span{display:block;font-size:10px;color:#666;margin-top:2px}
+    .clinic-address{font-size:10px;font-weight:700;color:#5f5f5f;margin-top:7px}
+    .avatar-lg{width:82px;height:82px;object-fit:cover;border-radius:12px;border:1px solid #ddd}
+    .patient-head-id{font-weight:800;margin-top:3px}
+    .reportsection{margin:14px 0;break-inside:avoid}
+    .reportsection h3{font-size:14px;color:#6a431c;border-bottom:1px solid #e6e0d8;padding-bottom:5px;margin:0 0 8px}
+    .metricrow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+    .metric{border:1px solid #e5e0d8;border-radius:8px;padding:8px}
+    .metric span{display:block;font-size:9px;color:#777}
+    .metric b{display:block;font-size:14px;margin-top:2px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #e8e8e8;padding:6px;text-align:left;font-size:10px}
+    th{background:#faf7f2}
+    .good{color:#2d7755;font-weight:700}.bad{color:#b14f4f;font-weight:700}.stable{color:#3f6d9c;font-weight:700}
+    .signature{margin-top:22px;border-top:1px solid #ddd;padding-top:9px}
+    .signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .signature-grid span,.signature-address{font-size:9px;color:#666}
+    ul{margin:5px 0 5px 18px;padding:0}
+  `;
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${printCss}</style></head><body><div class="reportpaper">${html}</div><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);
+  w.document.close();
+}
+function printCaseReport(){
+  const el=$('#caseReportPreview');
+  if(!el || !el.innerHTML.trim()){alert('Please generate the prescription first.');return}
+  printHtmlContent(el.innerHTML,'Mahamaya Clinic - Swarnaprashan Digital Prescription');
+}
+function printParentReport(){
+  const el=$('#reportPaper');
+  if(!el || !el.innerHTML.trim()){alert('Please generate the report first.');return}
+  printHtmlContent(el.innerHTML,'Mahamaya Clinic - Swarnaprashan Progress Report');
+}
+
 function init(){openIDB().catch(()=>{});$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');$('#childSearch').value=q;drawChildren(q)};showView('dashboard')}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport};
 })();
 document.addEventListener('DOMContentLoaded',app.init);
