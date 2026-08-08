@@ -1,17 +1,21 @@
-SWARNAPRASHAN PRO V4 — MAHAMAYA CLINIC
-Deploy-ready static PWA for GitHub Pages.
+SWARNAPRASHAN PRO V5 CLINICAL TRACKER
 
-Files to upload to repository root:
-- index.html
-- styles.css
-- app.js
-- manifest.webmanifest
-- sw.js
+Core features
+- Child registration
+- Month-by-month Swarnaprashan dose and visit date
+- Height, weight, BMI and vital tracking
+- Current health issue, medications and adverse events
+- Functional grading: appetite, bladder, bowel, sleep, learning, memory, play, school performance, energy, illness frequency
+- Ashtavidha Pariksha grading
+- Dashavidha Pariksha grading
+- Baseline vs latest improvement analysis
+- Growth chart
+- Parent-ready report
+- Digital Swarnaprashan prescription
+- Print / Save as PDF
+- Browser share and WhatsApp text share
+- Pathya / Apathya / lifestyle plans
+- JSON backup / restore and CSV export
 
-Core modules:
-Dashboard, Children, Swarnaprashan Visits, Growth, Vaccination, Schedule, Parent Education, Reports & Print, Backup & Restore, Settings.
-
-Data storage: browser localStorage under key sp_pro_v4.
-Backup: JSON export/import built in.
-Print: browser print / Save as PDF.
-Share: Web Share API where supported, otherwise clipboard.
+IMPORTANT
+This is a browser-local PWA starter. For real multi-device clinical use, secure authentication, cloud database, audit logging, role-based access, consent, privacy and backup policies should be added before production-scale deployment.

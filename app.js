@@ -1,42 +1,360 @@
-const KEY='sp_pro_v4';
-const defaults={children:[],visits:[],growth:[],vaccines:[],appointments:[],settings:{clinic:'Mahamaya Clinic',doctor:'Dr Rajesh Sao',timing:'Mon–Sat 9:00 AM–8:00 PM • Sun 9:00 AM–2:00 PM',nextSession:''}};
-let db=load(); let current='dashboard';
-const navItems=[['CLINIC WORKSPACE'],['dashboard','⌂','Dashboard'],['children','👶','Children'],['visits','✨','Swarnaprashan Visits'],['growth','📈','Growth'],['vaccines','💉','Vaccination'],['appointments','🗓','Schedule'],['CARE & COMMUNICATION'],['education','📚','Parent Education'],['reports','🧾','Reports & Print'],['backup','💾','Backup & Restore'],['settings','⚙','Settings']];
-function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch{return structuredClone(defaults)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db));}
-function uid(p='ID'){return p+Date.now().toString(36).toUpperCase().slice(-7)}
-function esc(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
-function toast(t){let x=document.querySelector('#toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2200)}
-function age(d){if(!d)return '—';let b=new Date(d),n=new Date(),m=(n-b)/(365.25*864e5);return m<2?Math.max(0,Math.round(m*12))+' mo':Math.floor(m)+' y'}
-function renderNav(){nav.innerHTML=navItems.map(x=>x.length===1?`<div class="nav-label">${x[0]}</div>`:`<button class="nav-item ${current===x[0]?'active':''}" data-nav="${x[0]}"><span>${x[1]}</span><span>${x[2]}</span></button>`).join('')}
-function go(v){current=v;renderNav();render();sidebar.classList.remove('open')}
-function dashboard(){let today=new Date().toISOString().slice(0,10);let upcoming=db.appointments.filter(a=>a.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);return `<div class="hero"><div><div class="eyebrow">Clinical child wellness registry</div><h2>Welcome, Super Admin</h2><p>Register once. Record every Swarnaprashan visit, safety screen, growth milestone and vaccination—then print or share professional records in seconds.</p><div class="hero-actions"><button class="primary" data-action="newChild">＋ New Child</button><button class="secondary" data-action="newVisit">＋ Record Visit</button><button class="secondary" data-nav="children">Find Child</button></div></div><div class="session-card"><div><small>Next Swarnaprashan Session</small><div class="big">${db.settings.nextSession||'Not configured'}</div><small>${esc(db.settings.timing)}</small></div><div><button class="secondary" data-nav="appointments">Schedule</button></div></div></div>
-<div class="kpis"><div class="kpi"><div class="label">Registered Children</div><div class="value">${db.children.length}</div><div class="trend">Complete child registry</div></div><div class="kpi"><div class="label">Swarnaprashan Visits</div><div class="value">${db.visits.length}</div><div class="trend">Longitudinal records</div></div><div class="kpi"><div class="label">Upcoming</div><div class="value">${db.appointments.filter(a=>a.date>=today).length}</div><div class="trend">Scheduled follow-ups</div></div><div class="kpi"><div class="label">Growth Records</div><div class="value">${db.growth.length}</div><div class="trend">Height • Weight • BMI</div></div></div>
-<div class="grid-2"><div class="panel"><div class="panel-head"><div><div class="eyebrow">Quick registry</div><h3>Recent Children</h3></div><button class="secondary" data-nav="children">View all</button></div>${db.children.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>ID</th><th>Child</th><th>Age</th><th>Mobile</th><th></th></tr></thead><tbody>${db.children.slice(-6).reverse().map(c=>`<tr><td>${c.id}</td><td><b>${esc(c.name)}</b><br><small class="muted">${esc(c.sex||'')}</small></td><td>${age(c.dob)}</td><td>${esc(c.mobile||'—')}</td><td><div class="mini-actions"><button data-print-child="${c.id}">🖨</button><button data-share-child="${c.id}">↗</button></div></td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No child registered yet. Use <b>New Child</b> to begin.</div>`}</div>
-<div class="panel"><div class="panel-head"><div><div class="eyebrow">Today / next</div><h3>Clinic Worklist</h3></div></div><div class="worklist">${upcoming.length?upcoming.map(a=>`<div class="work-item"><div class="date-badge">${a.date.slice(5)}</div><div><b>${esc(childName(a.childId))}</b><div class="muted">${esc(a.purpose||'Swarnaprashan')}</div></div><span class="badge ok">Scheduled</span></div>`).join(''):`<div class="empty">No upcoming appointments.</div>`}</div></div></div>`}
-function childName(id){return db.children.find(c=>c.id===id)?.name||'Unknown child'}
-function listView(kind){let config={children:['Children','Child Registry','newChild',['ID','Child','Age','Guardian / Mobile']],visits:['Swarnaprashan Visits','Clinical administration records','newVisit',['Visit','Child','Date','Dose / Form']],growth:['Growth','Height • Weight • BMI tracking','newGrowth',['Record','Child','Date','Height / Weight']],vaccines:['Vaccination','Vaccination history & due status','newVaccine',['Record','Child','Vaccine','Date']],appointments:['Schedule','Appointments & Swarnaprashan calendar','newAppointment',['Appointment','Child','Date','Purpose']]}[kind];
-let rows=(kind==='children'?db.children:db[kind]).map(r=>{if(kind==='children')return [r.id,`<b>${esc(r.name)}</b><br><small>${esc(r.sex||'')}</small>`,age(r.dob),`${esc(r.guardian||'')}<br><small>${esc(r.mobile||'')}</small>`];if(kind==='visits')return [r.id,childName(r.childId),r.date,`${esc(r.dose||'—')} • ${esc(r.form||'—')}`];if(kind==='growth')return [r.id,childName(r.childId),r.date,`${r.height||'—'} cm / ${r.weight||'—'} kg`];if(kind==='vaccines')return [r.id,childName(r.childId),esc(r.vaccine),r.date];return [r.id,childName(r.childId),r.date,esc(r.purpose||'')]}).reverse();
-return `<div class="toolbar"><div><div class="eyebrow">${config[1]}</div><h2>${config[0]}</h2></div><button class="primary" data-action="${config[2]}">＋ Add ${kind==='children'?'Child':'Record'}</button></div><div class="panel">${rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr>${config[3].map(x=>`<th>${x}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}<td><div class="mini-actions"><button data-action="printCurrent">🖨</button><button data-action="shareCurrent">↗</button></div></td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No records yet.</div>`}</div>`}
-function education(){return `<div class="toolbar"><div><div class="eyebrow">Parent counselling library</div><h2>Parent Education</h2></div><button class="primary" data-action="shareEducation">Share Guidance</button></div><div class="grid-2"><div class="panel"><h3>Before Swarnaprashan</h3><p class="muted">Confirm child identity, current illness, allergy/ADR history, recent medication and parent consent. Defer and clinically assess when the child is acutely unwell.</p><span class="badge warn">Safety-first checklist</span></div><div class="panel"><h3>Home Follow-up</h3><p class="muted">Record any new symptom after administration, maintain routine nutrition, sleep and vaccination schedule, and contact the clinic if concerns arise.</p><span class="badge ok">Easy to share</span></div></div>`}
-function reports(){return `<div class="toolbar"><div><div class="eyebrow">Professional documentation</div><h2>Reports & Print</h2></div></div><div class="grid-2"><div class="panel"><h3>Child Summary</h3><p class="muted">Select a child and generate a clean clinical summary containing demographics, Swarnaprashan visits, growth and vaccination records.</p><select class="select" id="reportChild"><option value="">Choose child…</option>${db.children.map(c=>`<option value="${c.id}">${esc(c.name)} • ${c.id}</option>`).join('')}</select><div class="hero-actions"><button class="primary" data-action="printChildSummary">🖨 Print / Save PDF</button><button class="secondary" data-action="shareChildSummary">↗ Share</button></div></div><div class="panel"><h3>Clinic Register</h3><p class="muted">Print a consolidated registry for documentation and audit.</p><div class="hero-actions"><button class="primary" data-action="printCurrent">Print Current View</button><button class="secondary" data-action="exportCSV">Export CSV</button></div></div></div>`}
-function backup(){return `<div class="toolbar"><div><div class="eyebrow">Data safety</div><h2>Backup & Restore</h2></div></div><div class="grid-2"><div class="panel"><h3>Full JSON Backup</h3><p class="muted">Downloads children, visits, growth, vaccines, appointments and settings in one portable backup file.</p><button class="primary" data-action="exportBackup">⬇ Download Backup</button></div><div class="panel"><h3>Restore Backup</h3><p class="muted">Restore from a previously downloaded JSON backup. Existing app data will be replaced.</p><button class="secondary" data-action="importBackup">⬆ Choose Backup</button></div></div>`}
-function settings(){return `<div class="toolbar"><div><div class="eyebrow">Clinic configuration</div><h2>Settings</h2></div></div><div class="panel"><div class="form-grid"><div class="field"><label>Clinic Name</label><input class="input" id="sClinic" value="${esc(db.settings.clinic)}"></div><div class="field"><label>Doctor</label><input class="input" id="sDoctor" value="${esc(db.settings.doctor)}"></div><div class="field full"><label>Clinic Timing</label><input class="input" id="sTiming" value="${esc(db.settings.timing)}"></div><div class="field"><label>Next Swarnaprashan Session</label><input class="input" type="date" id="sSession" value="${esc(db.settings.nextSession)}"></div></div><div class="hero-actions"><button class="primary" data-action="saveSettings">Save Settings</button></div></div>`}
-function render(){view.innerHTML=current==='dashboard'?dashboard():['children','visits','growth','vaccines','appointments'].includes(current)?listView(current):current==='education'?education():current==='reports'?reports():current==='backup'?backup():settings()}
-function modal(title,body,onSave){let m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="modal-card"><div class="modal-head"><b>${title}</b><button class="close">×</button></div><div class="modal-body">${body}</div><div class="modal-foot"><button class="secondary closeBtn">Cancel</button><button class="primary saveBtn">Save</button></div></div>`;document.body.append(m);m.querySelector('.close').onclick=m.querySelector('.closeBtn').onclick=()=>m.remove();m.querySelector('.saveBtn').onclick=()=>{if(onSave(m)!==false)m.remove()}}
-function childOptions(){return `<option value="">Choose child…</option>${db.children.map(c=>`<option value="${c.id}">${esc(c.name)} • ${c.id}</option>`).join('')}`}
-function newChild(){modal('Register New Child',`<div class="section-title">Identity & Contact</div><div class="form-grid"><div class="field"><label>Child Name *</label><input class="input" name="name"></div><div class="field"><label>Date of Birth *</label><input class="input" type="date" name="dob"></div><div class="field"><label>Sex</label><select class="select" name="sex"><option>Male</option><option>Female</option><option>Other</option></select></div><div class="field"><label>Guardian Name</label><input class="input" name="guardian"></div><div class="field"><label>Mobile / WhatsApp</label><input class="input" name="mobile" inputmode="tel"></div><div class="field"><label>Blood Group</label><input class="input" name="blood"></div></div><div class="section-title">Clinical Background</div><div class="form-grid"><div class="field full"><label>Allergy / ADR</label><input class="input" name="allergy" placeholder="Drug / food allergy, prior reaction"></div><div class="field"><label>Birth Weight (kg)</label><input class="input" name="birthWeight" type="number" step="0.01"></div><div class="field"><label>Delivery</label><select class="select" name="delivery"><option>Normal vaginal</option><option>Caesarean</option><option>Assisted</option></select></div><div class="field full"><label>Medical / Development Notes</label><textarea class="textarea" name="notes" rows="3"></textarea></div></div>`,m=>{let f=Object.fromEntries([...m.querySelectorAll('[name]')].map(x=>[x.name,x.value]));if(!f.name||!f.dob){toast('Name and DOB are required');return false}db.children.push({...f,id:uid('CH-'),created:new Date().toISOString()});save();render();toast('Child registered successfully')})}
-function newVisit(){if(!db.children.length){toast('Register a child first');return}modal('Record Swarnaprashan Visit',`<div class="section-title">Visit</div><div class="form-grid"><div class="field"><label>Child *</label><select class="select" name="childId">${childOptions()}</select></div><div class="field"><label>Date *</label><input class="input" type="date" name="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Form</label><select class="select" name="form"><option>Classical preparation</option><option>Clinic preparation</option><option>Other</option></select></div><div class="field"><label>Dose</label><input class="input" name="dose" placeholder="e.g., drops / as advised"></div></div><div class="section-title">Pre-administration Safety Screen</div><div class="form-grid"><div class="field"><label>Current illness / fever</label><select class="select" name="ill"><option>No</option><option>Yes — clinically assessed</option></select></div><div class="field"><label>Known allergy / ADR</label><select class="select" name="adr"><option>No known</option><option>Present — reviewed</option></select></div><div class="field"><label>Recent medication</label><input class="input" name="meds"></div><div class="field"><label>Parent consent</label><select class="select" name="consent"><option>Obtained</option><option>Not obtained</option></select></div><div class="field full"><label>Clinical Notes / Advice</label><textarea class="textarea" name="notes" rows="4"></textarea></div></div>`,m=>{let f=Object.fromEntries([...m.querySelectorAll('[name]')].map(x=>[x.name,x.value]));if(!f.childId||!f.date){toast('Child and date required');return false}db.visits.push({...f,id:uid('SV-')});save();render();toast('Visit saved')})}
-function newGrowth(){if(!db.children.length){toast('Register a child first');return}modal('Add Growth Record',`<div class="form-grid"><div class="field"><label>Child</label><select class="select" name="childId">${childOptions()}</select></div><div class="field"><label>Date</label><input class="input" type="date" name="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Height (cm)</label><input class="input" type="number" step=".1" name="height"></div><div class="field"><label>Weight (kg)</label><input class="input" type="number" step=".1" name="weight"></div><div class="field full"><label>Notes</label><textarea class="textarea" name="notes"></textarea></div></div>`,m=>{let f=Object.fromEntries([...m.querySelectorAll('[name]')].map(x=>[x.name,x.value]));db.growth.push({...f,id:uid('GR-')});save();render();toast('Growth record saved')})}
-function newVaccine(){if(!db.children.length){toast('Register a child first');return}modal('Add Vaccination Record',`<div class="form-grid"><div class="field"><label>Child</label><select class="select" name="childId">${childOptions()}</select></div><div class="field"><label>Vaccine</label><input class="input" name="vaccine"></div><div class="field"><label>Date</label><input class="input" type="date" name="date"></div><div class="field"><label>Status</label><select class="select" name="status"><option>Given</option><option>Due</option><option>Planned</option></select></div></div>`,m=>{let f=Object.fromEntries([...m.querySelectorAll('[name]')].map(x=>[x.name,x.value]));db.vaccines.push({...f,id:uid('VX-')});save();render();toast('Vaccination record saved')})}
-function newAppointment(){if(!db.children.length){toast('Register a child first');return}modal('Schedule Appointment',`<div class="form-grid"><div class="field"><label>Child</label><select class="select" name="childId">${childOptions()}</select></div><div class="field"><label>Date</label><input class="input" type="date" name="date"></div><div class="field"><label>Time</label><input class="input" type="time" name="time"></div><div class="field"><label>Purpose</label><input class="input" name="purpose" value="Swarnaprashan"></div></div>`,m=>{let f=Object.fromEntries([...m.querySelectorAll('[name]')].map(x=>[x.name,x.value]));db.appointments.push({...f,id:uid('AP-')});save();render();toast('Appointment scheduled')})}
-function download(name,text,type='application/json'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
-function exportBackup(){download(`swarnaprashan-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(db,null,2))}
-function exportCSV(){let rows=[['ID','Name','DOB','Sex','Guardian','Mobile'],...db.children.map(c=>[c.id,c.name,c.dob,c.sex,c.guardian,c.mobile])];download('swarnaprashan-child-registry.csv',rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(',')).join('\n'),'text/csv')}
-function childSummary(id){let c=db.children.find(x=>x.id===id);if(!c)return '';let vs=db.visits.filter(x=>x.childId===id),gs=db.growth.filter(x=>x.childId===id),vxs=db.vaccines.filter(x=>x.childId===id);return `SWARNAPRASHAN @ ${db.settings.clinic}\nChild: ${c.name} (${c.id})\nDOB: ${c.dob} | Age: ${age(c.dob)} | Sex: ${c.sex||'—'}\nGuardian: ${c.guardian||'—'} | Mobile: ${c.mobile||'—'}\nAllergy/ADR: ${c.allergy||'None recorded'}\n\nSwarnaprashan Visits: ${vs.length}\n${vs.map(v=>`${v.date}: ${v.form||''} ${v.dose||''}`).join('\n')}\n\nGrowth Records: ${gs.length}\n${gs.map(g=>`${g.date}: ${g.height||'—'} cm, ${g.weight||'—'} kg`).join('\n')}\n\nVaccination Records: ${vxs.length}\n${vxs.map(v=>`${v.date||'—'}: ${v.vaccine||''} (${v.status||''})`).join('\n')}\n\n${db.settings.doctor}\n${db.settings.timing}`}
-function shareText(text){if(navigator.share)navigator.share({title:'Swarnaprashan @ Mahamaya Clinic',text}).catch(()=>{});else navigator.clipboard?.writeText(text).then(()=>toast('Copied for sharing'))}
-function printChild(id){let text=childSummary(id);let w=open('','_blank');w.document.write(`<html><head><title>Child Summary</title><style>body{font-family:Arial;padding:32px;color:#173d33}pre{white-space:pre-wrap;font:15px Arial;line-height:1.6}h2{border-bottom:2px solid #c8a34f;padding-bottom:10px}</style></head><body><h2>Swarnaprashan @ Mahamaya Clinic</h2><pre>${esc(text)}</pre></body></html>`);w.document.close();w.print()}
-function searchGlobal(){let q=globalSearch.value.trim().toLowerCase();if(!q)return;let hits=db.children.filter(c=>[c.name,c.mobile,c.id,c.guardian].some(v=>String(v||'').toLowerCase().includes(q)));go('children');setTimeout(()=>toast(hits.length?`${hits.length} matching child record(s)`:'No matching child found'),0)}
-document.addEventListener('click',e=>{let n=e.target.closest('[data-nav]');if(n)return go(n.dataset.nav);let a=e.target.closest('[data-action]');if(a){let fn={newChild,newVisit,newGrowth,newVaccine,newAppointment,exportBackup,importBackup:()=>restoreInput.click(),exportCSV,printCurrent:()=>print(),shareCurrent:()=>shareText(`Swarnaprashan @ ${db.settings.clinic} — ${current} view`),shareEducation:()=>shareText('Swarnaprashan parent guidance: clinical screening, parent consent, routine nutrition, sleep, vaccination follow-up and prompt clinic contact for concerns.'),saveSettings:()=>{db.settings={clinic:sClinic.value,doctor:sDoctor.value,timing:sTiming.value,nextSession:sSession.value};save();render();toast('Settings saved')},printChildSummary:()=>{let id=document.querySelector('#reportChild')?.value;if(id)printChild(id);else toast('Choose a child')},shareChildSummary:()=>{let id=document.querySelector('#reportChild')?.value;if(id)shareText(childSummary(id));else toast('Choose a child')}}[a.dataset.action];fn?.();return}let p=e.target.closest('[data-print-child]');if(p)return printChild(p.dataset.printChild);let s=e.target.closest('[data-share-child]');if(s)return shareText(childSummary(s.dataset.shareChild))});
-menuBtn.onclick=()=>sidebar.classList.toggle('open');searchBtn.onclick=searchGlobal;globalSearch.addEventListener('keydown',e=>{if(e.key==='Enter')searchGlobal()});restoreInput.onchange=async()=>{let f=restoreInput.files[0];if(!f)return;try{let x=JSON.parse(await f.text());db=Object.assign({},defaults,x);save();render();toast('Backup restored')}catch{toast('Invalid backup file')}};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});renderNav();render();
+
+const app = (() => {
+  const KEY = 'mahamaya_swarnaprashan_v5';
+  const defaultSettings = {
+    clinicName:'Mahamaya Clinic',
+    subtitle:'Swarnaprashan Clinical Tracker',
+    doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',
+    designation:'Consultant Physician • Ayurveda',
+    phone:'',
+    address:'Bhatagaon, Raipur',
+    footer:'For clinical follow-up and parent education. Not a substitute for emergency care.'
+  };
+  let db = JSON.parse(localStorage.getItem(KEY) || 'null') || {children:[], visits:[], settings:defaultSettings, plans:[]};
+  db.settings = {...defaultSettings, ...(db.settings||{})};
+
+  const $ = s => document.querySelector(s);
+  const esc = s => (s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const save = () => localStorage.setItem(KEY, JSON.stringify(db));
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+  const ageText = dob => {
+    if(!dob) return '-';
+    const b=new Date(dob), n=new Date(); let y=n.getFullYear()-b.getFullYear(), m=n.getMonth()-b.getMonth();
+    if(m<0){y--;m+=12} return `${y}y ${m}m`;
+  };
+  const childById = id => db.children.find(x=>x.id===id);
+  const visitsOf = id => db.visits.filter(v=>v.childId===id).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const scoreLabel = v => ['Poor','Reduced','Stable/Normal','Improved','Best'][Number(v)||0] || '-';
+  const trendLabel = (a,b) => {
+    if(a==null||b==null||a==='') return '<span class="trend-stable">No baseline</span>';
+    const x=Number(a),y=Number(b); if(y>x) return '<span class="trend-up">Improved ↑</span>';
+    if(y<x) return '<span class="trend-down">Reduced ↓</span>';
+    return '<span class="trend-stable">Stable →</span>';
+  };
+  const navTitles = {
+    dashboard:['Dashboard','Longitudinal child development, Swarnaprashan and parent-ready reporting'],
+    children:['Children','Registration, contact details and clinical profile'],
+    monthly:['Monthly Follow-up','Dose, growth, vitals, health and developmental monitoring'],
+    growth:['Growth & BMI','Track height, weight and BMI across visits'],
+    assessment:['Clinical Assessment','Ashtavidha, Dashavidha and functional grading analysis'],
+    reports:['Reports & Prescription','Generate, print, save as PDF and share parent-ready records'],
+    education:['Diet • Pathya • Lifestyle','Personalized parent guidance and supportive care'],
+    backup:['Backup / Restore','Portable local data backup and CSV export'],
+    settings:['Settings','Clinic identity and prescription footer']
+  };
+  const tpl = id => document.getElementById(id).content.cloneNode(true);
+
+  function showView(name){
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+    $('#pageTitle').textContent = navTitles[name][0]; $('#pageSubtitle').textContent = navTitles[name][1];
+    const view=$('#view'); view.innerHTML=''; view.appendChild(tpl(name+'Tpl'));
+    ({dashboard:renderDashboard,children:renderChildren,monthly:renderMonthly,growth:renderGrowth,assessment:renderAssessment,reports:renderReports,education:renderEducation,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
+  }
+
+  function childOptions(sel, includeBlank=true){
+    sel.innerHTML=(includeBlank?'<option value="">Select child</option>':'')+db.children.map(c=>`<option value="${c.id}">${esc(c.name)} • ${esc(c.regId||c.id.slice(-5).toUpperCase())}</option>`).join('');
+  }
+
+  function renderDashboard(){
+    const c=db.children.length,v=db.visits.length;
+    const thisMonth=db.visits.filter(x=>new Date(x.date).getMonth()===new Date().getMonth()&&new Date(x.date).getFullYear()===new Date().getFullYear()).length;
+    const with2=db.children.filter(ch=>visitsOf(ch.id).length>=2).length;
+    $('#kpis').innerHTML=[
+      ['Registered Children',c],['Total Swarnaprashan Visits',v],['Visits This Month',thisMonth],['Children With Trend Data',with2]
+    ].map(x=>`<div class="kpi"><div class="num">${x[1]}</div><div class="lbl">${x[0]}</div></div>`).join('');
+    $('#recentChildren').innerHTML=db.children.slice(-6).reverse().map(ch=>`<div style="padding:9px 0;border-bottom:1px solid #eee"><b>${esc(ch.name)}</b><div class="muted">${ageText(ch.dob)} • ${esc(ch.mobile||'')}</div></div>`).join('')||'<p class="muted">No children registered yet.</p>';
+    $('#dueList').innerHTML=db.children.slice(0,8).map(ch=>{
+      const vs=visitsOf(ch.id); const last=vs.at(-1);
+      return `<div style="padding:9px 0;border-bottom:1px solid #eee"><b>${esc(ch.name)}</b><div class="muted">Last visit: ${last?fmtDate(last.date):'No visit yet'}</div></div>`;
+    }).join('')||'<p class="muted">Register a child to begin.</p>';
+    const eligible=db.children.find(ch=>visitsOf(ch.id).length>=2);
+    $('#dashboardTrend').innerHTML=eligible?buildMiniTrend(eligible.id):'<p class="muted">At least 2 monthly visits are required for improvement analysis.</p>';
+  }
+
+  function renderChildren(){
+    $('#addChildBtn').onclick=()=>showChildForm();
+    $('#childSearch').oninput=()=>drawChildrenTable($('#childSearch').value);
+    drawChildrenTable('');
+  }
+  function showChildForm(editId=''){
+    const ch=editId?childById(editId):{};
+    $('#childFormWrap').innerHTML=`<div class="card">
+      <h4>${editId?'Edit':'Register'} Child</h4>
+      <div class="form-grid">
+        <label>Child Name<input id="f_name" value="${esc(ch.name||'')}"></label>
+        <label>Date of Birth<input id="f_dob" type="date" value="${ch.dob||''}"></label>
+        <label>Sex<select id="f_sex"><option ${ch.sex==='Male'?'selected':''}>Male</option><option ${ch.sex==='Female'?'selected':''}>Female</option><option ${ch.sex==='Other'?'selected':''}>Other</option></select></label>
+        <label>Parent / Guardian<input id="f_parent" value="${esc(ch.parent||'')}"></label>
+        <label>Mobile / WhatsApp<input id="f_mobile" value="${esc(ch.mobile||'')}"></label>
+        <label>Registration ID<input id="f_reg" value="${esc(ch.regId||('SW'+String(db.children.length+1).padStart(4,'0')))}"></label>
+        <label>School / Class<input id="f_school" value="${esc(ch.school||'')}"></label>
+        <label>Address<input id="f_address" value="${esc(ch.address||'')}"></label>
+        <label>Allergies<input id="f_allergy" value="${esc(ch.allergies||'')}"></label>
+      </div>
+      <label>Medical / Birth / Developmental History<textarea id="f_history">${esc(ch.history||'')}</textarea></label>
+      <div class="section-actions"><button id="saveChild">Save Child</button><button class="secondary" id="cancelChild">Cancel</button></div>
+    </div>`;
+    $('#saveChild').onclick=()=>{
+      const item={id:editId||uid(),name:$('#f_name').value.trim(),dob:$('#f_dob').value,sex:$('#f_sex').value,parent:$('#f_parent').value,mobile:$('#f_mobile').value,regId:$('#f_reg').value,school:$('#f_school').value,address:$('#f_address').value,allergies:$('#f_allergy').value,history:$('#f_history').value};
+      if(!item.name){alert('Child name is required');return}
+      if(editId) db.children=db.children.map(x=>x.id===editId?item:x); else db.children.push(item);
+      save(); $('#childFormWrap').innerHTML=''; drawChildrenTable('');
+    };
+    $('#cancelChild').onclick=()=>$('#childFormWrap').innerHTML='';
+  }
+  function drawChildrenTable(q=''){
+    q=q.toLowerCase();
+    const rows=db.children.filter(c=>[c.name,c.mobile,c.regId].join(' ').toLowerCase().includes(q));
+    $('#childrenTable').innerHTML=`<table><thead><tr><th>ID</th><th>Child</th><th>Age / Sex</th><th>Parent</th><th>Visits</th><th>Actions</th></tr></thead><tbody>${rows.map(c=>`<tr>
+      <td>${esc(c.regId||'-')}</td><td><b>${esc(c.name)}</b><div class="muted">${esc(c.school||'')}</div></td><td>${ageText(c.dob)} / ${esc(c.sex||'-')}</td>
+      <td>${esc(c.parent||'-')}<div class="muted">${esc(c.mobile||'')}</div></td><td>${visitsOf(c.id).length}</td>
+      <td><button onclick="app.editChild('${c.id}')">Edit</button> <button class="secondary" onclick="app.quickReport('${c.id}')">Report</button></td></tr>`).join('')}</tbody></table>`;
+  }
+
+  const scaleOptions = (selected=2)=>[0,1,2,3,4].map(n=>`<option value="${n}" ${Number(selected)===n?'selected':''}>${n} - ${scoreLabel(n)}</option>`).join('');
+  function renderMonthly(){
+    childOptions($('#timelineChild'));
+    $('#timelineChild').onchange=()=>drawTimeline($('#timelineChild').value);
+    $('#monthlyForm').innerHTML = monthlyFormHtml();
+    childOptions($('#m_child'));
+    $('#m_date').value=new Date().toISOString().slice(0,10);
+    $('#m_child').onchange=()=>prefillPrev($('#m_child').value);
+    $('#saveVisit').onclick=saveMonthlyVisit;
+    drawTimeline('');
+  }
+  function monthlyFormHtml(){
+    const scoreFields=['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy','Immunity / Illness Frequency'];
+    const ashta=['Nadi','Mala','Mutra','Jihva','Shabda','Sparsha','Drik','Akruti'];
+    const dasha=['Prakriti','Vikriti','Sara','Samhanana','Pramana','Satmya','Satva','Ahara Shakti','Vyayama Shakti','Vaya'];
+    return `
+    <div class="form-grid">
+      <label>Child<select id="m_child"></select></label>
+      <label>Visit Date<input id="m_date" type="date"></label>
+      <label>Swarnaprashan Dose<input id="m_dose" placeholder="e.g. 2 drops / 4 drops / prescribed dose"></label>
+      <label>Batch / Preparation<input id="m_batch" placeholder="Optional"></label>
+      <label>Height (cm)<input id="m_height" type="number" step="0.1"></label>
+      <label>Weight (kg)<input id="m_weight" type="number" step="0.1"></label>
+      <label>Temperature °F<input id="m_temp" type="number" step="0.1"></label>
+      <label>Pulse /min<input id="m_pulse" type="number"></label>
+      <label>Respiratory Rate /min<input id="m_rr" type="number"></label>
+      <label>SpO₂ %<input id="m_spo2" type="number"></label>
+      <label>BP Systolic<input id="m_sys" type="number"></label>
+      <label>BP Diastolic<input id="m_dia" type="number"></label>
+    </div>
+    <fieldset><legend>Medical Health at This Visit</legend>
+      <div class="form-grid">
+        <label>Current Illness / Complaint<textarea id="m_issue"></textarea></label>
+        <label>Medication / Treatment<textarea id="m_meds"></textarea></label>
+        <label>Adverse Event / Reaction<textarea id="m_ae"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Functional & Developmental Grading (0–4)</legend>
+      <div class="scale-grid">${scoreFields.map(f=>`<div class="scale-card"><b>${f}</b><select data-score="${f}">${scaleOptions()}</select></div>`).join('')}</div>
+      <p class="muted">0 Poor • 1 Reduced • 2 Stable/Normal • 3 Improved • 4 Best</p>
+    </fieldset>
+    <fieldset><legend>Ashtavidha Pariksha Grading (0–4)</legend>
+      <div class="scale-grid">${ashta.map(f=>`<div class="scale-card"><b>${f}</b><select data-ashta="${f}">${scaleOptions()}</select></div>`).join('')}</div>
+    </fieldset>
+    <fieldset><legend>Dashavidha Pariksha Grading (0–4)</legend>
+      <div class="scale-grid">${dasha.map(f=>`<div class="scale-card"><b>${f}</b><select data-dasha="${f}">${scaleOptions()}</select></div>`).join('')}</div>
+    </fieldset>
+    <div class="form-grid">
+      <label>Diet / Pathya Adherence<select id="m_pathya">${scaleOptions()}</select></label>
+      <label>Activity / Lifestyle Adherence<select id="m_life">${scaleOptions()}</select></label>
+      <label>Parent Global Impression<select id="m_parentimpr">${scaleOptions()}</select></label>
+    </div>
+    <label>Clinical Notes<textarea id="m_notes" placeholder="Important change from previous month, physician observation, parent concerns..."></textarea></label>
+    <div class="section-actions"><button id="saveVisit">Save Monthly Visit</button></div>`;
+  }
+  function prefillPrev(id){
+    const prev=visitsOf(id).at(-1); if(!prev) return;
+    ['dose','batch'].forEach(k=>$('#m_'+k).value=prev[k]||'');
+  }
+  function saveMonthlyVisit(){
+    const id=$('#m_child').value; if(!id){alert('Select child');return}
+    const scores={},ashta={},dasha={};
+    document.querySelectorAll('[data-score]').forEach(e=>scores[e.dataset.score]=Number(e.value));
+    document.querySelectorAll('[data-ashta]').forEach(e=>ashta[e.dataset.ashta]=Number(e.value));
+    document.querySelectorAll('[data-dasha]').forEach(e=>dasha[e.dataset.dasha]=Number(e.value));
+    const height=Number($('#m_height').value||0), weight=Number($('#m_weight').value||0);
+    const bmi=height&&weight? +(weight/((height/100)**2)).toFixed(2):'';
+    db.visits.push({
+      id:uid(),childId:id,date:$('#m_date').value,dose:$('#m_dose').value,batch:$('#m_batch').value,
+      height,weight,bmi,temp:$('#m_temp').value,pulse:$('#m_pulse').value,rr:$('#m_rr').value,spo2:$('#m_spo2').value,sys:$('#m_sys').value,dia:$('#m_dia').value,
+      issue:$('#m_issue').value,meds:$('#m_meds').value,ae:$('#m_ae').value,scores,ashta,dasha,
+      pathya:Number($('#m_pathya').value),life:Number($('#m_life').value),parentImpression:Number($('#m_parentimpr').value),notes:$('#m_notes').value
+    });
+    save(); alert('Monthly Swarnaprashan follow-up saved'); showView('monthly'); $('#timelineChild').value=id; drawTimeline(id);
+  }
+  function drawTimeline(id){
+    if(!id){$('#timelineTable').innerHTML='<p class="muted">Select a child to view month-by-month records.</p>';return}
+    const vs=visitsOf(id);
+    $('#timelineTable').innerHTML=`<table><thead><tr><th>Date</th><th>Dose</th><th>Ht / Wt / BMI</th><th>Vitals</th><th>Health</th><th>Overall Change</th></tr></thead><tbody>${vs.map((v,i)=>{
+      const prev=vs[i-1]; const curAvg=avgScore(v.scores), prevAvg=prev?avgScore(prev.scores):null;
+      return `<tr><td>${fmtDate(v.date)}</td><td>${esc(v.dose||'-')}</td><td>${v.height||'-'} cm<br>${v.weight||'-'} kg<br>BMI ${v.bmi||'-'}</td>
+      <td>P ${v.pulse||'-'} • SpO₂ ${v.spo2||'-'}<br>BP ${v.sys||'-'}/${v.dia||'-'}</td><td>${esc(v.issue||'No issue recorded')}</td><td>${trendLabel(prevAvg,curAvg)}</td></tr>`}).join('')}</tbody></table>`;
+  }
+  const avgScore = obj => {
+    const vals=Object.values(obj||{}).map(Number).filter(x=>!isNaN(x)); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+  };
+
+  function renderGrowth(){
+    childOptions($('#growthChild')); $('#growthChild').onchange=()=>drawGrowth($('#growthChild').value); $('#growthSummary').innerHTML='<p class="muted">Select a child.</p>';
+  }
+  function drawGrowth(id){
+    const vs=visitsOf(id); if(!id||!vs.length){$('#growthSummary').innerHTML='<p class="muted">No growth records yet.</p>';return}
+    const first=vs[0],last=vs.at(-1);
+    $('#growthSummary').innerHTML=`<div class="metric-row">
+      <div class="metric"><span>Height</span><strong>${last.height||'-'} cm</strong><small>${first.height&&last.height?((last.height-first.height)>=0?'+':'')+(last.height-first.height).toFixed(1)+' cm':''}</small></div>
+      <div class="metric"><span>Weight</span><strong>${last.weight||'-'} kg</strong><small>${first.weight&&last.weight?((last.weight-first.weight)>=0?'+':'')+(last.weight-first.weight).toFixed(1)+' kg':''}</small></div>
+      <div class="metric"><span>BMI</span><strong>${last.bmi||'-'}</strong><small>Latest recorded</small></div>
+      <div class="metric"><span>Visits</span><strong>${vs.length}</strong><small>${fmtDate(first.date)} → ${fmtDate(last.date)}</small></div>
+    </div>`;
+    drawChart(vs);
+  }
+  function drawChart(vs){
+    const c=$('#growthChart'),ctx=c.getContext('2d'),W=c.width,H=c.height;ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#ddd';ctx.lineWidth=1;for(let i=1;i<6;i++){let y=i*H/6;ctx.beginPath();ctx.moveTo(45,y);ctx.lineTo(W-20,y);ctx.stroke()}
+    const series=[['height','#9b7a3c'],['weight','#2f7d5c'],['bmi','#446a93']];
+    series.forEach(([key,color])=>{
+      const vals=vs.map(v=>Number(v[key])).filter(Boolean); if(vals.length<1)return; const max=Math.max(...vals),min=Math.min(...vals);
+      ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
+      vs.forEach((v,i)=>{const val=Number(v[key]); if(!val)return; const x=50+i*(W-80)/Math.max(1,vs.length-1), y=H-35-((val-min)/Math.max(1,max-min))*(H-70); i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+      ctx.stroke();
+    });
+  }
+
+  function renderAssessment(){
+    childOptions($('#assessmentChild')); $('#assessmentChild').onchange=()=>drawAssessment($('#assessmentChild').value); $('#assessmentPanel').innerHTML='<p class="muted">Select a child.</p>';
+  }
+  function drawAssessment(id){
+    const vs=visitsOf(id); if(!vs.length){$('#assessmentPanel').innerHTML='<p class="muted">No assessment data yet.</p>';return}
+    const first=vs[0],last=vs.at(-1);
+    const rows=Object.keys(last.scores||{}).map(k=>`<tr><td>${k}</td><td>${scoreLabel(first.scores?.[k])}</td><td>${scoreLabel(last.scores?.[k])}</td><td>${trendLabel(first.scores?.[k],last.scores?.[k])}</td></tr>`).join('');
+    $('#assessmentPanel').innerHTML=`<div class="metric-row">
+      <div class="metric"><span>Functional Score</span><strong>${(avgScore(last.scores)||0).toFixed(1)}/4</strong></div>
+      <div class="metric"><span>Ashtavidha</span><strong>${(avgScore(last.ashta)||0).toFixed(1)}/4</strong></div>
+      <div class="metric"><span>Dashavidha</span><strong>${(avgScore(last.dasha)||0).toFixed(1)}/4</strong></div>
+      <div class="metric"><span>Parent Impression</span><strong>${scoreLabel(last.parentImpression)}</strong></div>
+    </div>
+    <h4 style="margin-top:18px">Baseline vs Latest Functional Change</h4>
+    <table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderReports(){
+    childOptions($('#reportChild')); $('#reportChild').onchange=()=>populateReportVisits($('#reportChild').value);
+    $('#buildReport').onclick=buildReport; $('#printReport').onclick=()=>window.print(); $('#shareReport').onclick=shareReport; $('#whatsappReport').onclick=whatsappReport;
+  }
+  function populateReportVisits(id){
+    const sel=$('#reportVisit'); const vs=visitsOf(id); sel.innerHTML='<option value="latest">Latest / Longitudinal Report</option>'+vs.map(v=>`<option value="${v.id}">${fmtDate(v.date)} • ${esc(v.dose||'Visit')}</option>`).join('');
+  }
+  function buildMiniTrend(id){
+    const vs=visitsOf(id),first=vs[0],last=vs.at(-1),ch=childById(id);
+    return `<div><b>${esc(ch.name)}</b> • ${vs.length} visits • ${fmtDate(first.date)} → ${fmtDate(last.date)}</div>
+    <div class="metric-row" style="margin-top:10px">
+      ${['Learning','Memory','Playing','School Performance'].map(k=>`<div class="metric"><span>${k}</span><strong>${scoreLabel(last.scores?.[k])}</strong><small>${trendLabel(first.scores?.[k],last.scores?.[k])}</small></div>`).join('')}
+    </div>`;
+  }
+  function buildReport(){
+    const id=$('#reportChild').value;if(!id){alert('Select child');return}
+    const ch=childById(id),vs=visitsOf(id); if(!vs.length){$('#reportOutput').innerHTML='<p>No visit recorded.</p>';return}
+    const visitId=$('#reportVisit').value; const v=visitId==='latest'?vs.at(-1):vs.find(x=>x.id===visitId); const first=vs[0];
+    const functionalRows=Object.keys(v.scores||{}).map(k=>`<tr><td>${k}</td><td>${scoreLabel(first.scores?.[k])}</td><td>${scoreLabel(v.scores?.[k])}</td><td>${trendLabel(first.scores?.[k],v.scores?.[k])}</td></tr>`).join('');
+    const ashtaRows=Object.entries(v.ashta||{}).map(([k,val])=>`<tr><td>${k}</td><td>${scoreLabel(val)}</td></tr>`).join('');
+    const dashaRows=Object.entries(v.dasha||{}).map(([k,val])=>`<tr><td>${k}</td><td>${scoreLabel(val)}</td></tr>`).join('');
+    $('#reportOutput').innerHTML=`<div class="report-head"><div><h2>${esc(db.settings.clinicName)}</h2><b>Digital Swarnaprashan Prescription & Progress Report</b><div class="muted">${esc(db.settings.doctor)} • ${esc(db.settings.designation)}</div></div><div><b>${esc(ch.regId||'')}</b><br>${fmtDate(v.date)}</div></div>
+    <div class="report-section"><h3>Child Details</h3><div class="metric-row">
+      <div class="metric"><span>Name</span><strong>${esc(ch.name)}</strong><small>${ageText(ch.dob)} • ${esc(ch.sex)}</small></div>
+      <div class="metric"><span>Parent</span><strong>${esc(ch.parent||'-')}</strong><small>${esc(ch.mobile||'')}</small></div>
+      <div class="metric"><span>School</span><strong>${esc(ch.school||'-')}</strong></div>
+      <div class="metric"><span>Total Visits</span><strong>${vs.length}</strong><small>${fmtDate(vs[0].date)} → ${fmtDate(vs.at(-1).date)}</small></div>
+    </div></div>
+    <div class="report-section"><h3>Swarnaprashan Administration</h3><p><b>Dose:</b> ${esc(v.dose||'-')} &nbsp; <b>Batch/Preparation:</b> ${esc(v.batch||'-')}</p></div>
+    <div class="report-section"><h3>Growth & Vitals</h3><div class="metric-row">
+      <div class="metric"><span>Height</span><strong>${v.height||'-'} cm</strong></div><div class="metric"><span>Weight</span><strong>${v.weight||'-'} kg</strong></div>
+      <div class="metric"><span>BMI</span><strong>${v.bmi||'-'}</strong></div><div class="metric"><span>Vitals</span><strong>P ${v.pulse||'-'} • SpO₂ ${v.spo2||'-'}</strong><small>BP ${v.sys||'-'}/${v.dia||'-'} • RR ${v.rr||'-'}</small></div>
+    </div></div>
+    <div class="report-section"><h3>Medical Health at Visit</h3><p><b>Current issue:</b> ${esc(v.issue||'No significant issue recorded')}</p><p><b>Medication:</b> ${esc(v.meds||'-')}</p><p><b>Adverse event:</b> ${esc(v.ae||'None recorded')}</p></div>
+    <div class="report-section"><h3>Month-by-Month Functional Progress</h3><table><thead><tr><th>Parameter</th><th>Baseline</th><th>Current</th><th>Change</th></tr></thead><tbody>${functionalRows}</tbody></table></div>
+    <div class="report-section"><h3>Ashtavidha Pariksha</h3><table><tbody>${ashtaRows}</tbody></table></div>
+    <div class="report-section"><h3>Dashavidha Pariksha</h3><table><tbody>${dashaRows}</tbody></table></div>
+    <div class="report-section"><h3>Diet • Pathya • Lifestyle</h3><p><b>Pathya adherence:</b> ${scoreLabel(v.pathya)} &nbsp; <b>Lifestyle adherence:</b> ${scoreLabel(v.life)}</p>
+    <p>Maintain age-appropriate balanced diet, adequate hydration, regular sleep-wake schedule, active outdoor play, limited excessive screen time, hygiene, and individualized physician-advised Pathya/Apathya based on clinical need.</p></div>
+    <div class="report-section"><h3>Physician Notes</h3><p>${esc(v.notes||'-')}</p></div>
+    <div class="report-section"><h3>Digital Swarnaprashan Prescription</h3><p><b>Swarnaprashan:</b> ${esc(v.dose||'As advised')} on the scheduled clinic date / as clinically advised.</p><p><b>Follow-up:</b> Continue monthly longitudinal review of growth, health, cognition, activity and Ayurvedic assessment.</p></div>
+    <div style="border-top:1px solid #ddd;padding-top:12px;margin-top:18px"><b>${esc(db.settings.doctor)}</b><br><span class="muted">${esc(db.settings.address)} • ${esc(db.settings.phone)}<br>${esc(db.settings.footer)}</span></div>`;
+  }
+  function reportText(){
+    const el=$('#reportOutput'); return el.innerText.trim();
+  }
+  async function shareReport(){
+    const text=reportText(); if(!text){alert('Generate report first');return}
+    if(navigator.share){await navigator.share({title:'Mahamaya Clinic Swarnaprashan Report',text});}
+    else {await navigator.clipboard.writeText(text);alert('Report copied to clipboard');}
+  }
+  function whatsappReport(){
+    const text=reportText(); if(!text){alert('Generate report first');return}
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  }
+  function quickReport(id){showView('reports');$('#reportChild').value=id;populateReportVisits(id);}
+
+  function renderEducation(){
+    childOptions($('#eduChild')); $('#generatePlan').onclick=()=>{
+      const id=$('#eduChild').value;if(!id){alert('Select child');return} const ch=childById(id),type=$('#planType').value;
+      const plans={
+        'General Swarnaprashan Support':[
+          'Fresh, age-appropriate, balanced meals with adequate protein, fruits, vegetables and healthy fats.',
+          'Regular meal timing; avoid force-feeding and excessive packaged foods.',
+          'Adequate hydration and age-appropriate physical activity/outdoor play.',
+          'Consistent bedtime and wake time; reduce late-night screen exposure.',
+          'Maintain vaccination and routine pediatric care as advised.'
+        ],
+        'Low Appetite':['Small frequent nutritious meals','Avoid excessive snacking before meals','Assess persistent poor appetite, weight loss or red flags clinically','Use individualized Ayurveda dietary advice only after assessment'],
+        'Constipation':['Adequate water','Fiber-rich fruits and vegetables','Regular toilet routine','Outdoor activity','Seek medical review for pain, blood, vomiting or persistent constipation'],
+        'Poor Sleep':['Regular sleep schedule','Reduce evening screens','Quiet bedtime routine','Avoid heavy late meals','Assess snoring, breathing difficulty or persistent daytime sleepiness'],
+        'Frequent Illness':['Hand hygiene and sleep adequacy','Balanced diet and hydration','Avoid unnecessary antibiotics','Review vaccination status','Medical review for recurrent/severe infections or poor growth'],
+        'Learning & Memory Support':['Regular sleep','Structured study-play balance','Reading and recall activities','Adequate nutrition and hydration','Discuss persistent school difficulty with pediatric/educational professional when needed']
+      };
+      $('#planOutput').innerHTML=`<div class="report-head"><div><h2>${esc(db.settings.clinicName)}</h2><b>Parent Guidance Plan</b></div><div>${esc(ch.name)}</div></div><h3>${esc(type)}</h3><ul>${plans[type].map(x=>`<li>${x}</li>`).join('')}</ul><h3>Pathya</h3><p>Fresh, simple, seasonal, well-tolerated food; regular routine; adequate rest and play.</p><h3>Apathya</h3><p>Excess junk food, irregular meals, excessive screen time, chronic sleep deprivation, and unnecessary self-medication.</p><p class="muted">Individual advice should be modified according to age, constitution, diagnosis, allergies, nutritional status and treating physician assessment.</p>`;
+    };
+  }
+
+  function renderBackup(){
+    $('#downloadBackup').onclick=()=>download('swarnaprashan-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json');
+    $('#restoreBackup').onchange=async e=>{
+      const f=e.target.files[0];if(!f)return; try{const d=JSON.parse(await f.text()); if(!d.children||!d.visits)throw 0; db=d; db.settings={...defaultSettings,...(db.settings||{})};save();alert('Backup restored');showView('dashboard')}catch{alert('Invalid backup file')}
+    };
+    $('#exportCsv').onclick=()=>{
+      const head=['Child','RegID','Date','Dose','Height','Weight','BMI','Pulse','SpO2','BP','Issue','Learning','Memory','Playing','SchoolPerformance'];
+      const rows=db.visits.map(v=>{const ch=childById(v.childId)||{};return [ch.name,ch.regId,v.date,v.dose,v.height,v.weight,v.bmi,v.pulse,v.spo2,`${v.sys||''}/${v.dia||''}`,v.issue,v.scores?.Learning,v.scores?.Memory,v.scores?.Playing,v.scores?.['School Performance']]});
+      download('swarnaprashan-visits.csv',[head,...rows].map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'),'text/csv');
+    };
+  }
+  function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+  function renderSettings(){
+    $('#settingsForm').innerHTML=`<div class="form-grid">
+      <label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label>
+      <label>Doctor<input id="s_doctor" value="${esc(db.settings.doctor)}"></label>
+      <label>Designation<input id="s_designation" value="${esc(db.settings.designation)}"></label>
+      <label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label>
+      <label>Address<input id="s_address" value="${esc(db.settings.address)}"></label>
+    </div><label>Footer<textarea id="s_footer">${esc(db.settings.footer)}</textarea></label><div class="section-actions"><button id="saveSettings">Save Settings</button></div>`;
+    $('#saveSettings').onclick=()=>{db.settings={...db.settings,clinicName:$('#s_clinic').value,doctor:$('#s_doctor').value,designation:$('#s_designation').value,phone:$('#s_phone').value,address:$('#s_address').value,footer:$('#s_footer').value};save();alert('Settings saved')}
+  }
+
+  function init(){
+    document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+    $('#quickAddChild').onclick=()=>{showView('children');showChildForm()};
+    $('#quickVisit').onclick=()=>showView('monthly');
+    $('#globalSearch').oninput=e=>{
+      if(!e.target.value)return;
+      const q=e.target.value.toLowerCase(),hit=db.children.find(c=>[c.name,c.mobile,c.regId].join(' ').toLowerCase().includes(q));
+      if(hit){showView('children');$('#childSearch').value=e.target.value;drawChildrenTable(e.target.value)}
+    };
+    showView('dashboard');
+  }
+  return {init,showView,editChild:(id)=>{showView('children');showChildForm(id)},quickReport};
+})();
+document.addEventListener('DOMContentLoaded',app.init);

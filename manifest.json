@@ -1,14 +1,9 @@
 {
-  "name": "Swarnaprashan @ Mahamaya Clinic",
+  "name": "Mahamaya Clinic Swarnaprashan Clinical Tracker",
   "short_name": "Swarnaprashan",
-  "description": "Professional child registry, Swarnaprashan visit, growth and follow-up PWA",
-  "start_url": "./index.html?v=3.0",
-  "scope": "./",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#fbf8f1",
-  "theme_color": "#6f451b",
-  "icons": [
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
-  ]
+  "background_color": "#f6f3ec",
+  "theme_color": "#624526",
+  "icons": []
 }
