@@ -1,0 +1,9 @@
+{
+  "name":"Swarnaprashan Pro @ Mahamaya Clinic",
+  "short_name":"Swarnaprashan",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#fbf8f1",
+  "theme_color":"#173d33",
+  "description":"Professional Swarnaprashan child registry, visits, growth, vaccination, scheduling, print, share and backup PWA."
+}
