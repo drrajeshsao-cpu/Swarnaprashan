@@ -127,3 +127,23 @@ nav button.active::before{background:var(--tab)}
   #caseReportPreview *,#reportPaper *{visibility:visible!important}
   .reportpaper{position:static!important;width:100%!important}
 }
+
+/* V8.2 Direct Camera */
+.direct-camera-btn{width:100%;min-height:120px;font-size:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.direct-camera-btn span{font-size:11px;font-weight:600;margin-top:6px;color:#7b6b57}
+.camera-modal{position:fixed;inset:0;background:rgba(17,20,28,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:99999}
+.camera-modal.open{display:flex}
+.camera-dialog{width:min(760px,96vw);background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.35);padding:18px}
+.camera-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.camera-header h3{margin:4px 0 0;font-size:22px}
+.camera-close{padding:8px 11px}
+.camera-stage{position:relative;margin-top:14px;background:#101216;border-radius:16px;overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center}
+.camera-stage video{width:100%;height:100%;object-fit:cover;background:#101216}
+.camera-message{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:white;background:rgba(0,0,0,.45);padding:30px;font-weight:700}
+.camera-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.camera-actions button{min-width:150px}
+@media(max-width:680px){
+ .camera-dialog{padding:12px}
+ .camera-actions{display:grid;grid-template-columns:1fr}
+ .camera-actions button{width:100%}
+}

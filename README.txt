@@ -1,16 +1,26 @@
-SWARNAPRASHAN PRO V8.1 — PRINT / PDF FIX
+SWARNAPRASHAN PRO V8.2 — DIRECT CAMERA CAPTURE
 
-Fix:
-- Print / Save PDF no longer relies on printing the whole app screen.
-- It opens a clean A4 prescription/report document and then launches the browser print dialog.
-- Prevents blank PDF preview.
-- Separate functions for Clinical Prescription and Parent Progress Report.
-- Keeps V8 baby photo registry, dual-doctor letterhead, camera/documents, analytics, vaccination and Save & Next workflow.
+Key fix
+- 'Take Photo Now' now opens the browser camera directly using getUserMedia.
+- Live camera preview is shown inside the app.
+- Capture Photo button creates the image immediately.
+- Switch Camera supports front/rear cameras where available.
+- Works for:
+  1. Baby Identity Photo
+  2. Investigation / Clinical Photo
+  3. Monthly Follow-up Photo
+  4. Documents / Manual Swarnaprashan Card
+- Gallery/File/PDF remains available as fallback.
 
-Use:
-1. Generate Prescription/Report first.
-2. Click Print / Save PDF.
-3. A clean print window opens.
-4. Choose Save as PDF or printer.
+Important
+Browser will ask for camera permission on first use.
+GitHub Pages is HTTPS, so camera APIs are allowed when browser/device permissions permit them.
 
-Deploy by replacing repository root files and hard refresh with Ctrl+F5.
+Also retains:
+- V8.1 blank PDF print fix
+- dual-doctor letterhead
+- sequential child photo registry
+- Save & Next clinical workflow
+- analytics, vaccination, documents, backup and WhatsApp.
+
+Deploy root files, commit, wait for Pages, then Ctrl+F5.

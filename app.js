@@ -65,9 +65,54 @@ async function renderDashboard(){
 }
 function drawSnapshot(id){const fs=fups(id);if(fs.length<2){$('#dashSnapshot').innerHTML='<p class="muted">At least 2 follow-ups required.</p>';return}const a=fs[0],b=fs.at(-1);$('#dashSnapshot').innerHTML=`<div class="metricrow">${['Learning','Memory','Playing','School Performance'].map(k=>`<div class="metric"><span>${k}</span><b>${scoreLabel(b.scores?.[k])}</b>${trend(a.scores?.[k],b.scores?.[k])}</div>`).join('')}</div>`}
 
+
+// Direct in-browser camera capture using getUserMedia
+let cameraStream=null, cameraFacing='environment', cameraTargetCallback=null;
+async function startDirectCamera(title='Take Photo', onCaptured=null){
+  cameraTargetCallback=onCaptured;
+  const modal=$('#cameraModal'),video=$('#cameraVideo'),msg=$('#cameraMessage');
+  $('#cameraModalTitle').textContent=title;
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  msg.textContent='Starting camera…';msg.style.display='grid';
+  try{
+    if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraFacing}},audio:false});
+    video.srcObject=cameraStream;
+    await video.play();
+    msg.style.display='none';
+  }catch(err){
+    msg.innerHTML='Camera access is unavailable or blocked.<br><small>Please allow camera permission in the browser, or use Gallery/File.</small>';
+  }
+}
+function stopDirectCamera(){
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
+  const modal=$('#cameraModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+}
+async function switchDirectCamera(){
+  cameraFacing=cameraFacing==='environment'?'user':'environment';
+  await startDirectCamera($('#cameraModalTitle')?.textContent||'Take Photo',cameraTargetCallback);
+}
+async function captureDirectCamera(){
+  const video=$('#cameraVideo'),canvas=$('#cameraCanvas');
+  if(!video?.videoWidth){alert('Camera is not ready yet.');return}
+  const maxW=1280,scale=Math.min(1,maxW/video.videoWidth);
+  canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);
+  canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+  if(!blob)return;
+  const file=new File([blob],`camera_${new Date().toISOString().replace(/[:.]/g,'-')}.jpg`,{type:'image/jpeg'});
+  const cb=cameraTargetCallback;stopDirectCamera();
+  if(cb)await cb(file);
+}
+function bindCameraModal(){
+  $('#cameraCloseBtn').onclick=stopDirectCamera;
+  $('#cameraCancelBtn').onclick=stopDirectCamera;
+  $('#cameraSwitchBtn').onclick=switchDirectCamera;
+  $('#cameraCaptureBtn').onclick=captureDirectCamera;
+}
 // Guided clinical workflow
 const STEPS=['Profile','Examination','Investigations','Treatment','Prescription','Review & Share'];
-let wiz={step:0,caseId:null,data:{}};
+let wiz={step:0,caseId:null,data:{}};let wizardCameraFile=null;
 function startClinical(childId=''){showView('clinical');wiz={step:0,caseId:null,data:{childId,date:new Date().toISOString().slice(0,10)}};renderWizard()}
 function renderClinical(){if(!wiz.data||!Object.keys(wiz.data).length)wiz={step:0,caseId:null,data:{date:new Date().toISOString().slice(0,10)}};renderWizard()}
 function renderWizard(){
@@ -82,17 +127,26 @@ function wizardHtml(i){
  const d=wiz.data,scale=(name,val=2)=>`<label>${name}<select data-w="${name}">${scaleOptions(val)}</select></label>`;
  if(i===0)return`<div class="card"><h3>1. Patient Profile</h3><div class="formgrid"><label>Existing Child<select id="w_child"></select></label><label>Date<input id="w_date" type="date" value="${d.date||''}"></label><label>Visit Type<select id="w_type"><option>Initial Swarnaprashan</option><option>Monthly Follow-up</option><option>Clinical Review</option></select></label><label>Present Complaint<input id="w_complaint" value="${esc(d.complaint||'')}"></label><label>Allergy / Sensitivity<input id="w_allergy" value="${esc(d.allergy||'')}"></label><label>Current Medication<input id="w_currentMeds" value="${esc(d.currentMeds||'')}"></label></div><label>Relevant History<textarea id="w_history">${esc(d.history||'')}</textarea></label></div>`;
  if(i===1)return`<div class="card"><h3>2. Examination</h3><div class="formgrid"><label>Height cm<input id="w_height" type="number" step=".1" value="${d.height||''}"></label><label>Weight kg<input id="w_weight" type="number" step=".1" value="${d.weight||''}"></label><label>Temperature °F<input id="w_temp" type="number" step=".1" value="${d.temp||''}"></label><label>Pulse /min<input id="w_pulse" type="number" value="${d.pulse||''}"></label><label>RR /min<input id="w_rr" type="number" value="${d.rr||''}"></label><label>SpO₂ %<input id="w_spo2" type="number" value="${d.spo2||''}"></label><label>BP Systolic<input id="w_sys" type="number" value="${d.sys||''}"></label><label>BP Diastolic<input id="w_dia" type="number" value="${d.dia||''}"></label><label>General Appearance<input id="w_ga" value="${esc(d.ga||'')}"></label></div><div class="section"><h4>Functional Grading 0–4</h4><div class="scalegrid">${['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy'].map(x=>scale(x,d.examScores?.[x]??2)).join('')}</div></div><div class="section"><h4>Ashtavidha Pariksha</h4><div class="scalegrid">${['Nadi','Mala','Mutra','Jihva','Shabda','Sparsha','Drik','Akruti'].map(x=>scale('A:'+x,d.examScores?.['A:'+x]??2)).join('')}</div></div><div class="section"><h4>Dashavidha Pariksha</h4><div class="scalegrid">${['Prakriti','Vikriti','Sara','Samhanana','Pramana','Satmya','Satva','Ahara Shakti','Vyayama Shakti','Vaya'].map(x=>scale('D:'+x,d.examScores?.['D:'+x]??2)).join('')}</div></div><label>Examination Notes<textarea id="w_examNotes">${esc(d.examNotes||'')}</textarea></label></div>`;
- if(i===2)return`<div class="card"><h3>3. Investigations & Clinical Attachments</h3><div class="formgrid"><label>Investigation Summary<textarea id="w_invest">${esc(d.invest||'')}</textarea></label><label>Clinical Impression<textarea id="w_impression">${esc(d.impression||'')}</textarea></label><label>Red Flags / Safety Notes<textarea id="w_redflags">${esc(d.redflags||'')}</textarea></label></div><div class="upload-grid"><label class="uploadbox">📷 Camera<input id="w_camera" type="file" accept="image/*" capture="environment"></label><label class="uploadbox">🖼 Gallery / 📎 File / PDF<input id="w_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><p class="tiny muted">Files will be linked to this clinical entry when you press Save & Next.</p></div>`;
+ if(i===2)return`<div class="card"><h3>3. Investigations & Clinical Attachments</h3><div class="formgrid"><label>Investigation Summary<textarea id="w_invest">${esc(d.invest||'')}</textarea></label><label>Clinical Impression<textarea id="w_impression">${esc(d.impression||'')}</textarea></label><label>Red Flags / Safety Notes<textarea id="w_redflags">${esc(d.redflags||'')}</textarea></label></div><div class="upload-grid"><button type="button" id="w_direct_camera" class="uploadbox direct-camera-btn">📷 Open Camera Now<br><span>Live camera preview → Capture</span></button><label class="uploadbox">🖼 Gallery / 📎 File / PDF<input id="w_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><div id="w_camera_capture_name" class="selected-files"></div><p class="tiny muted">Files will be linked to this clinical entry when you press Save & Next.</p></div>`;
  if(i===3)return`<div class="card"><h3>4. Treatment Plan</h3><div class="formgrid"><label>Swarnaprashan Dose<input id="w_dose" value="${esc(d.dose||'')}"></label><label>Preparation / Batch<input id="w_batch" value="${esc(d.batch||'')}"></label><label>Next Follow-up<input id="w_next" type="date" value="${d.next||''}"></label><label>Other Medicines<textarea id="w_medicines">${esc(d.medicines||'')}</textarea></label><label>Diet / Pathya<textarea id="w_pathya">${esc(d.pathya||'')}</textarea></label><label>Apathya / Avoid<textarea id="w_apathya">${esc(d.apathya||'')}</textarea></label><label>Activity / Lifestyle<textarea id="w_lifestyle">${esc(d.lifestyle||'')}</textarea></label><label>School / Cognitive Advice<textarea id="w_cognitive">${esc(d.cognitive||'')}</textarea></label><label>Safety / Referral Advice<textarea id="w_safety">${esc(d.safety||'')}</textarea></label></div></div>`;
  if(i===4)return`<div class="card"><h3>5. Prescription Builder</h3><div class="formgrid"><label>Prescription Title<input id="w_rxTitle" value="${esc(d.rxTitle||'Digital Swarnaprashan Prescription')}"></label><label>Special Instructions<textarea id="w_rxInstructions">${esc(d.rxInstructions||'')}</textarea></label><label>Parent Message<textarea id="w_parentMsg">${esc(d.parentMsg||'')}</textarea></label></div><div class="section"><h4>Print Options</h4><label><input id="w_printGrowth" type="checkbox" ${d.printGrowth!==false?'checked':''}> Include growth summary</label><br><label><input id="w_printAssessment" type="checkbox" ${d.printAssessment!==false?'checked':''}> Include assessment summary</label><br><label><input id="w_printDocs" type="checkbox" ${d.printDocs!==false?'checked':''}> Include uploaded-document list</label></div></div>`;
  return`<div class="card"><h3>6. Review, Save, Print & Share</h3><div id="wizardReview"></div><div class="actionrow"><button onclick="app.generateCaseReport()">Generate Prescription</button><button class="ghost" onclick="app.printCaseReport()">Print / Save PDF</button><button class="ghost" onclick="app.shareCurrent()">Share</button><button class="ghost" onclick="app.whatsappCurrent()">WhatsApp</button></div></div><div id="caseReportPreview" class="reportpaper"></div>`;
 }
-function bindWizard(){const c=$('#w_child');if(c){options(c);c.value=wiz.data.childId||''}if(wiz.step===5){$('#wizardReview').innerHTML=reviewHtml();generateCaseReport(false)}}
+function bindWizard(){
+ const c=$('#w_child');if(c){options(c);c.value=wiz.data.childId||''}
+ if(wiz.step===2 && $('#w_direct_camera')){
+   $('#w_direct_camera').onclick=()=>startDirectCamera('Investigation / Clinical Photo',async(file)=>{
+     wizardCameraFile=file;
+     $('#w_camera_capture_name').innerHTML=`<span class="file-chip">📷 ${esc(file.name)} captured</span>`;
+   });
+ }
+ if(wiz.step===5){$('#wizardReview').innerHTML=reviewHtml();generateCaseReport(false)}
+}
 async function collectWizard(){
  const d=wiz.data;
  if(wiz.step===0){d.childId=$('#w_child')?.value||d.childId;d.date=$('#w_date')?.value;d.type=$('#w_type')?.value;d.complaint=$('#w_complaint')?.value;d.allergy=$('#w_allergy')?.value;d.currentMeds=$('#w_currentMeds')?.value;d.history=$('#w_history')?.value}
  if(wiz.step===1){['height','weight','temp','pulse','rr','spo2','sys','dia','ga','examNotes'].forEach(k=>d[k]=$('#w_'+k)?.value);d.examScores={};$$('[data-w]').forEach(e=>d.examScores[e.dataset.w]=Number(e.value));d.bmi=d.height&&d.weight?(+d.weight/((+d.height/100)**2)).toFixed(2):''}
- if(wiz.step===2){d.invest=$('#w_invest')?.value;d.impression=$('#w_impression')?.value;d.redflags=$('#w_redflags')?.value;if(!wiz.caseId)wiz.caseId=uid();const arr=[];if($('#w_camera')?.files?.[0])arr.push($('#w_camera').files[0]);if($('#w_files')?.files?.length)arr.push(...$('#w_files').files);for(const f of arr)await putDoc({id:uid(),childId:d.childId||'',caseId:wiz.caseId,type:'Investigation / Clinical Attachment',date:d.date||new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:''})}
+ if(wiz.step===2){d.invest=$('#w_invest')?.value;d.impression=$('#w_impression')?.value;d.redflags=$('#w_redflags')?.value;if(!wiz.caseId)wiz.caseId=uid();const arr=[];if(wizardCameraFile)arr.push(wizardCameraFile);if($('#w_files')?.files?.length)arr.push(...$('#w_files').files);for(const f of arr)await putDoc({id:uid(),childId:d.childId||'',caseId:wiz.caseId,type:'Investigation / Clinical Attachment',date:d.date||new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:''});wizardCameraFile=null}
  if(wiz.step===3)['dose','batch','next','medicines','pathya','apathya','lifestyle','cognitive','safety'].forEach(k=>d[k]=$('#w_'+k)?.value);
  if(wiz.step===4){['rxTitle','rxInstructions','parentMsg'].forEach(k=>d[k]=$('#w_'+k)?.value);d.printGrowth=$('#w_printGrowth')?.checked;d.printAssessment=$('#w_printAssessment')?.checked;d.printDocs=$('#w_printDocs')?.checked}
 }
@@ -157,13 +211,19 @@ async function editChild(id=''){
    const url=URL.createObjectURL(f),img=$('#photoPreview');img.src=url;img.style.display='block';
    const ph=$('#photoPreviewPlaceholder');if(ph)ph.style.display='none';
  };
- $('#c_photo_camera').onchange=e=>preview(e.target);
+ let directCameraFile=null;
+ $('#c_direct_camera').onclick=()=>startDirectCamera('Baby Identity Photo',async(file)=>{
+   directCameraFile=file;
+   const url=URL.createObjectURL(file),img=$('#photoPreview');img.src=url;img.style.display='block';
+   const ph=$('#photoPreviewPlaceholder');if(ph)ph.style.display='none';
+   $('#cameraCapturedName').innerHTML=`<span class="file-chip">📷 ${esc(file.name)} captured</span>`;
+ });
  $('#c_photo_gallery').onchange=e=>preview(e.target);
  $('#saveChild').onclick=async()=>{
    const x={id:id||uid(),name:$('#c_name').value.trim(),dob:$('#c_dob').value,sex:$('#c_sex').value,parent:$('#c_parent').value,mobile:$('#c_mobile').value,regId:$('#c_reg').value,school:$('#c_school').value,address:$('#c_address').value,allergies:$('#c_allergy').value,history:$('#c_history').value,photoDocId:c.photoDocId||''};
    if(!x.name){alert('Child name is required');return}
    if(!x.dob){alert('Date of birth is required');return}
-   const f=$('#c_photo_camera').files[0]||$('#c_photo_gallery').files[0];
+   const f=directCameraFile||$('#c_photo_gallery').files[0];
    if(!id && !f){alert('Please add the baby identity photo using Camera or Gallery.');return}
    if(f){const doc={id:uid(),childId:x.id,type:'Baby Profile Photo',date:new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:'Identity profile photo'};await putDoc(doc);x.photoDocId=doc.id}
    if(id)db.children=db.children.map(y=>y.id===id?x:y);else db.children.push(x);
@@ -196,15 +256,18 @@ async function drawChildren(q){
 }
 // Followup
 const scales=['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy','Illness Frequency'];
+let followupCameraFile=null;
 function renderFollowup(){
  options($('#followupChild'));$('#followupChild').onchange=()=>drawTimeline($('#followupChild').value);
  $('#followupForm').innerHTML=`<div class="formgrid"><label>Child<select id="f_child"></select></label><label>Date<input id="f_date" type="date"></label><label>Swarnaprashan Dose<input id="f_dose"></label><label>Batch/Preparation<input id="f_batch"></label><label>Height cm<input id="f_height" type="number" step=".1"></label><label>Weight kg<input id="f_weight" type="number" step=".1"></label><label>Pulse<input id="f_pulse" type="number"></label><label>RR<input id="f_rr" type="number"></label><label>SpO₂<input id="f_spo2" type="number"></label><label>BP<input id="f_bp" placeholder="e.g. 100/60"></label></div>
  <div class="section"><h4>Health & Functional Grading 0–4</h4><div class="scalegrid">${scales.map(x=>`<div class="scalebox"><b>${x}</b><select data-fscore="${x}">${scaleOptions()}</select></div>`).join('')}</div></div>
  <div class="formgrid"><label>Current Health Issue<textarea id="f_issue"></textarea></label><label>Medical / Treatment Notes<textarea id="f_med"></textarea></label><label>Parent Observation<textarea id="f_parent"></textarea></label></div>
- <div class="upload-grid"><label class="uploadbox">📷 Follow-up Photo / Camera<input id="f_camera" type="file" accept="image/*" capture="environment"></label><label class="uploadbox">📎 Follow-up File / PDF<input id="f_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><button id="saveFollow">Save Follow-up</button>`;
- options($('#f_child'));$('#f_date').value=new Date().toISOString().slice(0,10);$('#saveFollow').onclick=saveFollow;
+ <div class="upload-grid"><button type="button" id="f_direct_camera" class="uploadbox direct-camera-btn">📷 Open Camera Now<br><span>Live camera preview → Capture</span></button><label class="uploadbox">📎 Follow-up File / PDF<input id="f_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><div id="f_camera_capture_name" class="selected-files"></div><button id="saveFollow">Save Follow-up</button>`;
+ options($('#f_child'));$('#f_date').value=new Date().toISOString().slice(0,10);
+ $('#f_direct_camera').onclick=()=>startDirectCamera('Follow-up Clinical Photo',async(file)=>{followupCameraFile=file;$('#f_camera_capture_name').innerHTML=`<span class="file-chip">📷 ${esc(file.name)} captured</span>`});
+ $('#saveFollow').onclick=saveFollow;
 }
-async function saveFollow(){const id=$('#f_child').value;if(!id){alert('Select child');return}const s={};$$('[data-fscore]').forEach(e=>s[e.dataset.fscore]=Number(e.value));const h=+$('#f_height').value||0,w=+$('#f_weight').value||0,followId=uid();db.followups.push({id:followId,childId:id,date:$('#f_date').value,dose:$('#f_dose').value,batch:$('#f_batch').value,height:h,weight:w,bmi:h&&w?(w/((h/100)**2)).toFixed(2):'',pulse:$('#f_pulse').value,rr:$('#f_rr').value,spo2:$('#f_spo2').value,bp:$('#f_bp').value,scores:s,issue:$('#f_issue').value,med:$('#f_med').value,parent:$('#f_parent').value});const arr=[];if($('#f_camera').files[0])arr.push($('#f_camera').files[0]);if($('#f_files').files.length)arr.push(...$('#f_files').files);for(const f of arr)await putDoc({id:uid(),childId:id,followupId:followId,type:'Follow-up Attachment',date:$('#f_date').value,name:f.name,mime:f.type,size:f.size,blob:f,note:''});save();alert('Follow-up saved');showView('followup');$('#followupChild').value=id;drawTimeline(id)}
+async function saveFollow(){const id=$('#f_child').value;if(!id){alert('Select child');return}const s={};$$('[data-fscore]').forEach(e=>s[e.dataset.fscore]=Number(e.value));const h=+$('#f_height').value||0,w=+$('#f_weight').value||0,followId=uid();db.followups.push({id:followId,childId:id,date:$('#f_date').value,dose:$('#f_dose').value,batch:$('#f_batch').value,height:h,weight:w,bmi:h&&w?(w/((h/100)**2)).toFixed(2):'',pulse:$('#f_pulse').value,rr:$('#f_rr').value,spo2:$('#f_spo2').value,bp:$('#f_bp').value,scores:s,issue:$('#f_issue').value,med:$('#f_med').value,parent:$('#f_parent').value});const arr=[];if(followupCameraFile)arr.push(followupCameraFile);if($('#f_files').files.length)arr.push(...$('#f_files').files);for(const f of arr)await putDoc({id:uid(),childId:id,followupId:followId,type:'Follow-up Attachment',date:$('#f_date').value,name:f.name,mime:f.type,size:f.size,blob:f,note:''});followupCameraFile=null;save();alert('Follow-up saved');showView('followup');$('#followupChild').value=id;drawTimeline(id)}
 function drawTimeline(id){const fs=fups(id);$('#followupTimeline').innerHTML=!id?'<p class="muted">Select a child.</p>':`<table><thead><tr><th>Date</th><th>Dose</th><th>Growth</th><th>Vitals</th><th>Health</th><th>Overall</th></tr></thead><tbody>${fs.map((f,i)=>`<tr><td>${fmt(f.date)}</td><td>${esc(f.dose||'-')}</td><td>${f.height||'-'} cm • ${f.weight||'-'} kg<br>BMI ${f.bmi||'-'}</td><td>P ${f.pulse||'-'} • SpO₂ ${f.spo2||'-'}<br>BP ${esc(f.bp||'-')}</td><td>${esc(f.issue||'No issue')}</td><td>${i?trend(avg(fs[i-1].scores),avg(f.scores)):'Baseline'}</td></tr>`).join('')}</tbody></table>`}
 
 // Analytics
@@ -220,7 +283,9 @@ function drawVax(){const id=$('#vaxFilter')?.value||'';const a=db.vaccines.filte
 
 // Documents
 let pickedFiles=[];
-async function renderDocuments(){options($('#docChild'));options($('#docFilterChild'));$('#docDate').value=new Date().toISOString().slice(0,10);pickedFiles=[];$('#cameraInput').onchange=e=>{pickedFiles.push(...e.target.files);renderPicked()};$('#fileInput').onchange=e=>{pickedFiles.push(...e.target.files);renderPicked()};$('#saveDocs').onclick=saveDocs;$('#docFilterChild').onchange=drawDocs;await drawDocs()}
+async function renderDocuments(){options($('#docChild'));options($('#docFilterChild'));$('#docDate').value=new Date().toISOString().slice(0,10);pickedFiles=[];
+ $('#directDocCamera').onclick=()=>startDirectCamera('Document / Manual Card Photo',async(file)=>{pickedFiles.push(file);renderPicked()});
+ $('#fileInput').onchange=e=>{pickedFiles.push(...e.target.files);renderPicked()};$('#saveDocs').onclick=saveDocs;$('#docFilterChild').onchange=drawDocs;await drawDocs()}
 function renderPicked(){$('#selectedFiles').innerHTML=pickedFiles.map(f=>`<span class="file-chip">${esc(f.name)} • ${(f.size/1024).toFixed(0)} KB</span>`).join('')}
 async function saveDocs(){const id=$('#docChild').value;if(!id){alert('Select child');return}if(!pickedFiles.length){alert('Capture or select at least one file');return}for(const f of pickedFiles)await putDoc({id:uid(),childId:id,type:$('#docType').value,date:$('#docDate').value,note:$('#docNote').value,name:f.name,mime:f.type,size:f.size,blob:f});pickedFiles=[];renderPicked();alert('Document(s) saved');drawDocs()}
 async function drawDocs(){const filter=$('#docFilterChild')?.value||'',docs=(await getDocs()).filter(d=>!filter||d.childId===filter).sort((a,b)=>String(b.date).localeCompare(String(a.date)));$('#docList').innerHTML=docs.map(d=>{const c=child(d.childId)||{};return`<div class="docitem"><b>${esc(d.type)}</b><div>${esc(d.name)}</div><div class="docmeta">${esc(c.name||'')} • ${fmt(d.date)} • ${(d.size/1024).toFixed(0)} KB</div><div class="actionrow"><button class="ghost" onclick="app.openDoc('${d.id}')">Open</button><button class="ghost" onclick="app.downloadDoc('${d.id}')">Download</button><button class="ghost" onclick="app.removeDoc('${d.id}')">Delete</button></div></div>`}).join('')||'<p class="muted">No documents saved.</p>'}
@@ -331,7 +396,7 @@ function printParentReport(){
   printHtmlContent(el.innerHTML,'Mahamaya Clinic - Swarnaprashan Progress Report');
 }
 
-function init(){openIDB().catch(()=>{});$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');$('#childSearch').value=q;drawChildren(q)};showView('dashboard')}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport};
+function init(){openIDB().catch(()=>{});bindCameraModal();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');$('#childSearch').value=q;drawChildren(q)};showView('dashboard')}
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera};
 })();
 document.addEventListener('DOMContentLoaded',app.init);

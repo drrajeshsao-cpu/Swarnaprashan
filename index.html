@@ -170,9 +170,7 @@
         <label>Notes<input id="docNote" placeholder="Optional note"></label>
       </div>
       <div class="upload-grid">
-        <label class="uploadbox">📷 Open Camera
-          <input id="cameraInput" type="file" accept="image/*" capture="environment">
-        </label>
+        <button type="button" id="directDocCamera" class="uploadbox direct-camera-btn">📷 Open Camera Now<br><span>Live camera preview → Capture</span></button>
         <label class="uploadbox">🖼 Gallery / 📎 File / PDF
           <input id="fileInput" type="file" multiple accept="image/*,.pdf,.doc,.docx">
         </label>
@@ -237,6 +235,30 @@
 <template id="settingsTpl">
   <div class="card"><h3>Clinic & Prescription Settings</h3><div id="settingsForm"></div></div>
 </template>
+
+
+<div id="cameraModal" class="camera-modal" aria-hidden="true">
+  <div class="camera-dialog">
+    <div class="camera-header">
+      <div>
+        <span class="eyebrow">DIRECT CAMERA CAPTURE</span>
+        <h3 id="cameraModalTitle">Take Photo</h3>
+      </div>
+      <button id="cameraCloseBtn" class="ghost camera-close">✕</button>
+    </div>
+    <div class="camera-stage">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <canvas id="cameraCanvas" style="display:none"></canvas>
+      <div id="cameraMessage" class="camera-message">Starting camera…</div>
+    </div>
+    <div class="camera-actions">
+      <button id="cameraSwitchBtn" class="ghost">↺ Switch Camera</button>
+      <button id="cameraCaptureBtn">📷 Capture Photo</button>
+      <button id="cameraCancelBtn" class="ghost">Cancel</button>
+    </div>
+    <p class="tiny muted">On first use, allow camera permission in the browser. If camera access is blocked, use Gallery/File as fallback.</p>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>
