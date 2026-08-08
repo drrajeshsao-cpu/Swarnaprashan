@@ -39,3 +39,83 @@ canvas{width:100%;background:white;border:1px solid #eee;border-radius:12px}.but
 @media(max-width:1100px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.side-note{display:none}.hero{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.top-actions input{width:100%}.kpis,.formgrid,.metricrow,.scalegrid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.main{padding:16px}.grid2,.kpis,.formgrid,.metricrow,.scalegrid,.upload-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.top-actions>*{width:100%}.hero h2{font-size:26px}.wizard-title{align-items:flex-start;flex-direction:column}}
 @media print{.sidebar,.topbar,.card:not(.printable),.sticky-actions,.no-print{display:none!important}.app{display:block}.main{padding:0}.reportpaper{border:0;box-shadow:none;margin:0;padding:0}body{background:white}}
+
+
+/* V8 premium identity + navigation polish */
+nav button{
+  position:relative;border:1px solid transparent;border-radius:13px;
+  font-weight:760;letter-spacing:.005em;transition:.18s ease;
+}
+nav button::before{
+  content:"";position:absolute;left:0;top:9px;bottom:9px;width:4px;border-radius:99px;background:transparent;
+}
+nav button[data-view="dashboard"]{--tab:#9b6c2c}
+nav button[data-view="clinical"]{--tab:#8a4d34}
+nav button[data-view="children"]{--tab:#b78a25}
+nav button[data-view="followup"]{--tab:#2f7a61}
+nav button[data-view="analytics"]{--tab:#3d6f9f}
+nav button[data-view="vaccination"]{--tab:#527f55}
+nav button[data-view="documents"]{--tab:#755d9b}
+nav button[data-view="reports"]{--tab:#a35c43}
+nav button[data-view="education"]{--tab:#5f8b68}
+nav button[data-view="backup"]{--tab:#68717c}
+nav button[data-view="settings"]{--tab:#6a5d51}
+nav button:hover{border-color:#eee5d8;transform:translateX(2px)}
+nav button.active{
+  background:linear-gradient(90deg,color-mix(in srgb,var(--tab) 14%,white),#fff);
+  color:#2a2730;border-color:color-mix(in srgb,var(--tab) 25%,white);box-shadow:0 7px 18px rgba(60,45,25,.06);
+}
+nav button.active::before{background:var(--tab)}
+.brand{border-bottom:1px solid #f0e9dd;margin-bottom:10px}
+.brand strong{font-size:19px;letter-spacing:-.02em}
+.topbar h1{letter-spacing:-.025em}
+.card h3,.wizard-title h2{letter-spacing:-.015em}
+.children-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#766957}
+.children-table tbody tr:hover{background:#fffaf1}
+.seqno{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#f4ecdf;color:#6b4b29;font-weight:900}
+.seqcell{width:45px}
+.id-badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#f2eee8;color:#5e5347;font-size:11px;font-weight:900}
+.child-name{font-size:15px;font-weight:900;color:#182033}
+.child-sub{font-size:11px;margin-top:3px}
+.followup-count{display:inline-grid;place-items:center;min-width:31px;height:31px;border-radius:999px;background:#eaf4ee;color:#2d7755;font-weight:900}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.row-actions button{padding:8px 11px;font-size:12px}
+.registry-summary{padding:10px 2px;color:#766957;font-size:12px}
+.registry-summary b{color:#5f4327;font-size:15px}
+.photo-pending,.photo-status{display:inline-block;margin-top:5px;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:850}
+.photo-pending,.photo-status.pending{background:#fff0d8;color:#8a5a18}
+.photo-status.ok{background:#e6f5eb;color:#2d7755}
+.avatar-xl{width:128px;height:128px;border-radius:22px;object-fit:cover;border:2px solid #e2d5c1;background:#faf6ef;box-shadow:0 8px 24px rgba(75,52,26,.10)}
+.avatar-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:40px;color:#8b755b}
+.avatar-placeholder span{font-size:10px;margin-top:4px;font-weight:800}
+.avatar-placeholder.mini{width:48px;height:48px;border-radius:50%;font-size:21px}
+.profile-photo-panel{text-align:center}
+.profile-section{background:linear-gradient(180deg,#fff,#fcfaf6)}
+.camera-box{background:#fff8e9;border-color:#d9b874}
+.gallery-box{background:#f7f7ff;border-color:#beb7dd}
+
+/* Premium letterhead */
+.letterhead{
+  border-bottom:2px solid #c79a45;padding-bottom:12px;margin-bottom:18px;
+}
+.letterhead-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.clinic-identity{display:flex;gap:13px;align-items:center}
+.letter-logo{width:54px;height:54px;border-radius:15px;background:linear-gradient(135deg,#e8c57b,#694622);color:#fff;display:grid;place-items:center;font-size:26px;font-weight:900}
+.clinic-name{font-size:25px;line-height:1;font-weight:950;letter-spacing:.015em;color:#6a431c}
+.rx-title{font-size:16px;font-weight:900;margin-top:5px;color:#172033}
+.letter-date{font-size:13px;text-align:right}
+.doctor-strip{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:11px}
+.doctor-card{padding:9px 11px;border-radius:11px;background:#faf6ef;border:1px solid #eee2d1}
+.doctor-card b{display:block;font-size:13px;color:#2a3140}
+.doctor-card span{display:block;font-size:11px;color:#6f7480;margin-top:2px}
+.clinic-address{margin-top:8px;font-size:11px;font-weight:760;color:#6d6255}
+.patient-head-id{margin-top:4px;font-weight:850}
+.signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:10px}
+.signature-grid b{color:#50371f}
+.signature-grid span{font-size:11px;color:#6d7480}
+.signature-address{font-size:11px;color:#6b6f77;border-top:1px dashed #ddd;padding-top:8px}
+@media(max-width:680px){
+  .doctor-strip,.signature-grid{grid-template-columns:1fr}
+  .letterhead-top{flex-direction:column}
+  .letter-date{text-align:left}
+}

@@ -1,7 +1,7 @@
 
 const app=(()=>{
 const KEY='mahamaya_swarnaprashan_v7';
-const defaults={clinicName:'Mahamaya Clinic',doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',designation:'Consultant Physician • Ayurveda',phone:'',address:'Bhatagaon, Raipur',footer:'Clinical follow-up record and parent education. Seek urgent medical care for emergency symptoms.'};
+const defaults={clinicName:'MAHAMAYA CLINIC',prescriptionTitle:'Swarnaprashan Digital Prescription',doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',designation:'Consultant Physician • Ayurveda',doctor2:'Dr. Ravi Chandrakar, B.A.M.S.',designation2:'Consultant Physician • Ayurveda',phone:'',address:'In front of India 1 ATM, Sheetla Chowk, Bhatagaon, Raipur',footer:'Clinical follow-up record and parent education. Seek urgent medical care for emergency symptoms.'};
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
 db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -26,6 +26,26 @@ async function docById(id){return (await getDocs()).find(d=>d.id===id)}
 async function avatarUrl(c){if(!c?.photoDocId)return'';const d=await docById(c.photoDocId);return d?URL.createObjectURL(d.blob):''}
 
 function options(sel,blank=true){sel.innerHTML=(blank?'<option value="">Select child</option>':'')+db.children.map(c=>`<option value="${c.id}">${esc(c.name)} • ${esc(c.regId||c.id.slice(-5).toUpperCase())}</option>`).join('')}
+
+function letterhead(dateText='', rightHtml=''){
+ return `<div class="letterhead">
+   <div class="letterhead-top">
+     <div class="clinic-identity">
+       <div class="letter-logo">स्व</div>
+       <div>
+         <div class="clinic-name">${esc(db.settings.clinicName||'MAHAMAYA CLINIC')}</div>
+         <div class="rx-title">${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}</div>
+       </div>
+     </div>
+     <div class="letter-date">${rightHtml||esc(dateText||'')}</div>
+   </div>
+   <div class="doctor-strip">
+     <div class="doctor-card"><b>${esc(db.settings.doctor||'')}</b><span>${esc(db.settings.designation||'')}</span></div>
+     <div class="doctor-card"><b>${esc(db.settings.doctor2||'')}</b><span>${esc(db.settings.designation2||'')}</span></div>
+   </div>
+   <div class="clinic-address">${esc(db.settings.address||'')}</div>
+ </div>`;
+}
 
 function showView(name){
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
@@ -81,14 +101,14 @@ function reviewHtml(){const d=wiz.data,c=child(d.childId)||{};return`<div class=
 async function generateCaseReport(scroll=true){
  const d=wiz.data,c=child(d.childId)||{},docs=(await getDocs()).filter(x=>x.childId===d.childId),el=$('#caseReportPreview')||$('#reportPaper');if(!el)return;
  let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
- el.innerHTML=`<div class="reporthead"><div><h2>${esc(db.settings.clinicName)}</h2><b>${esc(d.rxTitle||'Digital Swarnaprashan Prescription')}</b><div class="muted">${esc(db.settings.doctor)} • ${esc(db.settings.designation)}</div></div><div>${photo?`<img src="${photo}" class="avatar-lg">`:''}<br><b>${esc(c.regId||'')}</b><br>${fmt(d.date)}</div></div>
+ el.innerHTML=`${letterhead(fmt(d.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(d.date)}</div>`)}
  <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name||'-')}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Height / Weight</span><b>${d.height||'-'} cm / ${d.weight||'-'} kg</b></div><div class="metric"><span>BMI</span><b>${d.bmi||'-'}</b></div></div></div>
  <div class="reportsection"><h3>Clinical Assessment</h3><p><b>Complaint:</b> ${esc(d.complaint||'-')}</p><p><b>Impression:</b> ${esc(d.impression||'-')}</p><p><b>Vitals:</b> Pulse ${d.pulse||'-'} • RR ${d.rr||'-'} • SpO₂ ${d.spo2||'-'}% • BP ${d.sys||'-'}/${d.dia||'-'}</p><p><b>Safety / Red flags:</b> ${esc(d.redflags||'None recorded')}</p></div>
  <div class="reportsection"><h3>Swarnaprashan & Treatment</h3><p><b>Swarnaprashan Dose:</b> ${esc(d.dose||'-')} &nbsp; <b>Preparation/Batch:</b> ${esc(d.batch||'-')}</p><p><b>Other medicines:</b> ${esc(d.medicines||'-')}</p><p><b>Next follow-up:</b> ${fmt(d.next)}</p></div>
  <div class="reportsection"><h3>Diet • Pathya • Lifestyle</h3><p><b>Pathya:</b> ${esc(d.pathya||'-')}</p><p><b>Apathya:</b> ${esc(d.apathya||'-')}</p><p><b>Activity/Lifestyle:</b> ${esc(d.lifestyle||'-')}</p><p><b>Learning/School advice:</b> ${esc(d.cognitive||'-')}</p></div>
  <div class="reportsection"><h3>Instructions</h3><p>${esc(d.rxInstructions||'-')}</p><p><b>Parent message:</b> ${esc(d.parentMsg||'-')}</p></div>
  ${d.printDocs!==false?`<div class="reportsection"><h3>Attached Clinical Documents</h3><ul>${docs.map(x=>`<li>${esc(x.type)} — ${esc(x.name)} (${fmt(x.date)})</li>`).join('')||'<li>No document attached</li>'}</ul></div>`:''}
- <div class="signature"><b>${esc(db.settings.doctor)}</b><br><span class="muted">${esc(db.settings.address)} • ${esc(db.settings.phone)}<br>${esc(db.settings.footer)}</span></div>`;
+ <div class="signature"><div class="signature-grid"><div><b>${esc(db.settings.doctor)}</b><br><span>${esc(db.settings.designation)}</span></div><div><b>${esc(db.settings.doctor2)}</b><br><span>${esc(db.settings.designation2)}</span></div></div><div class="signature-address">${esc(db.settings.address)} ${db.settings.phone?'• '+esc(db.settings.phone):''}<br>${esc(db.settings.footer)}</div></div>`;
  if(scroll)el.scrollIntoView({behavior:'smooth'});
 }
 function currentText(){const e=$('#caseReportPreview')||$('#reportPaper');return e?.innerText.trim()||''}
@@ -99,19 +119,81 @@ function whatsappCurrent(){const t=currentText();if(!t){alert('Generate report f
 function renderChildren(){$('#registerChildBtn').onclick=()=>editChild();$('#childSearch').oninput=()=>drawChildren($('#childSearch').value);drawChildren('')}
 async function editChild(id=''){
  const c=id?child(id):{};let photo='';if(c?.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
- $('#childEditor').innerHTML=`<div class="card"><div class="cardhead"><div><h3>${id?'Edit':'Register'} Child</h3><p class="muted">Add baby photo using camera or gallery.</p></div>${photo?`<img src="${photo}" class="avatar-lg">`:''}</div>
- <div class="formgrid"><label>Name<input id="c_name" value="${esc(c.name||'')}"></label><label>Date of Birth<input id="c_dob" type="date" value="${c.dob||''}"></label><label>Sex<select id="c_sex"><option ${c.sex==='Male'?'selected':''}>Male</option><option ${c.sex==='Female'?'selected':''}>Female</option><option>Other</option></select></label><label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label><label>Mobile / WhatsApp<input id="c_mobile" value="${esc(c.mobile||'')}"></label><label>Registration ID<input id="c_reg" value="${esc(c.regId||('SW'+String(db.children.length+1).padStart(4,'0')))}"></label><label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label><label>Address<input id="c_address" value="${esc(c.address||'')}"></label><label>Allergies<input id="c_allergy" value="${esc(c.allergies||'')}"></label></div>
- <div class="upload-grid"><label class="uploadbox">📷 Baby Photo - Camera<input id="c_photo_camera" type="file" accept="image/*" capture="environment"></label><label class="uploadbox">🖼 Baby Photo - Gallery<input id="c_photo_gallery" type="file" accept="image/*"></label></div>
- <label>Birth / Medical / Developmental History<textarea id="c_history">${esc(c.history||'')}</textarea></label>
- <div class="actionrow"><button id="saveChild">Save Child</button><button class="ghost" id="cancelChild">Cancel</button></div></div>`;
- $('#saveChild').onclick=async()=>{const x={id:id||uid(),name:$('#c_name').value.trim(),dob:$('#c_dob').value,sex:$('#c_sex').value,parent:$('#c_parent').value,mobile:$('#c_mobile').value,regId:$('#c_reg').value,school:$('#c_school').value,address:$('#c_address').value,allergies:$('#c_allergy').value,history:$('#c_history').value,photoDocId:c.photoDocId||''};if(!x.name){alert('Name required');return}const f=$('#c_photo_camera').files[0]||$('#c_photo_gallery').files[0];if(f){const doc={id:uid(),childId:x.id,type:'Baby Profile Photo',date:new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:'Profile photo'};await putDoc(doc);x.photoDocId=doc.id}if(id)db.children=db.children.map(y=>y.id===id?x:y);else db.children.push(x);save();$('#childEditor').innerHTML='';drawChildren('')};$('#cancelChild').onclick=()=>$('#childEditor').innerHTML=''
+ $('#childEditor').innerHTML=`<div class="card profile-editor">
+   <div class="cardhead">
+     <div><span class="eyebrow">CHILD IDENTITY PROFILE</span><h3>${id?'Edit':'Register'} Child</h3><p class="muted">Baby identity photo is kept with the profile so the child can be recognized quickly in the registry.</p></div>
+     <div class="profile-photo-panel">
+       ${photo?`<img id="photoPreview" src="${photo}" class="avatar-xl">`:`<div id="photoPreviewPlaceholder" class="avatar-xl avatar-placeholder">👶<span>Photo required</span></div><img id="photoPreview" class="avatar-xl" style="display:none">`}
+       <span class="photo-status ${c.photoDocId?'ok':'pending'}">${c.photoDocId?'Identity photo saved':'Identity photo pending'}</span>
+     </div>
+   </div>
+   <div class="section profile-section">
+     <h4>Identity & Contact</h4>
+     <div class="formgrid">
+       <label>Child Name *<input id="c_name" value="${esc(c.name||'')}" placeholder="Full name"></label>
+       <label>Date of Birth *<input id="c_dob" type="date" value="${c.dob||''}"></label>
+       <label>Sex<select id="c_sex"><option ${c.sex==='Male'?'selected':''}>Male</option><option ${c.sex==='Female'?'selected':''}>Female</option><option>Other</option></select></label>
+       <label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label>
+       <label>Mobile / WhatsApp<input id="c_mobile" value="${esc(c.mobile||'')}"></label>
+       <label>Registration ID<input id="c_reg" value="${esc(c.regId||('SW'+String(db.children.length+1).padStart(4,'0')))}"></label>
+       <label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label>
+       <label>Address<input id="c_address" value="${esc(c.address||'')}"></label>
+       <label>Allergies<input id="c_allergy" value="${esc(c.allergies||'')}"></label>
+     </div>
+   </div>
+   <div class="section photo-section">
+     <h4>Baby Identity Photo *</h4>
+     <div class="upload-grid">
+       <label class="uploadbox camera-box">📷 Take Photo Now<input id="c_photo_camera" type="file" accept="image/*" capture="environment"></label>
+       <label class="uploadbox gallery-box">🖼 Choose from Gallery<input id="c_photo_gallery" type="file" accept="image/*"></label>
+     </div>
+     <p class="tiny muted">For a new child, please add one clear face/profile photograph. Existing records without a photo will show “Photo pending”.</p>
+   </div>
+   <label>Birth / Medical / Developmental History<textarea id="c_history">${esc(c.history||'')}</textarea></label>
+   <div class="actionrow"><button id="saveChild">Save Child Profile</button><button class="ghost" id="cancelChild">Cancel</button></div>
+ </div>`;
+ const preview=(input)=>{
+   const f=input.files?.[0];if(!f)return;
+   const url=URL.createObjectURL(f),img=$('#photoPreview');img.src=url;img.style.display='block';
+   const ph=$('#photoPreviewPlaceholder');if(ph)ph.style.display='none';
+ };
+ $('#c_photo_camera').onchange=e=>preview(e.target);
+ $('#c_photo_gallery').onchange=e=>preview(e.target);
+ $('#saveChild').onclick=async()=>{
+   const x={id:id||uid(),name:$('#c_name').value.trim(),dob:$('#c_dob').value,sex:$('#c_sex').value,parent:$('#c_parent').value,mobile:$('#c_mobile').value,regId:$('#c_reg').value,school:$('#c_school').value,address:$('#c_address').value,allergies:$('#c_allergy').value,history:$('#c_history').value,photoDocId:c.photoDocId||''};
+   if(!x.name){alert('Child name is required');return}
+   if(!x.dob){alert('Date of birth is required');return}
+   const f=$('#c_photo_camera').files[0]||$('#c_photo_gallery').files[0];
+   if(!id && !f){alert('Please add the baby identity photo using Camera or Gallery.');return}
+   if(f){const doc={id:uid(),childId:x.id,type:'Baby Profile Photo',date:new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:'Identity profile photo'};await putDoc(doc);x.photoDocId=doc.id}
+   if(id)db.children=db.children.map(y=>y.id===id?x:y);else db.children.push(x);
+   save();$('#childEditor').innerHTML='';drawChildren('');
+ };
+ $('#cancelChild').onclick=()=>$('#childEditor').innerHTML='';
 }
 async function drawChildren(q){
- q=(q||'').toLowerCase();const arr=db.children.filter(c=>[c.name,c.mobile,c.regId].join(' ').toLowerCase().includes(q));
- const rows=[];for(const c of arr){let p='';if(c.photoDocId){const d=await docById(c.photoDocId);if(d)p=URL.createObjectURL(d.blob)}rows.push(`<tr><td>${p?`<img src="${p}" class="avatar">`:'👶'}</td><td>${esc(c.regId||'-')}</td><td><b>${esc(c.name)}</b><div class="muted">${esc(c.school||'')}</div></td><td>${age(c.dob)} / ${esc(c.sex||'-')}</td><td>${esc(c.parent||'-')}<div class="muted">${esc(c.mobile||'')}</div></td><td>${fups(c.id).length}</td><td><button onclick="app.editChild('${c.id}')">Edit</button> <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button> <button class="ghost" onclick="app.quickReport('${c.id}')">Report</button></td></tr>`)}
- $('#childrenList').innerHTML=`<table><thead><tr><th>Photo</th><th>ID</th><th>Child</th><th>Age/Sex</th><th>Parent</th><th>Follow-ups</th><th>Actions</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+ q=(q||'').toLowerCase();
+ const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
+ const arr=db.children
+   .filter(c=>[c.name,c.mobile,c.regId,c.parent].join(' ').toLowerCase().includes(q))
+   .sort((a,b)=>num(a.regId)-num(b.regId)||String(a.name).localeCompare(String(b.name)));
+ const rows=[];
+ for(let idx=0;idx<arr.length;idx++){
+   const c=arr[idx];let p='';
+   if(c.photoDocId){const d=await docById(c.photoDocId);if(d)p=URL.createObjectURL(d.blob)}
+   rows.push(`<tr>
+     <td class="seqcell"><span class="seqno">${idx+1}</span></td>
+     <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
+     <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
+     <td><div class="child-name">${esc(c.name)}</div><div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')} ${c.school?'• '+esc(c.school):''}</div>${!p?'<span class="photo-pending">Photo pending</span>':''}</td>
+     <td><b>${esc(c.parent||'-')}</b><div class="muted">${esc(c.mobile||'')}</div></td>
+     <td><span class="followup-count">${fups(c.id).length}</span></td>
+     <td><div class="row-actions"><button onclick="app.editChild('${c.id}')">Edit</button><button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button><button class="ghost" onclick="app.quickReport('${c.id}')">Report</button></div></td>
+   </tr>`);
+ }
+ $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> child${arr.length===1?'':'ren'} shown • sorted by Registration ID</div>
+ <table class="children-table"><thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child Identity</th><th>Parent / Contact</th><th>Visits</th><th>Quick Actions</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="7" class="muted">No child found.</td></tr>'}</tbody></table>`;
 }
-
 // Followup
 const scales=['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy','Illness Frequency'];
 function renderFollowup(){
@@ -150,13 +232,13 @@ function openQuickUpload(){showView('documents')}
 // Reports
 function renderReports(){options($('#reportChild'));$('#generateReport').onclick=generateSelectedReport;$('#printReport').onclick=()=>window.print();$('#shareReport').onclick=shareReport;$('#waReport').onclick=waReport}
 async function generateSelectedReport(){const id=$('#reportChild').value;if(!id){alert('Select child');return}const c=child(id),fs=fups(id),latest=fs.at(-1),cases=db.cases.filter(x=>x.childId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))),cs=cases.at(-1),docs=(await getDocs()).filter(x=>x.childId===id),first=fs[0];let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
-$('#reportPaper').innerHTML=`<div class="reporthead"><div><h2>${esc(db.settings.clinicName)}</h2><b>Swarnaprashan Progress Report & Digital Prescription</b><div class="muted">${esc(db.settings.doctor)} • ${esc(db.settings.designation)}</div></div><div>${photo?`<img src="${photo}" class="avatar-lg">`:''}<br><b>${esc(c.regId||'')}</b><br>${fmt(latest?.date||cs?.date)}</div></div>
+$('#reportPaper').innerHTML=`${letterhead(fmt(latest?.date||cs?.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(latest?.date||cs?.date)}</div>`)}
 <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name)}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Follow-ups</span><b>${fs.length}</b></div><div class="metric"><span>Clinical Entries</span><b>${cases.length}</b></div></div></div>
 ${latest?`<div class="reportsection"><h3>Latest Growth & Vitals</h3><p>Height ${latest.height||'-'} cm • Weight ${latest.weight||'-'} kg • BMI ${latest.bmi||'-'} • Pulse ${latest.pulse||'-'} • RR ${latest.rr||'-'} • SpO₂ ${latest.spo2||'-'}% • BP ${esc(latest.bp||'-')}</p><p><b>Latest dose:</b> ${esc(latest.dose||'-')}</p></div>`:''}
 ${first&&latest?`<div class="reportsection"><h3>Baseline vs Latest Functional Progress</h3><table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${scales.map(k=>`<tr><td>${k}</td><td>${scoreLabel(first.scores?.[k])}</td><td>${scoreLabel(latest.scores?.[k])}</td><td>${trend(first.scores?.[k],latest.scores?.[k])}</td></tr>`).join('')}</tbody></table></div>`:''}
 ${cs?`<div class="reportsection"><h3>Latest Clinical Assessment & Prescription</h3><p><b>Impression:</b> ${esc(cs.impression||'-')}</p><p><b>Swarnaprashan:</b> ${esc(cs.dose||'-')} • ${esc(cs.batch||'')}</p><p><b>Other medicines:</b> ${esc(cs.medicines||'-')}</p><p><b>Pathya:</b> ${esc(cs.pathya||'-')}</p><p><b>Apathya:</b> ${esc(cs.apathya||'-')}</p><p><b>Lifestyle:</b> ${esc(cs.lifestyle||'-')}</p><p><b>Instructions:</b> ${esc(cs.rxInstructions||'-')}</p></div>`:''}
 ${$('#incDocs').checked?`<div class="reportsection"><h3>Documents</h3><ul>${docs.map(d=>`<li>${esc(d.type)} — ${esc(d.name)} — ${fmt(d.date)}</li>`).join('')||'<li>No attachment</li>'}</ul></div>`:''}
-<div class="signature"><b>${esc(db.settings.doctor)}</b><br><span class="muted">${esc(db.settings.address)} • ${esc(db.settings.phone)}<br>${esc(db.settings.footer)}</span></div>`}
+<div class="signature"><div class="signature-grid"><div><b>${esc(db.settings.doctor)}</b><br><span>${esc(db.settings.designation)}</span></div><div><b>${esc(db.settings.doctor2)}</b><br><span>${esc(db.settings.designation2)}</span></div></div><div class="signature-address">${esc(db.settings.address)} ${db.settings.phone?'• '+esc(db.settings.phone):''}<br>${esc(db.settings.footer)}</div></div>`}
 async function shareReport(){const t=$('#reportPaper').innerText.trim();if(!t){alert('Generate report first');return}if(navigator.share)await navigator.share({title:'Swarnaprashan Report',text:t});else{await navigator.clipboard.writeText(t);alert('Copied')}}
 function waReport(){const t=$('#reportPaper').innerText.trim();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function quickReport(id){showView('reports');$('#reportChild').value=id;generateSelectedReport()}
@@ -169,7 +251,29 @@ function buildPlan(){const id=$('#eduChild').value;if(!id){alert('Select child')
 function renderBackup(){$('#backupBtn').onclick=()=>download('swarnaprashan-v7-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json');$('#restoreInput').onchange=async e=>{try{db=JSON.parse(await e.target.files[0].text());db.settings={...defaults,...(db.settings||{})};save();alert('Restored');showView('dashboard')}catch{alert('Invalid backup')}};$('#csvBtn').onclick=exportCSV}
 function exportCSV(){const head=['Child','RegID','Date','Dose','Height','Weight','BMI','Pulse','RR','SpO2','BP','Issue',...scales],rows=db.followups.map(f=>{const c=child(f.childId)||{};return[c.name,c.regId,f.date,f.dose,f.height,f.weight,f.bmi,f.pulse,f.rr,f.spo2,f.bp,f.issue,...scales.map(k=>f.scores?.[k])]});download('swarnaprashan-followups.csv',[head,...rows].map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'),'text/csv')}
 function download(n,t,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function renderSettings(){$('#settingsForm').innerHTML=`<div class="formgrid"><label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label><label>Doctor<input id="s_doctor" value="${esc(db.settings.doctor)}"></label><label>Designation<input id="s_desig" value="${esc(db.settings.designation)}"></label><label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label><label>Address<input id="s_address" value="${esc(db.settings.address)}"></label></div><label>Report Footer<textarea id="s_footer">${esc(db.settings.footer)}</textarea></label><div class="actionrow"><button id="saveSettings">Save Settings</button></div>`;$('#saveSettings').onclick=()=>{db.settings={...db.settings,clinicName:$('#s_clinic').value,doctor:$('#s_doctor').value,designation:$('#s_desig').value,phone:$('#s_phone').value,address:$('#s_address').value,footer:$('#s_footer').value};save();alert('Settings saved')}}
+function renderSettings(){
+ $('#settingsForm').innerHTML=`<div class="section"><h4>Prescription Letterhead</h4><div class="formgrid">
+ <label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label>
+ <label>Prescription Title<input id="s_rxTitle" value="${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}"></label>
+ <label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label>
+ </div></div>
+ <div class="section"><h4>Doctor 1</h4><div class="formgrid">
+ <label>Name & Degree<input id="s_doctor" value="${esc(db.settings.doctor)}"></label>
+ <label>Designation<input id="s_desig" value="${esc(db.settings.designation)}"></label>
+ </div></div>
+ <div class="section"><h4>Doctor 2</h4><div class="formgrid">
+ <label>Name & Degree<input id="s_doctor2" value="${esc(db.settings.doctor2||'Dr. Ravi Chandrakar, B.A.M.S.')}"></label>
+ <label>Designation<input id="s_desig2" value="${esc(db.settings.designation2||'Consultant Physician • Ayurveda')}"></label>
+ </div></div>
+ <div class="section"><h4>Clinic Address & Footer</h4>
+ <label>Address<input id="s_address" value="${esc(db.settings.address)}"></label>
+ <label>Report Footer<textarea id="s_footer">${esc(db.settings.footer)}</textarea></label></div>
+ <div class="actionrow"><button id="saveSettings">Save Letterhead Settings</button></div>`;
+ $('#saveSettings').onclick=()=>{
+   db.settings={...db.settings,clinicName:$('#s_clinic').value,prescriptionTitle:$('#s_rxTitle').value,doctor:$('#s_doctor').value,designation:$('#s_desig').value,doctor2:$('#s_doctor2').value,designation2:$('#s_desig2').value,phone:$('#s_phone').value,address:$('#s_address').value,footer:$('#s_footer').value};
+   save();alert('Letterhead and clinic settings saved');
+ };
+}
 
 function init(){openIDB().catch(()=>{});$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');$('#childSearch').value=q;drawChildren(q)};showView('dashboard')}
 return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent};
