@@ -262,3 +262,14 @@ nav button{min-height:46px}
   .hero{grid-template-columns:minmax(0,1fr) 330px}
   .card{padding:22px}
 }
+
+
+/* V9.1 Gold Sparkle Logo */
+.sparkle-mark{
+  font-family:"Segoe UI Symbol","Noto Color Emoji","Apple Color Emoji",sans-serif;
+  font-weight:900;
+  color:#fff4d6;
+  text-shadow:0 1px 0 rgba(255,255,255,.35), 0 0 18px rgba(255,217,102,.30);
+}
+.brandmark.sparkle-mark{font-size:24px;letter-spacing:0}
+.letter-logo.sparkle-mark{font-size:24px;line-height:1}
