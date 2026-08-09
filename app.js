@@ -9,12 +9,274 @@ const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),save=()=>localStorage.setItem(KEY,JSON.stringify(db));
 const fmt=d=>d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';
 const child=id=>db.children.find(x=>x.id===id),fups=id=>db.followups.filter(x=>x.childId===id).sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+const CHILD_STATUSES=[
+  'Active',
+  'Ready for Swarnaprashan',
+  "Today's Dose Taken",
+  'Appointment Fixed',
+  'Out of City',
+  'Temporarily Hold - Health Issue',
+  'Swarnaprashan Stopped',
+  'Home Use Medicine'
+];
+const TASK_STATUSES=['Pending','Done','Waiting','Not Done'];
+function isoToday(){return new Date().toISOString().slice(0,10)}
+function normalizeChild(c){
+  return {
+    currentStatus:'Active',
+    taskStatus:'Pending',
+    appointmentDate:'',
+    reminderDate:'',
+    nextAction:'',
+    homeMedicineQty:'',
+    lastContactDate:'',
+    statusNote:'',
+    ...c
+  };
+}
+function normalizedChildren(){return db.children.map(normalizeChild)}
+function statusClass(status){
+  const m={
+    'Active':'st-active',
+    'Ready for Swarnaprashan':'st-ready',
+    "Today's Dose Taken":'st-done',
+    'Appointment Fixed':'st-appt',
+    'Out of City':'st-away',
+    'Temporarily Hold - Health Issue':'st-hold',
+    'Swarnaprashan Stopped':'st-stop',
+    'Home Use Medicine':'st-home'
+  };
+  return m[status]||'st-active';
+}
+function taskClass(status){
+  return {'Done':'task-done','Pending':'task-pending','Waiting':'task-waiting','Not Done':'task-notdone'}[status]||'task-pending';
+}
+function childOperationalCounts(){
+  const arr=normalizedChildren(), today=isoToday();
+  return {
+    total:arr.length,
+    active:arr.filter(c=>['Active','Ready for Swarnaprashan','Appointment Fixed',"Today's Dose Taken",'Home Use Medicine'].includes(c.currentStatus)).length,
+    ready:arr.filter(c=>c.currentStatus==='Ready for Swarnaprashan').length,
+    doseToday:arr.filter(c=>c.currentStatus==="Today's Dose Taken").length,
+    apptToday:arr.filter(c=>c.appointmentDate===today).length,
+    remindersToday:arr.filter(c=>c.reminderDate===today && c.taskStatus!=='Done').length,
+    stopped:arr.filter(c=>c.currentStatus==='Swarnaprashan Stopped').length,
+    hold:arr.filter(c=>c.currentStatus==='Temporarily Hold - Health Issue').length,
+    home:arr.filter(c=>c.currentStatus==='Home Use Medicine').length
+  };
+}
+function callLink(mobile){return mobile?`tel:${String(mobile).replace(/\D/g,'')}`:'#'}
+function waLink(mobile,name=''){
+  const n=String(mobile||'').replace(/\D/g,'');
+  if(!n)return'#';
+  const withCountry=n.length===10?'91'+n:n;
+  return `https://wa.me/${withCountry}?text=${encodeURIComponent('Namaste. Mahamaya Clinic Swarnaprashan follow-up reminder for '+name+'.')}`;
+}
+
 const age=dob=>{if(!dob)return'-';const b=new Date(dob),n=new Date();let y=n.getFullYear()-b.getFullYear(),m=n.getMonth()-b.getMonth();if(m<0){y--;m+=12}return`${y}y ${m}m`};
 const scoreLabel=n=>['Poor','Reduced','Stable/Normal','Improved','Best'][Number(n)]||'-';
 const avg=o=>{const a=Object.values(o||{}).map(Number).filter(x=>!isNaN(x));return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const trend=(a,b)=>a==null||b==null?'<span class="stable">No baseline</span>':(+b>+a?'<span class="good">Improved ↑</span>':+b<+a?'<span class="bad">Reduced ↓</span>':'<span class="stable">Stable →</span>');
 const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Print, Save PDF, Share and WhatsApp'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
 const tpl=id=>document.getElementById(id).content.cloneNode(true);
+
+const AUTH_KEY='mahamaya_swarnaprashan_users_v1';
+const SESSION_KEY='mahamaya_swarnaprashan_session_v1';
+let MEMORY_SESSION=null;
+function getUsers(){
+  try{
+    const raw=localStorage.getItem(AUTH_KEY);
+    if(!raw) return [];
+    const parsed=JSON.parse(raw);
+    return Array.isArray(parsed)?parsed:[];
+  }catch(e){ return []; }
+}
+function saveUsers(users){
+  try{ localStorage.setItem(AUTH_KEY,JSON.stringify(users)); }catch(e){}
+}
+const DEFAULT_AUTH_USERS=[
+  {name:'Super Admin',loginId:'superadmin',mobile:'9000000001',email:'',password:'admin123',recoveryEmail:'',role:'Super Admin'},
+  {name:'Dr Rajesh Sao',loginId:'drrajesh',mobile:'9000000002',email:'dr.raju2010@gmail.com',password:'rajesh123',recoveryEmail:'dr.raju2010@gmail.com',role:'Doctor'},
+  {name:'Dr Ravi Chandrakar',loginId:'drravi',mobile:'9000000003',email:'',password:'ravi123',recoveryEmail:'',role:'Doctor'}
+];
+function seedUsers(){
+  let users=getUsers();
+  let changed=false;
+  for(const d of DEFAULT_AUTH_USERS){
+    const idx=users.findIndex(u=>String(u.loginId||'').toLowerCase()===d.loginId.toLowerCase());
+    if(idx<0){users.push({id:uid(),...d});changed=true}
+    else{
+      // Repair incomplete/corrupted default login records while preserving user-added recovery fields where possible.
+      const repaired={...d,...users[idx],loginId:d.loginId,name:users[idx].name||d.name,role:users[idx].role||d.role};
+      if(!repaired.password) repaired.password=d.password;
+      if(!repaired.mobile) repaired.mobile=d.mobile;
+      if(d.loginId==='drrajesh' && !repaired.email) repaired.email=d.email;
+      if(d.loginId==='drrajesh' && !repaired.recoveryEmail) repaired.recoveryEmail=d.recoveryEmail;
+      if(JSON.stringify(repaired)!==JSON.stringify(users[idx])){users[idx]=repaired;changed=true}
+    }
+  }
+  if(changed || !localStorage.getItem(AUTH_KEY)) saveUsers(users);
+}
+function resetLoginAccess(){
+  const repaired=DEFAULT_AUTH_USERS.map(d=>({id:uid(),...d}));
+  saveUsers(repaired);
+  clearSession();
+  $('#loginIdentifier').value='drrajesh';
+  $('#loginPassword').value='rajesh123';
+  setLoginStatus('Login access repaired. Tap Login or Quick Login • Dr Rajesh.',true);
+  alert('Login access repaired. Credentials are already filled: drrajesh / rajesh123');
+}
+function currentSession(){
+  if(MEMORY_SESSION) return MEMORY_SESSION;
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    const parsed=JSON.parse(raw);
+    MEMORY_SESSION=parsed;
+    return parsed;
+  }catch(e){return null}
+}
+function setSession(user){
+  MEMORY_SESSION={id:user.id||'failsafe',name:user.name,loginId:user.loginId,role:user.role,at:Date.now()};
+  try{localStorage.setItem(SESSION_KEY,JSON.stringify(MEMORY_SESSION));}catch(e){}
+}
+function clearSession(){
+  MEMORY_SESSION=null;
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+}
+function findUser(identifier){identifier=(identifier||'').trim().toLowerCase();return getUsers().find(u=>[u.loginId,u.mobile,u.email].filter(Boolean).map(v=>String(v).trim().toLowerCase()).includes(identifier))}
+function ensureAuthUI(){
+  const ses=currentSession();
+  const gate=$('#authGate'),appShell=$('#appShell');
+  if(!gate||!appShell)return;
+  if(ses){
+    gate.style.display='none';
+    appShell.classList.remove('auth-hidden');
+    if($('#currentUserBadge')) $('#currentUserBadge').textContent=`${ses.name} • ${ses.role}`;
+    showView('dashboard');
+  }else{
+    gate.style.display='grid';
+    appShell.classList.add('auth-hidden');
+  }
+}
+function bindAuth(){
+  seedUsers();
+  $('#loginBtn').onclick=loginUser;
+  $('#oneTapRajeshBtn').onclick=()=>{
+    $('#loginIdentifier').value='drrajesh';
+    $('#loginPassword').value='rajesh123';
+    loginUser();
+  };
+  $('#demoUsersBtn').onclick=toggleDemoUsers;
+  $('#forgotBtn').onclick=()=>$('#forgotModal').classList.add('open');
+  $('#resetLoginBtn').onclick=resetLoginAccess;
+  $('#forgotCloseBtn').onclick=()=>$('#forgotModal').classList.remove('open');
+  $('#forgotCancelBtn').onclick=()=>$('#forgotModal').classList.remove('open');
+  $('#recoverBtn').onclick=recoverPassword;
+  $('#logoutBtn').onclick=()=>{if(confirm('Logout current user?')){clearSession();ensureAuthUI()}};
+  $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')loginUser()});
+}
+function toggleDemoUsers(){
+  const box=$('#demoUsersBox');
+  box.style.display=box.style.display==='none'?'block':'none';
+  if(box.style.display==='none') return;
+  const users=getUsers();
+  box.innerHTML=`<b>Available login accounts</b><div class="small-note">You can use Login ID, Mobile or Email shown below.</div>`+users.map(u=>`<div class="docitem"><b>${esc(u.name)}</b><div class="docmeta">Login ID: ${esc(u.loginId)} • Mobile: ${esc(u.mobile||'-')} • Role: ${esc(u.role)} • Password: ${esc(u.password)}</div></div>`).join('');
+}
+
+function guaranteedUser(identifier,password){
+  const i=String(identifier||'').trim().toLowerCase();
+  const p=String(password||'');
+  const map=[
+    {ids:['drrajesh','dr.raju2010@gmail.com','9000000002'],password:'rajesh123',name:'Dr Rajesh Sao',loginId:'drrajesh',role:'Doctor'},
+    {ids:['drravi','9000000003'],password:'ravi123',name:'Dr Ravi Chandrakar',loginId:'drravi',role:'Doctor'},
+    {ids:['superadmin','9000000001'],password:'admin123',name:'Super Admin',loginId:'superadmin',role:'Super Admin'}
+  ];
+  const hit=map.find(x=>x.ids.includes(i)&&x.password===p);
+  return hit?{id:'builtin-'+hit.loginId,...hit}:null;
+}
+function setLoginStatus(text,ok=false){
+  const el=$('#loginStatus'); if(!el)return;
+  el.textContent=text;
+  el.classList.toggle('ok',ok);
+  el.classList.toggle('error',!ok);
+}
+
+function loginUser(){
+  const identifier=$('#loginIdentifier').value.trim();
+  const password=$('#loginPassword').value;
+  setLoginStatus('Checking login…',true);
+
+  // Guaranteed built-in access: independent of browser local-storage state.
+  let user=guaranteedUser(identifier,password);
+
+  // Then allow any user created in Settings.
+  if(!user){
+    const local=findUser(identifier);
+    if(local && String(local.password)===String(password)) user=local;
+  }
+
+  if(!user){
+    setLoginStatus('Login failed. Use Quick Login • Dr Rajesh, or enter drrajesh / rajesh123.',false);
+    alert('Login failed. Please use Quick Login • Dr Rajesh, or type Login ID: drrajesh and Password: rajesh123.');
+    return;
+  }
+
+  setSession(user);
+  $('#loginPassword').value='';
+  setLoginStatus('Login successful. Opening dashboard…',true);
+  ensureAuthUI();
+}
+function recoverPassword(){
+  const identifier=$('#fpIdentifier').value.trim();
+  const recoveryEmail=$('#fpRecoveryEmail').value.trim().toLowerCase();
+  const newPassword=$('#fpNewPassword').value;
+  const confirmPassword=$('#fpConfirmPassword').value;
+  const users=getUsers();
+  const idx=users.findIndex(u=>[u.loginId,u.mobile,u.email].filter(Boolean).map(v=>String(v).trim().toLowerCase()).includes(identifier.toLowerCase()));
+  if(idx<0){alert('User not found.');return}
+  if(!newPassword || newPassword.length<4){alert('New password should be at least 4 characters.');return}
+  if(newPassword!==confirmPassword){alert('Password confirmation does not match.');return}
+  const savedRecovery=(users[idx].recoveryEmail||'').trim().toLowerCase();
+  if(savedRecovery && recoveryEmail!==savedRecovery){alert('Recovery email does not match this user record.');return}
+  if(!savedRecovery && !recoveryEmail){alert('This user has no recovery email yet. Ask admin to update it in Settings → User Management.');return}
+  users[idx].recoveryEmail=recoveryEmail||savedRecovery;
+  users[idx].password=newPassword;
+  saveUsers(users);
+  alert('Password reset successful. Please login with the new password.');
+  $('#forgotModal').classList.remove('open');
+  ['#fpIdentifier','#fpRecoveryEmail','#fpNewPassword','#fpConfirmPassword'].forEach(s=>$(s).value='');
+}
+function usersHtml(){
+  const users=getUsers();
+  return `<table class="user-table"><thead><tr><th>Name</th><th>Login</th><th>Mobile</th><th>Recovery</th><th>Role</th><th>Actions</th></tr></thead><tbody>${users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.loginId)}${u.email?`<div class="small-note">${esc(u.email)}</div>`:''}</td><td>${esc(u.mobile||'-')}</td><td>${esc(u.recoveryEmail||'-')}</td><td>${esc(u.role||'-')}</td><td><button class="ghost" onclick="app.prefillUser('${u.id}')">Edit</button> <button class="ghost" onclick="app.deleteUser('${u.id}')">Delete</button></td></tr>`).join('')}</tbody></table>`;
+}
+function prefillUser(id){
+  const u=getUsers().find(x=>x.id===id); if(!u) return;
+  $('#u_id').value=u.id||''; $('#u_name').value=u.name||''; $('#u_login').value=u.loginId||''; $('#u_mobile').value=u.mobile||''; $('#u_email').value=u.email||''; $('#u_role').value=u.role||'Doctor'; $('#u_password').value=u.password||''; $('#u_recovery').value=u.recoveryEmail||'';
+}
+function deleteUser(id){
+  const users=getUsers(); const u=users.find(x=>x.id===id); if(!u) return; if(!confirm(`Delete user ${u.name}?`)) return;
+  saveUsers(users.filter(x=>x.id!==id));
+  if($('#usersList')) $('#usersList').innerHTML=usersHtml();
+}
+function saveUserFromSettings(){
+  const name=$('#u_name').value.trim(), loginId=$('#u_login').value.trim(), mobile=$('#u_mobile').value.trim(), email=$('#u_email').value.trim(), role=$('#u_role').value, password=$('#u_password').value, recoveryEmail=$('#u_recovery').value.trim(), id=$('#u_id').value;
+  if(!name || !loginId || !password){alert('Name, login ID and password are required.');return}
+  const users=getUsers();
+  if(users.some(u=>u.id!==id && String(u.loginId).toLowerCase()===loginId.toLowerCase())){alert('Login ID already exists.');return}
+  if(mobile && users.some(u=>u.id!==id && String(u.mobile)===mobile)){alert('Mobile already exists.');return}
+  if(email && users.some(u=>u.id!==id && String(u.email).toLowerCase()===email.toLowerCase())){alert('Email already exists.');return}
+  const obj={id:id||uid(),name,loginId,mobile,email,password,recoveryEmail,role};
+  const idx=users.findIndex(u=>u.id===obj.id);
+  if(idx>=0) users[idx]=obj; else users.push(obj);
+  saveUsers(users);
+  ['#u_id','#u_name','#u_login','#u_mobile','#u_email','#u_password','#u_recovery'].forEach(s=>$(s).value=''); $('#u_role').value='Doctor';
+  $('#usersList').innerHTML=usersHtml();
+  alert('User saved successfully.');
+}
+
 
 // IndexedDB file store
 let idb;
@@ -31,7 +293,7 @@ function letterhead(dateText='', rightHtml=''){
  return `<div class="letterhead">
    <div class="letterhead-top">
      <div class="clinic-identity">
-       <div class="letter-logo">स्व</div>
+       <div class="letter-logo sparkle-mark">✨</div>
        <div>
          <div class="clinic-name">${esc(db.settings.clinicName||'MAHAMAYA CLINIC')}</div>
          <div class="rx-title">${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}</div>
@@ -47,7 +309,7 @@ function letterhead(dateText='', rightHtml=''){
  </div>`;
 }
 
-function showView(name){
+function showView(name){ if(!currentSession()) return; 
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   $('#pageTitle').textContent=titles[name][0];$('#pageSubtitle').textContent=titles[name][1];
   const v=$('#view');v.innerHTML='';v.appendChild(tpl(name+'Tpl'));
@@ -58,6 +320,18 @@ async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
   const thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===new Date().getMonth()&&new Date(v.date).getFullYear()===new Date().getFullYear()).length;
   $('#kpis').innerHTML=[['Registered Children',db.children.length],['Clinical Entries',db.cases.length],['Visits This Month',thisMonth],['Saved Documents',docs.length]].map(x=>`<div class="kpi"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  const oc=childOperationalCounts();
+  if($('#opsKpis')) $('#opsKpis').innerHTML=[
+    ['Active',oc.active,'green'],
+    ['Ready',oc.ready,'gold'],
+    ['Appointments Today',oc.apptToday,'blue'],
+    ['Dose Taken Today',oc.doseToday,'green'],
+    ['Reminders Today',oc.remindersToday,'orange'],
+    ['Home Use',oc.home,'violet'],
+    ['Health Hold',oc.hold,'red'],
+    ['Stopped',oc.stopped,'gray']
+  ].map(x=>`<button class="ops-kpi ${x[2]}" onclick="app.openChildrenStatus('${x[0]}')"><b>${x[1]}</b><span>${x[0]}</span></button>`).join('');
+
   $('#recentChildren').innerHTML=db.children.slice(-6).reverse().map(c=>`<div class="docitem"><b>${esc(c.name)}</b><div class="docmeta">${age(c.dob)} • ${esc(c.mobile||'')}</div></div>`).join('')||'<p class="muted">No child registered.</p>';
   $('#dueChildren').innerHTML=db.children.slice(0,7).map(c=>{const f=fups(c.id).at(-1);return`<div class="docitem"><b>${esc(c.name)}</b><div class="docmeta">Last follow-up: ${f?fmt(f.date):'Not recorded'}</div></div>`}).join('')||'<p class="muted">Register a child to begin.</p>';
   options($('#dashChild'));$('#dashChild').onchange=()=>drawSnapshot($('#dashChild').value);$('#dashSnapshot').innerHTML='<p class="muted">Select a child for baseline-to-latest analysis.</p>';
@@ -170,90 +444,316 @@ async function shareCurrent(){const t=currentText();if(!t){alert('Generate repor
 function whatsappCurrent(){const t=currentText();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 
 // children & baby photo
-function renderChildren(){$('#registerChildBtn').onclick=()=>editChild();$('#childSearch').oninput=()=>drawChildren($('#childSearch').value);drawChildren('')}
+
+function renderChildren(){
+  db.children=db.children.map(normalizeChild);
+  save();
+  $('#registerChildBtn').onclick=()=>editChild();
+  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
+  $('#childSearch').oninput=()=>drawChildren($('#childSearch').value);
+  $('#childStatusFilter').onchange=()=>drawChildren($('#childSearch').value);
+  $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
+  renderRegistryKpis();
+  renderTodayPanel();
+  drawChildren('');
+}
+function renderRegistryKpis(){
+  const c=childOperationalCounts();
+  $('#registryKpis').innerHTML=[
+    ['Total Saved',c.total,'neutral'],
+    ['Active',c.active,'green'],
+    ['Ready',c.ready,'gold'],
+    ['Appointment Today',c.apptToday,'blue'],
+    ['Dose Taken Today',c.doseToday,'green'],
+    ['Reminder Today',c.remindersToday,'orange'],
+    ['Health Hold',c.hold,'red'],
+    ['Stopped',c.stopped,'gray']
+  ].map(x=>`<div class="ops-kpi ${x[2]}"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+}
+function renderTodayPanel(){
+  const today=isoToday();
+  const arr=normalizedChildren().filter(c=>c.appointmentDate===today || c.reminderDate===today || c.currentStatus==='Ready for Swarnaprashan');
+  $('#todayRegistryPanel').innerHTML=`<div class="today-head"><div><b>Today / Next Action Board</b><span>${fmt(today)}</span></div><span class="pill">${arr.length} child${arr.length===1?'':'ren'}</span></div>
+  <div class="today-grid">${arr.map(c=>`<div class="today-child">
+    <div><b>${esc(c.name)}</b><span>${esc(c.parent||'-')} • ${esc(c.mobile||'-')}</span></div>
+    <span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span>
+    <div class="today-actions">
+      ${c.mobile?`<a href="${callLink(c.mobile)}" class="mini-action">Call</a><a href="${waLink(c.mobile,c.name)}" target="_blank" class="mini-action">WhatsApp</a>`:''}
+      <button class="mini-action" onclick="app.openChildDetails('${c.id}')">Open</button>
+    </div>
+  </div>`).join('')||'<p class="muted">No child is due today. Use Appointment / Reminder dates in child profiles.</p>'}</div>`;
+}
 async function editChild(id=''){
- const c=id?child(id):{};let photo='';if(c?.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
- $('#childEditor').innerHTML=`<div class="card profile-editor">
-   <div class="cardhead">
-     <div><span class="eyebrow">CHILD IDENTITY PROFILE</span><h3>${id?'Edit':'Register'} Child</h3><p class="muted">Baby identity photo is kept with the profile so the child can be recognized quickly in the registry.</p></div>
-     <div class="profile-photo-panel">
-       ${photo?`<img id="photoPreview" src="${photo}" class="avatar-xl">`:`<div id="photoPreviewPlaceholder" class="avatar-xl avatar-placeholder">👶<span>Photo required</span></div><img id="photoPreview" class="avatar-xl" style="display:none">`}
-       <span class="photo-status ${c.photoDocId?'ok':'pending'}">${c.photoDocId?'Identity photo saved':'Identity photo pending'}</span>
-     </div>
-   </div>
-   <div class="section profile-section">
-     <h4>Identity & Contact</h4>
-     <div class="formgrid">
-       <label>Child Name *<input id="c_name" value="${esc(c.name||'')}" placeholder="Full name"></label>
-       <label>Date of Birth *<input id="c_dob" type="date" value="${c.dob||''}"></label>
-       <label>Sex<select id="c_sex"><option ${c.sex==='Male'?'selected':''}>Male</option><option ${c.sex==='Female'?'selected':''}>Female</option><option>Other</option></select></label>
-       <label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label>
-       <label>Mobile / WhatsApp<input id="c_mobile" value="${esc(c.mobile||'')}"></label>
-       <label>Registration ID<input id="c_reg" value="${esc(c.regId||('SW'+String(db.children.length+1).padStart(4,'0')))}"></label>
-       <label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label>
-       <label>Address<input id="c_address" value="${esc(c.address||'')}"></label>
-       <label>Allergies<input id="c_allergy" value="${esc(c.allergies||'')}"></label>
-     </div>
-   </div>
-   <div class="section photo-section">
-     <h4>Baby Identity Photo *</h4>
-     <div class="upload-grid">
-       <label class="uploadbox camera-box">📷 Take Photo Now<input id="c_photo_camera" type="file" accept="image/*" capture="environment"></label>
-       <label class="uploadbox gallery-box">🖼 Choose from Gallery<input id="c_photo_gallery" type="file" accept="image/*"></label>
-     </div>
-     <p class="tiny muted">For a new child, please add one clear face/profile photograph. Existing records without a photo will show “Photo pending”.</p>
-   </div>
-   <label>Birth / Medical / Developmental History<textarea id="c_history">${esc(c.history||'')}</textarea></label>
-   <div class="actionrow"><button id="saveChild">Save Child Profile</button><button class="ghost" id="cancelChild">Cancel</button></div>
- </div>`;
- const preview=(input)=>{
-   const f=input.files?.[0];if(!f)return;
-   const url=URL.createObjectURL(f),img=$('#photoPreview');img.src=url;img.style.display='block';
-   const ph=$('#photoPreviewPlaceholder');if(ph)ph.style.display='none';
- };
- let directCameraFile=null;
- $('#c_direct_camera').onclick=()=>startDirectCamera('Baby Identity Photo',async(file)=>{
-   directCameraFile=file;
-   const url=URL.createObjectURL(file),img=$('#photoPreview');img.src=url;img.style.display='block';
-   const ph=$('#photoPreviewPlaceholder');if(ph)ph.style.display='none';
-   $('#cameraCapturedName').innerHTML=`<span class="file-chip">📷 ${esc(file.name)} captured</span>`;
- });
- $('#c_photo_gallery').onchange=e=>preview(e.target);
- $('#saveChild').onclick=async()=>{
-   const x={id:id||uid(),name:$('#c_name').value.trim(),dob:$('#c_dob').value,sex:$('#c_sex').value,parent:$('#c_parent').value,mobile:$('#c_mobile').value,regId:$('#c_reg').value,school:$('#c_school').value,address:$('#c_address').value,allergies:$('#c_allergy').value,history:$('#c_history').value,photoDocId:c.photoDocId||''};
-   if(!x.name){alert('Child name is required');return}
-   if(!x.dob){alert('Date of birth is required');return}
-   const f=directCameraFile||$('#c_photo_gallery').files[0];
-   if(!id && !f){alert('Please add the baby identity photo using Camera or Gallery.');return}
-   if(f){const doc={id:uid(),childId:x.id,type:'Baby Profile Photo',date:new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:'Identity profile photo'};await putDoc(doc);x.photoDocId=doc.id}
-   if(id)db.children=db.children.map(y=>y.id===id?x:y);else db.children.push(x);
-   save();$('#childEditor').innerHTML='';drawChildren('');
- };
- $('#cancelChild').onclick=()=>$('#childEditor').innerHTML='';
+  const c=normalizeChild(id?child(id):{});
+  let photo='';
+  if(c?.photoDocId){
+    try{ const pd=await docById(c.photoDocId); if(pd?.blob) photo=URL.createObjectURL(pd.blob); }catch(e){}
+  }
+  const regDefault=c.regId||('SW'+String(db.children.length+1).padStart(4,'0'));
+
+  $('#childEditor').innerHTML=`<div class="card profile-editor">
+    <div class="cardhead">
+      <div><span class="eyebrow">CHILD PROFILE + SWARNAPRASHAN STATUS</span><h3>${id?'Edit':'Register'} Child</h3><p class="muted">Profile saves first. Photo is recommended but does not block saving.</p></div>
+      <div class="profile-photo-panel">
+        ${photo?`<img id="photoPreview" src="${photo}" class="avatar-xl">`:`<div id="photoPreviewPlaceholder" class="avatar-xl avatar-placeholder">👶<span>Photo optional</span></div><img id="photoPreview" class="avatar-xl" style="display:none">`}
+        <span id="photoStatus" class="photo-status ${c.photoDocId?'ok':'pending'}">${c.photoDocId?'Identity photo saved':'Photo can be added now or later'}</span>
+      </div>
+    </div>
+
+    <div class="section profile-section">
+      <h4>Identity & Contact</h4>
+      <div class="formgrid">
+        <label>Child Name *<input id="c_name" value="${esc(c.name||'')}" placeholder="Full name"></label>
+        <label>Date of Birth<input id="c_dob" type="date" value="${c.dob||''}"></label>
+        <label>Sex<select id="c_sex"><option ${c.sex==='Male'?'selected':''}>Male</option><option ${c.sex==='Female'?'selected':''}>Female</option><option ${c.sex==='Other'?'selected':''}>Other</option></select></label>
+        <label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label>
+        <label>Mobile / WhatsApp<input id="c_mobile" inputmode="tel" value="${esc(c.mobile||'')}"></label>
+        <label>Registration ID<input id="c_reg" value="${esc(regDefault)}"></label>
+        <label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label>
+        <label>Short Address<input id="c_address" value="${esc(c.address||'')}"></label>
+        <label>Allergies<input id="c_allergy" value="${esc(c.allergies||'')}"></label>
+      </div>
+    </div>
+
+    <div class="section ops-section">
+      <h4>Swarnaprashan Current Status & Checklist</h4>
+      <div class="formgrid">
+        <label>Current Status<select id="c_status">${CHILD_STATUSES.map(s=>`<option ${c.currentStatus===s?'selected':''}>${s}</option>`).join('')}</select></label>
+        <label>Checklist<select id="c_task">${TASK_STATUSES.map(s=>`<option ${c.taskStatus===s?'selected':''}>${s}</option>`).join('')}</select></label>
+        <label>Appointment Date<input id="c_appointment" type="date" value="${c.appointmentDate||''}"></label>
+        <label>Reminder Date<input id="c_reminder" type="date" value="${c.reminderDate||''}"></label>
+        <label>Last Contact Date<input id="c_lastcontact" type="date" value="${c.lastContactDate||''}"></label>
+        <label>Home Medicine Qty<input id="c_homeqty" value="${esc(c.homeMedicineQty||'')}" placeholder="e.g. 5 tablets / 2 doses"></label>
+        <label>Next Action<input id="c_nextaction" value="${esc(c.nextAction||'')}" placeholder="Call / visit / dose / review"></label>
+        <label>Status Note<input id="c_statusnote" value="${esc(c.statusNote||'')}" placeholder="Reason / short note"></label>
+      </div>
+    </div>
+
+    <div class="section photo-section">
+      <h4>Baby Identity Photo</h4>
+      <div class="upload-grid">
+        <button type="button" id="c_direct_camera" class="uploadbox camera-box direct-camera-btn">📷 Open Camera Now<br><span>Live preview → Capture Photo</span></button>
+        <label class="uploadbox gallery-box">🖼 Choose from Gallery<input id="c_photo_gallery" type="file" accept="image/*"></label>
+      </div>
+      <div id="cameraCapturedName" class="selected-files"></div>
+    </div>
+
+    <label>Birth / Medical / Developmental History<textarea id="c_history">${esc(c.history||'')}</textarea></label>
+
+    <div id="childSaveStatus" class="login-status">Ready to save child profile.</div>
+    <div class="actionrow sticky-save-actions">
+      <button id="saveChild">Save Child Profile</button>
+      <button class="ghost" id="cancelChild">Cancel</button>
+    </div>
+  </div>`;
+
+  let selectedPhoto=null;
+  const showPreview=file=>{
+    if(!file)return;
+    selectedPhoto=file;
+    const u=URL.createObjectURL(file);
+    if($('#photoPreview')){ $('#photoPreview').src=u; $('#photoPreview').style.display='block'; }
+    if($('#photoPreviewPlaceholder')) $('#photoPreviewPlaceholder').style.display='none';
+    if($('#photoStatus')){ $('#photoStatus').textContent='Photo selected • will save with profile'; $('#photoStatus').className='photo-status ok'; }
+    $('#cameraCapturedName').innerHTML=`<span class="file-chip">📷 ${esc(file.name||'photo.jpg')}</span>`;
+  };
+
+  $('#c_direct_camera').onclick=()=>startDirectCamera('Baby Identity Photo',file=>showPreview(file));
+  $('#c_photo_gallery').onchange=e=>showPreview(e.target.files?.[0]);
+
+  $('#saveChild').onclick=async()=>{
+    const status=$('#childSaveStatus');
+    const mark=(t,ok=true)=>{if(status){status.textContent=t;status.className='login-status '+(ok?'ok':'error')}};
+    try{
+      mark('Saving profile…');
+      const x=normalizeChild({
+        ...c,
+        id:id||uid(),
+        name:($('#c_name').value||'').trim(),
+        dob:$('#c_dob').value||'',
+        sex:$('#c_sex').value||'',
+        parent:$('#c_parent').value||'',
+        mobile:$('#c_mobile').value||'',
+        regId:($('#c_reg').value||regDefault).trim(),
+        school:$('#c_school').value||'',
+        address:$('#c_address').value||'',
+        allergies:$('#c_allergy').value||'',
+        history:$('#c_history').value||'',
+        currentStatus:$('#c_status').value||'Active',
+        taskStatus:$('#c_task').value||'Pending',
+        appointmentDate:$('#c_appointment').value||'',
+        reminderDate:$('#c_reminder').value||'',
+        lastContactDate:$('#c_lastcontact').value||'',
+        homeMedicineQty:$('#c_homeqty').value||'',
+        nextAction:$('#c_nextaction').value||'',
+        statusNote:$('#c_statusnote').value||'',
+        photoDocId:c.photoDocId||''
+      });
+
+      if(!x.name){mark('Child name is required.',false);alert('Child name is required.');return}
+
+      const duplicate=db.children.find(y=>y.id!==x.id && String(y.regId||'').toLowerCase()===x.regId.toLowerCase());
+      if(duplicate){mark('Registration ID already exists.',false);alert('Registration ID already exists.');return}
+
+      // IMPORTANT: save structured profile FIRST so photo storage can never block child registration.
+      const oldChildren=[...db.children];
+      if(id) db.children=db.children.map(y=>y.id===id?x:y); else db.children.push(x);
+      try{ save(); }
+      catch(e){ db.children=oldChildren; mark('Browser could not store this profile.',false); alert('Profile storage failed on this browser.'); return; }
+
+      // Photo is secondary; if it fails, profile remains saved.
+      if(selectedPhoto){
+        try{
+          const doc={id:uid(),childId:x.id,type:'Baby Profile Photo',date:isoToday(),name:selectedPhoto.name||'baby-photo.jpg',mime:selectedPhoto.type||'image/jpeg',size:selectedPhoto.size||0,blob:selectedPhoto,note:'Identity profile photo'};
+          await putDoc(doc);
+          x.photoDocId=doc.id;
+          db.children=db.children.map(y=>y.id===x.id?x:y);
+          save();
+        }catch(photoErr){
+          console.warn('Profile saved; photo save failed',photoErr);
+          alert('Child profile is saved. Photo could not be stored; you can add it later.');
+        }
+      }
+
+      mark(`Saved • ${x.name} • ${x.regId}`);
+      alert(`Saved successfully: ${x.name} (${x.regId})`);
+      $('#childEditor').innerHTML='';
+      renderRegistryKpis();
+      renderTodayPanel();
+      await drawChildren('');
+      $('#childrenList')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(err){
+      console.error(err);
+      mark('Unexpected save error.',false);
+      alert('Unexpected error while saving. Please retry.');
+    }
+  };
+
+  $('#cancelChild').onclick=()=>$('#childEditor').innerHTML='';
 }
-async function drawChildren(q){
- q=(q||'').toLowerCase();
- const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
- const arr=db.children
-   .filter(c=>[c.name,c.mobile,c.regId,c.parent].join(' ').toLowerCase().includes(q))
-   .sort((a,b)=>num(a.regId)-num(b.regId)||String(a.name).localeCompare(String(b.name)));
- const rows=[];
- for(let idx=0;idx<arr.length;idx++){
-   const c=arr[idx];let p='';
-   if(c.photoDocId){const d=await docById(c.photoDocId);if(d)p=URL.createObjectURL(d.blob)}
-   rows.push(`<tr>
-     <td class="seqcell"><span class="seqno">${idx+1}</span></td>
-     <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
-     <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
-     <td><div class="child-name">${esc(c.name)}</div><div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')} ${c.school?'• '+esc(c.school):''}</div>${!p?'<span class="photo-pending">Photo pending</span>':''}</td>
-     <td><b>${esc(c.parent||'-')}</b><div class="muted">${esc(c.mobile||'')}</div></td>
-     <td><span class="followup-count">${fups(c.id).length}</span></td>
-     <td><div class="row-actions"><button onclick="app.editChild('${c.id}')">Edit</button><button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button><button class="ghost" onclick="app.quickReport('${c.id}')">Report</button></div></td>
-   </tr>`);
- }
- $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> child${arr.length===1?'':'ren'} shown • sorted by Registration ID</div>
- <table class="children-table"><thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child Identity</th><th>Parent / Contact</th><th>Visits</th><th>Quick Actions</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="7" class="muted">No child found.</td></tr>'}</tbody></table>`;
+async function drawChildren(q=''){
+  const statusFilter=$('#childStatusFilter')?.value||'';
+  const taskFilter=$('#childTaskFilter')?.value||'';
+  q=(q||'').toLowerCase();
+
+  const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
+  const arr=normalizedChildren()
+    .filter(c=>[c.name,c.parent,c.mobile,c.regId,c.address].join(' ').toLowerCase().includes(q))
+    .filter(c=>!statusFilter||c.currentStatus===statusFilter)
+    .filter(c=>!taskFilter||c.taskStatus===taskFilter)
+    .sort((a,b)=>num(a.regId)-num(b.regId)||String(a.name).localeCompare(String(b.name)));
+
+  const rows=[];
+  for(let idx=0;idx<arr.length;idx++){
+    const c=arr[idx]; let p='';
+    if(c.photoDocId){ try{const d=await docById(c.photoDocId);if(d?.blob)p=URL.createObjectURL(d.blob)}catch(e){} }
+
+    rows.push(`<tr>
+      <td><span class="seqno">${idx+1}</span></td>
+      <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
+      <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
+      <td><div class="child-name">${esc(c.name)}</div><div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div></td>
+      <td><b>${esc(c.parent||'-')}</b><div class="muted">${esc(c.mobile||'-')}</div><div class="muted">${esc(c.address||'')}</div></td>
+      <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
+      <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
+      <td><div class="row-actions">
+        <button onclick="app.openChildDetails('${c.id}')">Open</button>
+        <button class="ghost" onclick="app.editChild('${c.id}')">Edit</button>
+        <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button>
+        ${c.mobile?`<a class="button-anchor" href="${callLink(c.mobile)}">Call</a>`:''}
+        ${c.mobile?`<a class="button-anchor" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a>`:''}
+      </div></td>
+    </tr>`);
+  }
+
+  $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> shown • <b>${db.children.length}</b> total saved</div>
+  <table class="children-table operations-table">
+    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Appointment</th><th>Actions</th></tr></thead>
+    <tbody>${rows.join('')||'<tr><td colspan="8" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
+  </table>`;
 }
+async function openChildDetails(id){
+  const c=normalizeChild(child(id));
+  if(!c)return;
+  let p='';
+  if(c.photoDocId){try{const d=await docById(c.photoDocId);if(d?.blob)p=URL.createObjectURL(d.blob)}catch(e){}}
+  const visits=fups(id);
+  $('#childDetailsPanel').innerHTML=`<div class="card child-detail-card">
+    <div class="cardhead">
+      <div class="profile-row">${p?`<img src="${p}" class="avatar-xl">`:`<div class="avatar-xl avatar-placeholder">👶</div>`}
+        <div><span class="eyebrow">SAVED CHILD PROFILE</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.regId||'-')} • ${age(c.dob)} • ${esc(c.sex||'-')}</p></div>
+      </div>
+      <button class="ghost" onclick="document.getElementById('childDetailsPanel').innerHTML=''">Close</button>
+    </div>
+    <div class="detail-grid">
+      <div><span>Guardian</span><b>${esc(c.parent||'-')}</b></div>
+      <div><span>Mobile</span><b>${esc(c.mobile||'-')}</b></div>
+      <div><span>Address</span><b>${esc(c.address||'-')}</b></div>
+      <div><span>Current Status</span><b class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</b></div>
+      <div><span>Checklist</span><b class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</b></div>
+      <div><span>Appointment</span><b>${c.appointmentDate?fmt(c.appointmentDate):'-'}</b></div>
+      <div><span>Reminder</span><b>${c.reminderDate?fmt(c.reminderDate):'-'}</b></div>
+      <div><span>Home Medicine</span><b>${esc(c.homeMedicineQty||'-')}</b></div>
+      <div><span>Total Follow-ups</span><b>${visits.length}</b></div>
+      <div><span>Next Action</span><b>${esc(c.nextAction||'-')}</b></div>
+      <div><span>Status Note</span><b>${esc(c.statusNote||'-')}</b></div>
+      <div><span>Last Contact</span><b>${c.lastContactDate?fmt(c.lastContactDate):'-'}</b></div>
+    </div>
+    <div class="actionrow">
+      <button onclick="app.editChild('${c.id}')">Edit Profile</button>
+      <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical Entry</button>
+      <button class="ghost" onclick="app.quickReport('${c.id}')">Report / Print</button>
+      <button class="ghost" onclick="app.shareChildProfile('${c.id}')">Share</button>
+      ${c.mobile?`<a class="button-anchor" href="${callLink(c.mobile)}">Call Guardian</a><a class="button-anchor" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp Reminder</a>`:''}
+      <button class="danger-btn" onclick="app.deleteChild('${c.id}')">Delete</button>
+    </div>
+  </div>`;
+  $('#childDetailsPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function shareChildProfile(id){
+  const c=normalizeChild(child(id));if(!c)return;
+  const text=`Mahamaya Clinic • Swarnaprashan Child Profile
+Child: ${c.name}
+ID: ${c.regId||'-'}
+Age: ${age(c.dob)} • ${c.sex||'-'}
+Guardian: ${c.parent||'-'}
+Mobile: ${c.mobile||'-'}
+Address: ${c.address||'-'}
+Status: ${c.currentStatus}
+Checklist: ${c.taskStatus}
+Appointment: ${c.appointmentDate?fmt(c.appointmentDate):'-'}
+Reminder: ${c.reminderDate?fmt(c.reminderDate):'-'}
+Next Action: ${c.nextAction||'-'}`;
+  if(navigator.share) await navigator.share({title:'Swarnaprashan Child Profile',text});
+  else {await navigator.clipboard.writeText(text);alert('Child profile copied to clipboard.')}
+}
+async function deleteChild(id){
+  const c=child(id);if(!c)return;
+  if(!confirm(`Delete ${c.name}? This removes the child profile and linked structured follow-up entries.`))return;
+  db.children=db.children.filter(x=>x.id!==id);
+  db.followups=db.followups.filter(x=>x.childId!==id);
+  db.cases=db.cases.filter(x=>x.childId!==id);
+  db.vaccines=db.vaccines.filter(x=>x.childId!==id);
+  save();
+  $('#childDetailsPanel').innerHTML='';
+  renderRegistryKpis();renderTodayPanel();drawChildren('');
+}
+function openChildrenStatus(label){
+  showView('children');
+  setTimeout(()=>{
+    const map={
+      'Active':'Active',
+      'Ready':'Ready for Swarnaprashan',
+      'Dose Taken Today':"Today's Dose Taken",
+      'Home Use':'Home Use Medicine',
+      'Health Hold':'Temporarily Hold - Health Issue',
+      'Stopped':'Swarnaprashan Stopped'
+    };
+    if(map[label]) $('#childStatusFilter').value=map[label];
+    drawChildren('');
+  },50);
+}
+
 // Followup
 const scales=['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy','Illness Frequency'];
 let followupCameraFile=null;
@@ -367,11 +867,26 @@ function renderSettings(){
  <div class="section"><h4>Clinic Address & Footer</h4>
  <label>Address<input id="s_address" value="${esc(db.settings.address)}"></label>
  <label>Report Footer<textarea id="s_footer">${esc(db.settings.footer)}</textarea></label></div>
- <div class="actionrow"><button id="saveSettings">Save Letterhead Settings</button></div>`;
+ <div class="actionrow"><button id="saveSettings">Save Letterhead Settings</button></div>
+ <div class="section"><h4>Multi Login User Management</h4><p class="muted">Create multiple users. Login is possible via login ID, mobile number or email. Recovery email is used by the local forgot-password workflow.</p>
+ <input id="u_id" type="hidden">
+ <div class="formgrid">
+ <label>Full Name<input id="u_name" placeholder="User full name"></label>
+ <label>Role<select id="u_role"><option>Super Admin</option><option>Doctor</option><option>Assistant</option><option>Reception</option></select></label>
+ <label>Login ID<input id="u_login" placeholder="Unique login ID"></label>
+ <label>Mobile<input id="u_mobile" placeholder="Optional unique mobile"></label>
+ <label>Email<input id="u_email" placeholder="Optional login email"></label>
+ <label>Password<input id="u_password" type="password" placeholder="Create password"></label>
+ <label>Recovery Email<input id="u_recovery" placeholder="Gmail / recovery email"></label>
+ </div>
+ <div class="actionrow"><button id="saveUserBtn">Save User</button></div>
+ <div id="usersList"></div></div>`;
  $('#saveSettings').onclick=()=>{
    db.settings={...db.settings,clinicName:$('#s_clinic').value,prescriptionTitle:$('#s_rxTitle').value,doctor:$('#s_doctor').value,designation:$('#s_desig').value,doctor2:$('#s_doctor2').value,designation2:$('#s_desig2').value,phone:$('#s_phone').value,address:$('#s_address').value,footer:$('#s_footer').value};
    save();alert('Letterhead and clinic settings saved');
  };
+ $('#saveUserBtn').onclick=saveUserFromSettings;
+ $('#usersList').innerHTML=usersHtml();
 }
 
 function printHtmlContent(html, title='Mahamaya Clinic Swarnaprashan'){
@@ -430,7 +945,7 @@ function printParentReport(){
   printHtmlContent(el.innerHTML,'Mahamaya Clinic - Swarnaprashan Progress Report');
 }
 
-function init(){openIDB().catch(()=>{});bindCameraModal();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');$('#childSearch').value=q;drawChildren(q)};showView('dashboard')}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera};
+function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus};
 })();
 document.addEventListener('DOMContentLoaded',app.init);

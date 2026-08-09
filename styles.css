@@ -312,3 +312,44 @@ nav button{min-height:46px}
   .profile-editor .actionrow{display:grid;grid-template-columns:1fr 1fr}
   .profile-editor .actionrow button{width:100%}
 }
+
+
+/* V11 Saved Children Registry & Operations */
+.registry-command-card{overflow:visible}
+.registry-toolbar{display:grid;grid-template-columns:minmax(280px,1fr) 240px 180px;gap:10px;margin:14px 0}
+.registry-kpis{display:grid;grid-template-columns:repeat(8,minmax(105px,1fr));gap:9px;margin:14px 0}
+.ops-kpi{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;text-align:left;color:var(--ink);min-height:76px}
+.ops-kpi b{display:block;font-size:24px;line-height:1}.ops-kpi span{display:block;font-size:10px;margin-top:7px;font-weight:800}
+.ops-kpi.green{background:#edf8f1;border-color:#c8e5d2}.ops-kpi.gold{background:#fff7df;border-color:#ead18d}.ops-kpi.blue{background:#eef5fb;border-color:#c8dced}
+.ops-kpi.orange{background:#fff2e3;border-color:#efcfaa}.ops-kpi.red{background:#fff0ef;border-color:#ecc5c2}.ops-kpi.gray{background:#f3f3f3;border-color:#ddd}
+.ops-kpi.violet{background:#f6f0fb;border-color:#ddcbed}.ops-kpi.neutral{background:#faf8f4}
+.today-panel{border:1px solid #eadfce;border-radius:16px;padding:14px;background:linear-gradient(180deg,#fffdf8,#fff);margin:12px 0}
+.today-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.today-head b{font-size:16px}.today-head span{display:block;font-size:11px;color:var(--muted)}
+.today-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.today-child{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid #eee4d5;border-radius:12px;padding:10px;background:#fff}
+.today-child>div:first-child span{display:block;font-size:11px;color:var(--muted);margin-top:2px}.today-actions{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.mini-action,.button-anchor{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--brown);font-size:11px;font-weight:800;min-height:34px}
+.status-badge2,.task-badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;white-space:nowrap}
+.st-active{background:#edf8f1;color:#2d7755}.st-ready{background:#fff4d5;color:#8a6417}.st-done{background:#e8f6ef;color:#246f4d}.st-appt{background:#eaf2fb;color:#3f6d9c}
+.st-away{background:#f3f0fb;color:#71579a}.st-hold{background:#fff0e7;color:#a35d2f}.st-stop{background:#f2f2f2;color:#62666c}.st-home{background:#f7effb;color:#7b4f96}
+.task-done{background:#e8f6ef;color:#246f4d}.task-pending{background:#fff4d5;color:#8a6417}.task-waiting{background:#eaf2fb;color:#3f6d9c}.task-notdone{background:#fff0ef;color:#a84848}
+.operations-table{min-width:1250px}.operations-table td{vertical-align:middle}
+.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:14px 0}.detail-grid>div{border:1px solid #eee5d9;border-radius:11px;padding:10px;background:#fff}
+.detail-grid span{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.detail-grid b{font-size:12px}
+.child-detail-card{border:2px solid #dfc694}.danger-btn{background:#a64646!important;color:#fff!important}
+.ops-section{background:linear-gradient(180deg,#fffaf0,#fff)}
+.sticky-save-actions{position:sticky;bottom:8px;background:rgba(255,255,255,.97);padding:10px;border:1px solid var(--line);border-radius:14px;z-index:30}
+
+@media(max-width:1180px){
+  .registry-kpis{grid-template-columns:repeat(4,1fr)}
+  .detail-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+  .registry-toolbar{grid-template-columns:1fr}
+  .registry-kpis{grid-template-columns:repeat(2,1fr)}
+  .today-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .operations-table{min-width:1180px}
+}
+@media(max-width:430px){
+  .detail-grid{grid-template-columns:1fr}
+}

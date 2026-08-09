@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=10.4.0">
+<link rel="stylesheet" href="styles.css?v=11.0.0">
 </head>
 <body>
 <div id="authGate" class="auth-gate">
@@ -137,7 +137,7 @@
       </div>
     </div>
   </div>
-  <div id="kpis" class="kpis"></div>
+  <div id="kpis" class="kpis"></div><div id="opsKpis" class="registry-kpis"></div>
   <div class="grid2">
     <div class="card"><div class="cardhead"><h3>Recent Children</h3><button class="linkbtn" onclick="app.showView('children')">View all</button></div><div id="recentChildren"></div></div>
     <div class="card"><div class="cardhead"><h3>Upcoming / Due Follow-up</h3><button class="linkbtn" onclick="app.showView('followup')">Record visit</button></div><div id="dueChildren"></div></div>
@@ -166,14 +166,48 @@
 </template>
 
 <template id="childrenTpl">
-  <div class="card">
+  <div class="card registry-command-card">
     <div class="cardhead">
-      <div><span class="eyebrow">IDENTITY-FIRST CHILD REGISTRY</span><h3>Children Registry</h3><p class="muted">Sequential list with baby photo, ID, age, parent contact and one-click clinical access.</p></div>
-      <button id="registerChildBtn">+ Register Child</button>
+      <div>
+        <span class="eyebrow">SWARNAPRASHAN REGISTRY & OPERATIONS</span>
+        <h3>Saved Children & Current Status</h3>
+        <p class="muted">See every registered child, today’s plan, reminders, contact details and current Swarnaprashan status.</p>
+      </div>
+      <div class="actionrow">
+        <button id="registerChildBtn">+ Register Child</button>
+        <button id="showAllChildrenBtn" class="ghost">All Saved Children</button>
+      </div>
     </div>
-    <input id="childSearch" placeholder="Search name / mobile / registration ID">
+
+    <div id="registryKpis" class="registry-kpis"></div>
+
+    <div class="registry-toolbar">
+      <input id="childSearch" placeholder="Search child / guardian / mobile / registration ID">
+      <select id="childStatusFilter">
+        <option value="">All Status</option>
+        <option>Active</option>
+        <option>Ready for Swarnaprashan</option>
+        <option>Today's Dose Taken</option>
+        <option>Appointment Fixed</option>
+        <option>Out of City</option>
+        <option>Temporarily Hold - Health Issue</option>
+        <option>Swarnaprashan Stopped</option>
+        <option>Home Use Medicine</option>
+      </select>
+      <select id="childTaskFilter">
+        <option value="">All Checklist</option>
+        <option>Done</option>
+        <option>Pending</option>
+        <option>Waiting</option>
+        <option>Not Done</option>
+      </select>
+    </div>
+
+    <div id="todayRegistryPanel" class="today-panel"></div>
     <div id="childrenList" class="tablewrap"></div>
   </div>
+
+  <div id="childDetailsPanel"></div>
   <div id="childEditor"></div>
 </template>
 
@@ -449,6 +483,6 @@
 })();
 </script>
 
-<script src="app.js?v=10.4.0"></script>
+<script src="app.js?v=11.0.0"></script>
 </body>
 </html>

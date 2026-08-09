@@ -1,21 +1,45 @@
-MAHAMAYA CLINIC — SWARNAPRASHAN V10.4 CHILD SAVE FIX
+MAHAMAYA CLINIC — SWARNAPRASHAN DIGITAL HEALTH SUITE V11
 
-Root cause fixed:
-The child registration UI displayed a native camera file input with id c_photo_camera,
-but JavaScript tried to attach a click handler to a missing element c_direct_camera.
-That JavaScript error stopped the rest of the child form handlers from being attached,
-including Save Child Profile.
+Primary fix:
+- Child profile structured data is saved FIRST.
+- Baby photo is now optional and saved second.
+- A photo/storage problem can no longer block child registration.
+- Saved child appears immediately in Saved Children Registry.
 
-V10.4 fixes:
-- Child profile uses a real, matching Open Camera Now button (c_direct_camera).
-- Gallery upload works.
-- Save Child Profile handler is always attached.
-- Clear save status and success alert.
-- Saved child immediately appears in Children Registry.
-- Registry scrolls into view after save on mobile.
-- Duplicate Registration ID check.
-- Photo IndexedDB failures are reported instead of silently stopping.
-- Children list still renders even if a photo cannot be read.
-- Cache-busting updated to 10.4.0.
+New Children Registry & Operations:
+- All Saved Children button
+- Total saved children
+- Active candidates
+- Ready for Swarnaprashan
+- Today's dose taken
+- Appointment fixed / appointment today
+- Out of city
+- Temporarily hold due to health issue
+- Swarnaprashan stopped
+- Home-use medicine
+- Reminder date
+- Checklist: Done / Pending / Waiting / Not Done
+- Guardian, mobile and short address visible
+- Call and WhatsApp reminder buttons
+- Open complete saved child profile
+- Edit
+- Delete
+- Clinical entry
+- Report / Print
+- Share child profile
+- Today / Next Action board
+- Filters by Swarnaprashan status and checklist
 
-Deploy ALL files from this ZIP to GitHub root, wait 1–2 minutes, close/reopen the PWA or refresh browser.
+IMPORTANT DEPLOYMENT:
+Upload ALL root files from this ZIP, especially:
+index.html
+app.js
+styles.css
+sw.js
+manifest.json
+icon.svg
+swarna-baby.png
+
+The screenshot showing “Take Photo Now → Choose File” is an older cached UI.
+V11 shows “Open Camera Now” and versioned app.js/styles.css ?v=11.0.0.
+After upload, close the installed app completely and reopen it.
