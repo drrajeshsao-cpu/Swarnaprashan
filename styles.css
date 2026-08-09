@@ -353,3 +353,34 @@ nav button{min-height:46px}
 @media(max-width:430px){
   .detail-grid{grid-template-columns:1fr}
 }
+
+
+/* V11.1 Guardian contact + direct calling */
+.guardian-contact-cell{min-width:205px}
+.guardian-name span,.mobile-display span{
+  display:block;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#8a7a67;font-weight:900;
+}
+.guardian-name b{font-size:13px;color:#172033}
+.mobile-display{margin-top:6px}
+.mobile-display b{
+  font-size:14px;color:#5f4327;letter-spacing:.02em;
+}
+.short-address{margin-top:5px;font-size:10px;color:#757b84;max-width:220px;line-height:1.3}
+.contact-inline-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.contact-call-btn,.contact-wa-btn,.contact-missing-btn{
+  min-height:30px;display:inline-flex;align-items:center;justify-content:center;
+  padding:5px 9px;border-radius:8px;text-decoration:none;font-size:10px;font-weight:900;
+}
+.contact-call-btn{background:#eaf7ef;border:1px solid #bfe0cb;color:#246d49}
+.contact-wa-btn{background:#edf7ed;border:1px solid #c6e3c6;color:#31713b}
+.contact-missing-btn{background:#fff4dd;border:1px solid #ead09a;color:#7a571e}
+.detail-mobile{font-size:15px!important;color:#5f4327}
+.today-contact-block span{display:block!important;margin-top:2px}
+.today-contact-block strong{color:#6c5338}
+.call-action{background:#eaf7ef!important;color:#246d49!important;border-color:#bfe0cb!important}
+.wa-action{background:#edf7ed!important;color:#31713b!important;border-color:#c6e3c6!important}
+.missing-contact{font-size:10px;color:#a45b48;background:#fff0eb;padding:6px 8px;border-radius:8px}
+@media(max-width:760px){
+  .guardian-contact-cell{min-width:220px}
+  .mobile-display b{font-size:15px}
+}

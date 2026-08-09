@@ -475,11 +475,16 @@ function renderTodayPanel(){
   const arr=normalizedChildren().filter(c=>c.appointmentDate===today || c.reminderDate===today || c.currentStatus==='Ready for Swarnaprashan');
   $('#todayRegistryPanel').innerHTML=`<div class="today-head"><div><b>Today / Next Action Board</b><span>${fmt(today)}</span></div><span class="pill">${arr.length} child${arr.length===1?'':'ren'}</span></div>
   <div class="today-grid">${arr.map(c=>`<div class="today-child">
-    <div><b>${esc(c.name)}</b><span>${esc(c.parent||'-')} • ${esc(c.mobile||'-')}</span></div>
+    <div class="today-contact-block">
+      <b>${esc(c.name)}</b>
+      <span><strong>Guardian:</strong> ${esc(c.parent||'Not entered')}</span>
+      <span><strong>Mobile:</strong> ${esc(c.mobile||'Not entered')}</span>
+      ${c.address?`<span><strong>Address:</strong> ${esc(c.address)}</span>`:''}
+    </div>
     <span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span>
     <div class="today-actions">
-      ${c.mobile?`<a href="${callLink(c.mobile)}" class="mini-action">Call</a><a href="${waLink(c.mobile,c.name)}" target="_blank" class="mini-action">WhatsApp</a>`:''}
-      <button class="mini-action" onclick="app.openChildDetails('${c.id}')">Open</button>
+      ${c.mobile?`<a href="${callLink(c.mobile)}" class="mini-action call-action">📞 Call ${esc(c.mobile)}</a><a href="${waLink(c.mobile,c.name)}" target="_blank" class="mini-action wa-action">WhatsApp</a>`:'<span class="missing-contact">Mobile not entered</span>'}
+      <button class="mini-action" onclick="app.openChildDetails('${c.id}')">Open Profile</button>
     </div>
   </div>`).join('')||'<p class="muted">No child is due today. Use Appointment / Reminder dates in child profiles.</p>'}</div>`;
 }
@@ -507,7 +512,7 @@ async function editChild(id=''){
         <label>Date of Birth<input id="c_dob" type="date" value="${c.dob||''}"></label>
         <label>Sex<select id="c_sex"><option ${c.sex==='Male'?'selected':''}>Male</option><option ${c.sex==='Female'?'selected':''}>Female</option><option ${c.sex==='Other'?'selected':''}>Other</option></select></label>
         <label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label>
-        <label>Mobile / WhatsApp<input id="c_mobile" inputmode="tel" value="${esc(c.mobile||'')}"></label>
+        <label>Mobile / WhatsApp *<input id="c_mobile" inputmode="tel" value="${esc(c.mobile||'')}" placeholder="Guardian contact for reminders"></label>
         <label>Registration ID<input id="c_reg" value="${esc(regDefault)}"></label>
         <label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label>
         <label>Short Address<input id="c_address" value="${esc(c.address||'')}"></label>
@@ -591,6 +596,15 @@ async function editChild(id=''){
       });
 
       if(!x.name){mark('Child name is required.',false);alert('Child name is required.');return}
+      if(x.mobile && String(x.mobile).replace(/\D/g,'').length < 10){
+        mark('Please enter a valid guardian mobile number.',false);
+        alert('Guardian mobile number should contain at least 10 digits.');
+        return;
+      }
+      if(!x.mobile){
+        const continueWithout=confirm('Guardian mobile is blank. Without it, direct call/WhatsApp reminders will not be available. Save anyway?');
+        if(!continueWithout){mark('Please enter guardian mobile number.',false);return}
+      }
 
       const duplicate=db.children.find(y=>y.id!==x.id && String(y.regId||'').toLowerCase()===x.regId.toLowerCase());
       if(duplicate){mark('Registration ID already exists.',false);alert('Registration ID already exists.');return}
@@ -653,7 +667,14 @@ async function drawChildren(q=''){
       <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
       <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
       <td><div class="child-name">${esc(c.name)}</div><div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div></td>
-      <td><b>${esc(c.parent||'-')}</b><div class="muted">${esc(c.mobile||'-')}</div><div class="muted">${esc(c.address||'')}</div></td>
+      <td class="guardian-contact-cell">
+        <div class="guardian-name"><span>Guardian</span><b>${esc(c.parent||'Not entered')}</b></div>
+        <div class="mobile-display"><span>Mobile</span><b>${esc(c.mobile||'Not entered')}</b></div>
+        ${c.address?`<div class="short-address">${esc(c.address)}</div>`:''}
+        <div class="contact-inline-actions">
+          ${c.mobile?`<a class="contact-call-btn" href="${callLink(c.mobile)}">📞 Call</a><a class="contact-wa-btn" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a>`:'<button class="contact-missing-btn" onclick="app.editChild(\'${c.id}\')">+ Add Mobile</button>'}
+        </div>
+      </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
@@ -687,7 +708,7 @@ async function openChildDetails(id){
     </div>
     <div class="detail-grid">
       <div><span>Guardian</span><b>${esc(c.parent||'-')}</b></div>
-      <div><span>Mobile</span><b>${esc(c.mobile||'-')}</b></div>
+      <div><span>Mobile / WhatsApp</span>${c.mobile?`<b class="detail-mobile">${esc(c.mobile)}</b><div class="contact-inline-actions"><a class="contact-call-btn" href="${callLink(c.mobile)}">📞 Call</a><a class="contact-wa-btn" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a></div>`:'<b>Not entered</b>'}</div>
       <div><span>Address</span><b>${esc(c.address||'-')}</b></div>
       <div><span>Current Status</span><b class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</b></div>
       <div><span>Checklist</span><b class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</b></div>
