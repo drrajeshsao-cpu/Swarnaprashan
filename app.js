@@ -5,7 +5,7 @@ const defaults={clinicName:'MAHAMAYA CLINIC',prescriptionTitle:'Swarnaprashan Di
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
 let currentView='dashboard';
 let suppressCloudEvent=false;
-db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];
+db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];db.payments=db.payments||[];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),
@@ -313,10 +313,67 @@ function showView(name){ if(!currentSession()) return; currentView=name;
   ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
 }
 
+
+const PAYMENT_STATUSES=['Paid','Part Paid','Pending','Credit / Udhari','Pay Later','Home Use - Already Paid','Complimentary / Free','Waived / No Charge'];
+const PAYMENT_METHODS=['Cash','UPI','Card','Bank Transfer','Credit / Udhari','Pay Later','Home Use Prepaid','Complimentary / Free','Other'];
+
+function childPayments(childId){
+  return (db.payments||[]).filter(p=>p.childId===childId).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+}
+function latestPayment(childId){return childPayments(childId).at(-1)||null}
+function paymentBalance(p){return Math.max(0,(Number(p?.amount)||0)-(Number(p?.paid)||0))}
+function paymentStatus(p){
+  if(!p)return 'No Entry';
+  if(p.status)return p.status;
+  const amt=Number(p.amount)||0, paid=Number(p.paid)||0;
+  if(amt<=0)return 'Complimentary / Free';
+  if(paid>=amt)return 'Paid';
+  if(paid>0)return 'Part Paid';
+  return 'Pending';
+}
+function paymentStatusClass(s){
+  if(['Paid','Home Use - Already Paid'].includes(s))return 'pay-paid';
+  if(['Part Paid'].includes(s))return 'pay-part';
+  if(['Pending','Pay Later'].includes(s))return 'pay-pending';
+  if(['Credit / Udhari'].includes(s))return 'pay-credit';
+  if(['Complimentary / Free','Waived / No Charge'].includes(s))return 'pay-free';
+  return 'pay-none';
+}
+function money(n){return '₹'+(Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function paymentSummary(scope='all'){
+  const list=(db.payments||[]).filter(p=>{
+    if(scope==='month'){
+      const d=new Date((p.date||'')+'T00:00:00'),now=new Date();
+      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    }
+    return true;
+  });
+  const billed=list.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const collected=list.reduce((s,p)=>s+(Number(p.paid)||0),0);
+  const due=list.reduce((s,p)=>s+paymentBalance(p),0);
+  const dueChildren=new Set(list.filter(p=>paymentBalance(p)>0).map(p=>p.childId)).size;
+  const cash=list.filter(p=>p.method==='Cash').reduce((s,p)=>s+(Number(p.paid)||0),0);
+  const upi=list.filter(p=>p.method==='UPI').reduce((s,p)=>s+(Number(p.paid)||0),0);
+  return {billed,collected,due,dueChildren,cash,upi,count:list.length};
+}
+function renderPaymentKpis(){
+  const el=$('#paymentKpis');if(!el)return;
+  const m=paymentSummary('month'),all=paymentSummary('all');
+  el.innerHTML=[
+    ['Collected This Month',money(m.collected),'green'],
+    ['Cash This Month',money(m.cash),'gold'],
+    ['UPI This Month',money(m.upi),'blue'],
+    ['Total Outstanding',money(all.due),'red'],
+    ['Children With Due',all.dueChildren,'orange'],
+    ['Payment Entries',all.count,'neutral']
+  ].map(x=>`<div class="finance-kpi ${x[2]}"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+}
+
 async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
   const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
   $('#kpis').innerHTML=[['Registered Children',db.children.length],['Clinical Entries',db.cases.length],['Visits This Month',thisMonth],['Saved Documents',docs.length]].map(x=>`<div class="kpi"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  renderPaymentKpis();
   const oc=childOperationalCounts();
   if($('#opsKpis')) $('#opsKpis').innerHTML=[
     ['Active',oc.active,'green'],['Ready',oc.ready,'gold'],['Appointments Today',oc.apptToday,'blue'],['Dose Taken Today',oc.doseToday,'green'],
@@ -539,10 +596,11 @@ function renderChildren(){
   db.children=db.children.map(normalizeChild);
   save();
   $('#registerChildBtn').onclick=()=>editChild();
-  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
+  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; if($('#childPaymentFilter'))$('#childPaymentFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
   $('#childSearch').oninput=()=>drawChildren($('#childSearch').value);
   $('#childStatusFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
+  $('#childPaymentFilter').onchange=()=>drawChildren($('#childSearch').value);
   if($('#childAlphaBar')) $('#childAlphaBar').innerHTML='<button class="alpha-btn active" data-alpha="">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" data-alpha="${l}">${l}</button>`).join('');
   $$('#childAlphaBar .alpha-btn').forEach(b=>b.onclick=()=>{childAlpha=b.dataset.alpha||'';$$('#childAlphaBar .alpha-btn').forEach(x=>x.classList.toggle('active',x===b));drawChildren($('#childSearch').value)});
   renderRegistryKpis();
@@ -559,7 +617,8 @@ function renderRegistryKpis(){
     ['Dose Taken Today',c.doseToday,'green'],
     ['Reminder Today',c.remindersToday,'orange'],
     ['Health Hold',c.hold,'red'],
-    ['Stopped',c.stopped,'gray']
+    ['Stopped',c.stopped,'gray'],
+    ['Payment Due',paymentSummary('all').dueChildren,'red']
   ].map(x=>`<div class="ops-kpi ${x[2]}"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
 }
 function renderTodayPanel(){
@@ -740,6 +799,7 @@ async function editChild(id=''){
 async function drawChildren(q=''){
   const statusFilter=$('#childStatusFilter')?.value||'';
   const taskFilter=$('#childTaskFilter')?.value||'';
+  const paymentFilter=$('#childPaymentFilter')?.value||'';
   q=(q||'').toLowerCase();
 
   const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
@@ -747,6 +807,7 @@ async function drawChildren(q=''){
     .filter(c=>[c.name,c.parent,c.mobile,c.regId,c.address].join(' ').toLowerCase().includes(q))
     .filter(c=>!statusFilter||c.currentStatus===statusFilter)
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
+    .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
     .filter(c=>!childAlpha||String(c.name||'').trim().toUpperCase().startsWith(childAlpha))
     .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})||num(a.regId)-num(b.regId));
 
@@ -769,6 +830,7 @@ async function drawChildren(q=''){
         </div>
       </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
+      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${esc(p.method||'-')} • ${money(p.paid)} paid${bal?`<br><b>${money(bal)} due</b>`:''}</div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
         <button onclick="app.openChildDetails('${c.id}')">Open</button>
@@ -782,8 +844,8 @@ async function drawChildren(q=''){
 
   $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> shown • <b>${db.children.length}</b> total saved</div>
   <table class="children-table operations-table">
-    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Appointment</th><th>Actions</th></tr></thead>
-    <tbody>${rows.join('')||'<tr><td colspan="8" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
+    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Payment</th><th>Appointment</th><th>Actions</th></tr></thead>
+    <tbody>${rows.join('')||'<tr><td colspan="9" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
   </table>`;
 }
 async function openChildDetails(id){
@@ -808,6 +870,7 @@ async function openChildDetails(id){
       <div><span>Appointment</span><b>${c.appointmentDate?fmt(c.appointmentDate):'-'}</b></div>
       <div><span>Reminder</span><b>${c.reminderDate?fmt(c.reminderDate):'-'}</b></div>
       <div><span>Home Medicine</span><b>${esc(c.homeMedicineQty||'-')}</b></div>
+      <div><span>Payment Status</span>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p);return `<b class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</b>${p?`<small>${money(p.paid)} paid • ${money(paymentBalance(p))} due</small>`:''}`})()}</div>
       <div><span>Total Follow-ups</span><b>${visits.length}</b></div>
       <div><span>Next Action</span><b>${esc(c.nextAction||'-')}</b></div>
       <div><span>Status Note</span><b>${esc(c.statusNote||'-')}</b></div>
@@ -815,15 +878,93 @@ async function openChildDetails(id){
     </div>
     <div class="actionrow">
       <button onclick="app.editChild('${c.id}')">Edit Profile</button>
+      <button class="payment-action-btn" onclick="app.recordPayment('${c.id}')">₹ Record Payment</button>
       <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical Entry</button>
       <button class="ghost" onclick="app.quickReport('${c.id}')">Report / Print</button>
       <button class="ghost" onclick="app.shareChildProfile('${c.id}')">Share</button>
       ${c.mobile?`<a class="button-anchor" href="${callLink(c.mobile)}">Call Guardian</a><a class="button-anchor" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp Reminder</a>`:''}
       <button class="danger-btn" onclick="app.deleteChild('${c.id}')">Delete</button>
     </div>
+    <div class="section payment-history-section"><h4>Swarnaprashan Payment Ledger</h4><div id="childPaymentHistory">${paymentHistoryHtml(c.id)}</div></div>
   </div>`;
   $('#childDetailsPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+function paymentHistoryHtml(childId){
+  const ps=childPayments(childId).slice().reverse();
+  if(!ps.length)return '<p class="muted">No payment transaction recorded yet.</p>';
+  return `<div class="payment-history-list">${ps.map(p=>`<div class="payment-history-row">
+    <div><b>${fmt(p.date)}</b><span>${esc(p.purpose||'Swarnaprashan')}</span></div>
+    <div><span class="payment-badge ${paymentStatusClass(paymentStatus(p))}">${esc(paymentStatus(p))}</span><small>${esc(p.method||'-')}</small></div>
+    <div><span>Billed</span><b>${money(p.amount)}</b></div>
+    <div><span>Paid</span><b>${money(p.paid)}</b></div>
+    <div><span>Due</span><b class="${paymentBalance(p)>0?'due-money':''}">${money(paymentBalance(p))}</b></div>
+    <div><small>${esc(p.reference||p.note||'')}</small></div>
+  </div>`).join('')}</div>`;
+}
+function recordPayment(childId){
+  const c=child(childId);if(!c)return;
+  const last=latestPayment(childId);
+  $('#childDetailsPanel').insertAdjacentHTML('afterbegin',`<div id="paymentEditorCard" class="card payment-editor-card">
+    <div class="cardhead"><div><span class="eyebrow">PAYMENT / COLLECTION</span><h3>Record Swarnaprashan Payment — ${esc(c.name)}</h3><p class="muted">${esc(c.regId||'-')} • ${age(c.dob)}</p></div><button class="ghost" onclick="document.getElementById('paymentEditorCard')?.remove()">Close</button></div>
+    <div class="formgrid payment-formgrid">
+      <label>Date<input id="pay_date" type="date" value="${isoToday()}"></label>
+      <label>Purpose<select id="pay_purpose">
+        <option>Clinic Swarnaprashan Dose</option>
+        <option>Home Use Medicine / Doses</option>
+        <option>Registration / Package</option>
+        <option>Previous Due Collection</option>
+        <option>Other</option>
+      </select></label>
+      <label>Payment Status<select id="pay_status">${PAYMENT_STATUSES.map(s=>`<option>${s}</option>`).join('')}</select></label>
+      <label>Payment Method<select id="pay_method">${PAYMENT_METHODS.map(s=>`<option>${s}</option>`).join('')}</select></label>
+      <label>Total Amount ₹<input id="pay_amount" type="number" min="0" step="1" value=""></label>
+      <label>Amount Received ₹<input id="pay_paid" type="number" min="0" step="1" value=""></label>
+      <label>Balance Due ₹<input id="pay_due" type="number" readonly value="0"></label>
+      <label>UPI / Receipt / Reference<input id="pay_ref" placeholder="Optional transaction / receipt reference"></label>
+      <label class="wide">Payment Note<input id="pay_note" placeholder="e.g. balance next Pushya, paid at reception, home-use prepaid"></label>
+    </div>
+    <div class="payment-quick-status">
+      <button class="ghost" type="button" onclick="app.setPaymentPreset('Paid')">Paid in Full</button>
+      <button class="ghost" type="button" onclick="app.setPaymentPreset('Pending')">Pending</button>
+      <button class="ghost" type="button" onclick="app.setPaymentPreset('Credit / Udhari')">Credit / Udhari</button>
+      <button class="ghost" type="button" onclick="app.setPaymentPreset('Home Use - Already Paid')">Home Use Already Paid</button>
+      <button class="ghost" type="button" onclick="app.setPaymentPreset('Complimentary / Free')">Complimentary / Free</button>
+    </div>
+    <div class="actionrow"><button id="savePaymentBtn">Save Payment Transaction</button></div>
+  </div>`);
+  const calc=()=>{const a=Number($('#pay_amount').value)||0,p=Number($('#pay_paid').value)||0;$('#pay_due').value=Math.max(0,a-p)};
+  $('#pay_amount').oninput=calc;$('#pay_paid').oninput=calc;
+  $('#pay_status').onchange=()=>{const s=$('#pay_status').value;if(['Paid','Home Use - Already Paid'].includes(s)){const a=Number($('#pay_amount').value)||0;if(a)$('#pay_paid').value=a}else if(['Pending','Credit / Udhari','Pay Later'].includes(s)){$('#pay_paid').value=0}else if(['Complimentary / Free','Waived / No Charge'].includes(s)){if(!$('#pay_amount').value)$('#pay_amount').value=0;$('#pay_paid').value=0}calc()};
+  $('#savePaymentBtn').onclick=()=>savePaymentTransaction(childId);
+  $('#paymentEditorCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function setPaymentPreset(status){
+  const s=$('#pay_status');if(!s)return;s.value=status;
+  const method=$('#pay_method');
+  if(status==='Credit / Udhari')method.value='Credit / Udhari';
+  if(status==='Pay Later')method.value='Pay Later';
+  if(status==='Home Use - Already Paid'){method.value='Home Use Prepaid';$('#pay_purpose').value='Home Use Medicine / Doses'}
+  if(status==='Complimentary / Free')method.value='Complimentary / Free';
+  s.dispatchEvent(new Event('change'));
+}
+function savePaymentTransaction(childId){
+  const amount=Number($('#pay_amount').value)||0, paid=Number($('#pay_paid').value)||0;
+  let status=$('#pay_status').value;
+  if(status==='Paid' && amount>0 && paid<amount)status=paid>0?'Part Paid':'Pending';
+  if(status==='Part Paid' && paid>=amount && amount>0)status='Paid';
+  const p={
+    id:uid(),childId,date:$('#pay_date').value||isoToday(),purpose:$('#pay_purpose').value,
+    status,method:$('#pay_method').value,amount,paid,reference:$('#pay_ref').value||'',
+    note:$('#pay_note').value||'',createdAt:new Date().toISOString(),
+    recordedBy:currentSession()?.name||currentSession()?.loginId||'Clinic User'
+  };
+  db.payments=db.payments||[];db.payments.push(p);save();
+  alert(`Payment saved • ${money(paid)} received • ${money(paymentBalance(p))} due`);
+  $('#paymentEditorCard')?.remove();
+  openChildDetails(childId);
+}
+
 async function shareChildProfile(id){
   const c=normalizeChild(child(id));if(!c)return;
   const text=`Mahamaya Clinic • Swarnaprashan Child Profile
@@ -848,6 +989,7 @@ async function deleteChild(id){
   db.followups=db.followups.filter(x=>x.childId!==id);
   db.cases=db.cases.filter(x=>x.childId!==id);
   db.vaccines=db.vaccines.filter(x=>x.childId!==id);
+  db.payments=(db.payments||[]).filter(x=>x.childId!==id);
   save();
   $('#childDetailsPanel').innerHTML='';
   renderRegistryKpis();renderTodayPanel();drawChildren('');
@@ -1109,6 +1251,7 @@ function normalizeCloudDb(incoming){
     followups:incoming.followups||[],
     vaccines:incoming.vaccines||[],
     plans:incoming.plans||[],
+    payments:incoming.payments||[],
     settings:{...defaults,...(incoming.settings||{})}
   };
 }
@@ -1129,7 +1272,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);

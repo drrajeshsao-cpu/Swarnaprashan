@@ -1,0 +1,26 @@
+MAHAMAYA SWARNAPRASHAN V11.6 — PAYMENT & COLLECTION LEDGER
+
+Only requested operational/accounting additions were made.
+
+Added:
+- Separate payment transaction ledger per child.
+- Payment statuses: Paid, Part Paid, Pending, Credit/Udhari, Pay Later,
+  Home Use - Already Paid, Complimentary/Free, Waived/No Charge.
+- Methods: Cash, UPI, Card, Bank Transfer, Credit/Udhari, Pay Later,
+  Home Use Prepaid, Complimentary/Free, Other.
+- Amount billed, amount received, automatic balance due.
+- Receipt/UPI/reference and payment notes.
+- Payment recorded-by user name.
+- Child Registry payment column and payment-status filter.
+- Child detail payment ledger and Record Payment button.
+- Dashboard automatic monthly collection totals: cash, UPI, total collected,
+  total outstanding, due-child count, transaction count.
+- Payment ledger syncs as a dedicated Firebase collection for multi-user clinic use.
+- Child age remains visible with name and ID.
+
+Authentication policy:
+- Firebase authentication/login logic was not redesigned.
+- Existing stable role and persistence behavior retained.
+
+Suggested GitHub commit:
+Add Swarnaprashan V11.6 payment ledger collections dues and home-use prepaid tracking

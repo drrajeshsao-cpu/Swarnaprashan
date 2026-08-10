@@ -175,7 +175,7 @@
       </div>
     </div>
   </div>
-  <div id="kpis" class="kpis"></div><div id="opsKpis" class="registry-kpis"></div>
+  <div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="opsKpis" class="registry-kpis"></div>
   <div class="grid2 dashboard-utility-grid">
     <div class="card pushya-card">
       <div class="cardhead"><div><span class="eyebrow">PUSHYA NAKSHATRA CALENDAR</span><h3>Upcoming Swarnaprashan Dates</h3></div><button class="linkbtn" onclick="app.showView('knowledge')">Full guide</button></div>
@@ -258,6 +258,18 @@
         <option>Pending</option>
         <option>Waiting</option>
         <option>Not Done</option>
+      </select>
+      <select id="childPaymentFilter">
+        <option value="">All Payment Status</option>
+        <option>Paid</option>
+        <option>Part Paid</option>
+        <option>Pending</option>
+        <option>Credit / Udhari</option>
+        <option>Pay Later</option>
+        <option>Home Use - Already Paid</option>
+        <option>Complimentary / Free</option>
+        <option>Waived / No Charge</option>
+        <option>No Entry</option>
       </select>
     </div>
 
@@ -466,7 +478,7 @@
 
 
 
-<script src="app.js?v=11.5.0"></script>
-<script type="module" src="cloud-sync.js?v=11.5.0"></script>
+<script src="app.js?v=11.6.0"></script>
+<script type="module" src="cloud-sync.js?v=11.6.0"></script>
 </body>
 </html>
