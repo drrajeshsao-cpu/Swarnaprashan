@@ -190,21 +190,52 @@ function startListeners(){
 }
 
 function openLocalSession(user){
-  try{
-    localStorage.setItem('mahamaya_swarnaprashan_session_v1',JSON.stringify({
-      id:user.uid,
+  const email=String(user?.email||'').trim().toLowerCase();
+
+  const profiles={
+    'dr.raju2010@gmail.com':{
       name:'Dr Rajesh Sao',
-      loginId:user.email||'drrajesh',
-      role:'Super Admin',
-      at:Date.now(),
-      firebase:true
-    }));
+      loginId:'drrajesh',
+      role:'Super Admin'
+    },
+    'rchandrakar127@gmail.com':{
+      name:'Dr Ravi Chandrakar',
+      loginId:'drravi',
+      role:'Doctor'
+    }
+  };
+
+  const profile=profiles[email];
+
+  if(!profile){
+    console.error('Authorized role not configured for:',email);
+    return;
+  }
+
+  try{
+    localStorage.setItem(
+      'mahamaya_swarnaprashan_session_v1',
+      JSON.stringify({
+        id:user.uid,
+        name:profile.name,
+        loginId:profile.loginId,
+        email:email,
+        role:profile.role,
+        at:Date.now(),
+        firebase:true
+      })
+    );
   }catch{}
+
   document.getElementById('authGate')?.style.setProperty('display','none');
   document.getElementById('appShell')?.classList.remove('auth-hidden');
+
   const badge=document.getElementById('currentUserBadge');
-  if(badge)badge.textContent='Dr Rajesh Sao • Super Admin';
-  try{window.app?.showView?.('dashboard')}catch{}
+  if(badge) badge.textContent=`${profile.name} • ${profile.role}`;
+
+  try{
+    window.app?.showView?.('dashboard');
+  }catch{}
 }
 
 async function initializeCloudUser(user){
