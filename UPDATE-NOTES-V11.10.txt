@@ -1,0 +1,18 @@
+MAHAMAYA SWARNAPRASHAN V11.10 — STAFF AUDIT TRAIL
+
+Added independent accountability fields:
+- Child Registered By
+- Swarnaprashan Administered By
+- Payment Received / Status Known By
+
+Registry now displays all three in a Staff Audit column.
+Clinical Treatment step records Administered By independently of billing.
+Dashboard staff table shows monthly: Children Registered, Doses Administered, Payment Entries, Total Collected, Cash, UPI, Pending, Credit/Udhari.
+Child details show registration and latest administration/payment responsibility.
+Search also matches staff names.
+Old records without historical attribution display Not recorded (legacy); the app does not guess.
+New child registrations default Registered By to the currently signed-in user but remain selectable.
+Existing Firebase authentication/login logic was not redesigned.
+
+Suggested GitHub commit:
+Add V11.10 staff audit trail for registration Swarnaprashan administration and payment accountability

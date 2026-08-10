@@ -40,6 +40,10 @@ function normalizeChild(c){
     homeMedicineQty:'',
     lastContactDate:'',
     statusNote:'',
+    registeredBy:'',
+    registeredAt:'',
+    lastUpdatedBy:'',
+    lastUpdatedAt:'',
     ...c
   };
 }
@@ -326,18 +330,37 @@ function staffOptions(selected=''){
 function paymentAdministeredBy(p){return p?.administeredBy||p?.soldBy||p?.recordedBy||'Unassigned'}
 function paymentReceivedBy(p){return p?.receivedBy||p?.soldBy||p?.recordedBy||'Unassigned'}
 function paymentStaff(p){return paymentReceivedBy(p)}
+function auditName(v){return v||'Not recorded (legacy)'}
+function latestClinicalForChild(childId){return (db.cases||[]).filter(x=>x.childId===childId).slice().sort((a,b)=>String(b.updatedAt||b.date||'').localeCompare(String(a.updatedAt||a.date||'')))[0]||null}
+function latestAdministeredClinical(childId){return (db.cases||[]).filter(x=>x.childId===childId&&x.administeredBy).slice().sort((a,b)=>String(b.updatedAt||b.date||'').localeCompare(String(a.updatedAt||a.date||'')))[0]||null}
+function childAudit(c){
+  const cs=latestAdministeredClinical(c.id),pay=latestPayment(c.id);
+  return {registeredBy:auditName(c.registeredBy),administeredBy:auditName(cs?.administeredBy),paymentBy:auditName(pay?paymentReceivedBy(pay):'')};
+}
+
 function staffFinanceSummary(scope='month'){
   const now=new Date();
-  const list=(db.payments||[]).filter(p=>{
+  const inScope=(date)=>{
     if(scope!=='month')return true;
-    const d=new Date((p.date||'')+'T00:00:00');
+    if(!date)return false;
+    const d=new Date(String(date).slice(0,10)+'T00:00:00');
     return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-  });
+  };
   const map={};
-  const ensure=(name)=>map[name] ||= {administered:0,paymentEntries:0,billed:0,collected:0,cash:0,upi:0,cardBank:0,credit:0,pending:0};
-  for(const p of list){
-    const admin=paymentAdministeredBy(p);
-    ensure(admin).administered += Math.max(1,Number(p.quantity)||1);
+  const ensure=(name)=>map[auditName(name)] ||= {registered:0,administered:0,paymentEntries:0,billed:0,collected:0,cash:0,upi:0,cardBank:0,credit:0,pending:0};
+  for(const c of (db.children||[])){
+    if(inScope(c.registeredAt||c.createdAt)) ensure(c.registeredBy).registered++;
+  }
+  for(const cs of (db.cases||[])){
+    if(cs.administeredBy && inScope(cs.date||cs.updatedAt)) ensure(cs.administeredBy).administered += Math.max(1,Number(cs.administeredQty)||1);
+  }
+  for(const p of (db.payments||[])){
+    if(!inScope(p.date||p.createdAt))continue;
+    // Legacy fallback: count payment-level administration only when there is no attributed clinical entry for same child/date.
+    if(p.administeredBy){
+      const hasClinical=(db.cases||[]).some(cs=>cs.childId===p.childId&&cs.administeredBy&&String(cs.date||'')===String(p.date||''));
+      if(!hasClinical) ensure(p.administeredBy).administered += Math.max(1,Number(p.quantity)||1);
+    }
     const recv=paymentReceivedBy(p),x=ensure(recv),bal=paymentBalance(p),st=paymentStatus(p);
     x.paymentEntries++;x.billed+=Number(p.amount)||0;x.collected+=Number(p.paid)||0;
     if(p.method==='Cash')x.cash+=Number(p.paid)||0;
@@ -385,18 +408,16 @@ function inventoryUsageCount(action,item=''){
 }
 function renderStaffFinanceDashboard(){
   const el=$('#staffFinancePanel');if(!el)return;
-  const m=staffFinanceSummary('month'),rows=Object.entries(m).sort((a,b)=>b[1].collected-a[1].collected);
+  const m=staffFinanceSummary('month'),rows=Object.entries(m).sort((a,b)=>(b[1].administered+b[1].registered+b[1].paymentEntries)-(a[1].administered+a[1].registered+a[1].paymentEntries));
   el.innerHTML=`<div class="card staff-finance-card">
     <div class="cardhead">
-      <div><span class="eyebrow">STAFF ACCOUNTABILITY • THIS MONTH</span><h3>Swarnaprashan administration & collection by staff</h3><p class="muted">Administration and payment responsibility are tracked separately.</p></div>
+      <div><span class="eyebrow">STAFF AUDIT TRAIL • THIS MONTH</span><h3>Registration, Swarnaprashan administration & collections</h3><p class="muted">Three responsibilities are recorded separately: who registered the child, who administered Swarnaprashan, and who received/knew the payment status.</p></div>
       <button class="linkbtn" onclick="app.showView('children')">Open Child Registry</button>
     </div>
-    ${rows.length?`<div class="staff-finance-table staff-finance-wide">
-      <div class="staff-finance-head"><span>Staff</span><span>Doses</span><span>Collected</span><span>Cash</span><span>UPI</span><span>Card/Bank</span><span>Pending</span><span>Credit/Udhari</span></div>
-      ${rows.map(([n,x])=>`<div class="staff-finance-row">
-        <b>${esc(n)}</b><strong>${x.administered}</strong><strong>${money(x.collected)}</strong><span>${money(x.cash)}</span><span>${money(x.upi)}</span><span>${money(x.cardBank)}</span><span>${money(x.pending)}</span><span>${money(x.credit)}</span>
-      </div>`).join('')}
-    </div>`:'<p class="muted">No attributed Swarnaprashan/payment transactions this month.</p>'}
+    ${rows.length?`<div class="staff-finance-table staff-finance-wide staff-audit-wide">
+      <div class="staff-finance-head"><span>Staff</span><span>Registered</span><span>Doses</span><span>Payments</span><span>Collected</span><span>Cash</span><span>UPI</span><span>Pending</span><span>Credit/Udhari</span></div>
+      ${rows.map(([n,x])=>`<div class="staff-finance-row"><b>${esc(n)}</b><strong>${x.registered}</strong><strong>${x.administered}</strong><span>${x.paymentEntries}</span><strong>${money(x.collected)}</strong><span>${money(x.cash)}</span><span>${money(x.upi)}</span><span>${money(x.pending)}</span><span>${money(x.credit)}</span></div>`).join('')}
+    </div>`:'<p class="muted">No staff-attributed activity this month yet.</p>'}
   </div>`;
 }
 function renderInventoryDashboard(){
@@ -683,7 +704,7 @@ function wizardHtml(i){
  if(i===0)return`<div class="card"><h3>1. Patient Profile</h3><div class="formgrid"><label>Existing Child<select id="w_child"></select></label><label>Date<input id="w_date" type="date" value="${d.date||''}"></label><label>Visit Type<select id="w_type"><option>Initial Swarnaprashan</option><option>Monthly Follow-up</option><option>Clinical Review</option></select></label><label>Present Complaint<input id="w_complaint" value="${esc(d.complaint||'')}"></label><label>Allergy / Sensitivity<input id="w_allergy" value="${esc(d.allergy||'')}"></label><label>Current Medication<input id="w_currentMeds" value="${esc(d.currentMeds||'')}"></label></div><label>Relevant History<textarea id="w_history">${esc(d.history||'')}</textarea></label></div>`;
  if(i===1)return`<div class="card"><h3>2. Examination</h3><div class="formgrid"><label>Height cm<input id="w_height" type="number" step=".1" value="${d.height||''}"></label><label>Weight kg<input id="w_weight" type="number" step=".1" value="${d.weight||''}"></label><label>Temperature °F<input id="w_temp" type="number" step=".1" value="${d.temp||''}"></label><label>Pulse /min<input id="w_pulse" type="number" value="${d.pulse||''}"></label><label>RR /min<input id="w_rr" type="number" value="${d.rr||''}"></label><label>SpO₂ %<input id="w_spo2" type="number" value="${d.spo2||''}"></label><label>BP Systolic<input id="w_sys" type="number" value="${d.sys||''}"></label><label>BP Diastolic<input id="w_dia" type="number" value="${d.dia||''}"></label><label>General Appearance<input id="w_ga" value="${esc(d.ga||'')}"></label></div><div class="section"><h4>Functional Grading 0–4</h4><div class="scalegrid">${['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy'].map(x=>scale(x,d.examScores?.[x]??2)).join('')}</div></div><div class="section"><h4>Ashtavidha Pariksha — Ayurveda-specific findings</h4><div class="scalegrid">${Object.entries(ASHTAVIDHA_OPTIONS).map(([x,opts])=>ayurSelect('A:',x,opts,d.examScores?.['A:'+x])).join('')}</div></div><div class="section"><h4>Dashavidha Atura Pariksha — Ayurveda-specific assessment</h4><div class="scalegrid">${Object.entries(DASHAVIDHA_OPTIONS).map(([x,opts])=>ayurSelect('D:',x,opts,d.examScores?.['D:'+x])).join('')}</div><p class="tiny muted">Ahara Shakti is documented through Abhyavaharana Shakti and Jarana Shakti.</p></div><label>Examination Notes<textarea id="w_examNotes">${esc(d.examNotes||'')}</textarea></label></div>`;
  if(i===2)return`<div class="card"><h3>3. Investigations & Clinical Attachments</h3><div class="formgrid"><label>Investigation Summary<textarea id="w_invest">${esc(d.invest||'')}</textarea></label><label>Clinical Impression<textarea id="w_impression">${esc(d.impression||'')}</textarea></label><label>Red Flags / Safety Notes<textarea id="w_redflags">${esc(d.redflags||'')}</textarea></label></div><div class="upload-grid"><button type="button" id="w_direct_camera" class="uploadbox direct-camera-btn">📷 Open Camera Now<br><span>Live camera preview → Capture</span></button><label class="uploadbox">🖼 Gallery / 📎 File / PDF<input id="w_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><div id="w_camera_capture_name" class="selected-files"></div><p class="tiny muted">Files will be linked to this clinical entry when you press Save & Next.</p></div>`;
- if(i===3)return`<div class="card"><h3>4. Treatment Plan</h3><div class="formgrid"><label>Swarnaprashan Dose<input id="w_dose" value="${esc(d.dose||'')}"></label><label>Preparation / Batch<input id="w_batch" value="${esc(d.batch||'')}"></label><label>Next Follow-up<input id="w_next" type="date" value="${d.next||''}"></label><label>Other Medicines<textarea id="w_medicines">${esc(d.medicines||'')}</textarea></label><label>Diet / Pathya<textarea id="w_pathya">${esc(d.pathya||'')}</textarea></label><label>Apathya / Avoid<textarea id="w_apathya">${esc(d.apathya||'')}</textarea></label><label>Activity / Lifestyle<textarea id="w_lifestyle">${esc(d.lifestyle||'')}</textarea></label><label>School / Cognitive Advice<textarea id="w_cognitive">${esc(d.cognitive||'')}</textarea></label><label>Safety / Referral Advice<textarea id="w_safety">${esc(d.safety||'')}</textarea></label></div></div>`;
+ if(i===3)return`<div class="card"><h3>4. Treatment Plan</h3><div class="formgrid"><label>Swarnaprashan Dose<input id="w_dose" value="${esc(d.dose||'')}"></label><label>Administered By<select id="w_administeredBy">${staffOptions(d.administeredBy||currentSession()?.name||'Dr Rajesh Sao')}</select></label><label>Number of Doses<input id="w_administeredQty" type="number" min="1" step="1" value="${Number(d.administeredQty)||1}"></label><label>Preparation / Batch<input id="w_batch" value="${esc(d.batch||'')}"></label><label>Next Follow-up<input id="w_next" type="date" value="${d.next||''}"></label><label>Other Medicines<textarea id="w_medicines">${esc(d.medicines||'')}</textarea></label><label>Diet / Pathya<textarea id="w_pathya">${esc(d.pathya||'')}</textarea></label><label>Apathya / Avoid<textarea id="w_apathya">${esc(d.apathya||'')}</textarea></label><label>Activity / Lifestyle<textarea id="w_lifestyle">${esc(d.lifestyle||'')}</textarea></label><label>School / Cognitive Advice<textarea id="w_cognitive">${esc(d.cognitive||'')}</textarea></label><label>Safety / Referral Advice<textarea id="w_safety">${esc(d.safety||'')}</textarea></label></div></div>`;
  if(i===4)return`<div class="card"><h3>5. Prescription Builder</h3><div class="formgrid"><label>Prescription Title<input id="w_rxTitle" value="${esc(d.rxTitle||'Digital Swarnaprashan Prescription')}"></label><label>Special Instructions<textarea id="w_rxInstructions">${esc(d.rxInstructions||'')}</textarea></label><label>Parent Message<textarea id="w_parentMsg">${esc(d.parentMsg||'')}</textarea></label></div><div class="section"><h4>Print Options</h4><label><input id="w_printGrowth" type="checkbox" ${d.printGrowth!==false?'checked':''}> Include growth summary</label><br><label><input id="w_printAssessment" type="checkbox" ${d.printAssessment!==false?'checked':''}> Include assessment summary</label><br><label><input id="w_printDocs" type="checkbox" ${d.printDocs!==false?'checked':''}> Include uploaded-document list</label></div></div>`;
  return`<div class="card"><h3>6. Review, Save, Print & Share</h3><div id="wizardReview"></div><div class="actionrow"><button onclick="app.generateCaseReport()">Generate Prescription</button><button class="ghost" onclick="app.printCaseReport()">Print / Save PDF</button><button class="ghost" onclick="app.shareCurrent()">Share</button><button class="ghost" onclick="app.whatsappCurrent()">WhatsApp</button></div></div><div id="caseReportPreview" class="reportpaper"></div>`;
 }
@@ -702,18 +723,18 @@ async function collectWizard(){
  if(wiz.step===0){d.childId=$('#w_child')?.value||d.childId;d.date=$('#w_date')?.value;d.type=$('#w_type')?.value;d.complaint=$('#w_complaint')?.value;d.allergy=$('#w_allergy')?.value;d.currentMeds=$('#w_currentMeds')?.value;d.history=$('#w_history')?.value}
  if(wiz.step===1){['height','weight','temp','pulse','rr','spo2','sys','dia','ga','examNotes'].forEach(k=>d[k]=$('#w_'+k)?.value);d.examScores={};$$('[data-w]').forEach(e=>d.examScores[e.dataset.w]=e.dataset.ayur==='1'?e.value:Number(e.value));d.bmi=d.height&&d.weight?(+d.weight/((+d.height/100)**2)).toFixed(2):''}
  if(wiz.step===2){d.invest=$('#w_invest')?.value;d.impression=$('#w_impression')?.value;d.redflags=$('#w_redflags')?.value;if(!wiz.caseId)wiz.caseId=uid();const arr=[];if(wizardCameraFile)arr.push(wizardCameraFile);if($('#w_files')?.files?.length)arr.push(...$('#w_files').files);for(const f of arr)await putDoc({id:uid(),childId:d.childId||'',caseId:wiz.caseId,type:'Investigation / Clinical Attachment',date:d.date||new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:''});wizardCameraFile=null}
- if(wiz.step===3)['dose','batch','next','medicines','pathya','apathya','lifestyle','cognitive','safety'].forEach(k=>d[k]=$('#w_'+k)?.value);
+ if(wiz.step===3){['dose','batch','next','medicines','pathya','apathya','lifestyle','cognitive','safety'].forEach(k=>d[k]=$('#w_'+k)?.value);d.administeredBy=$('#w_administeredBy')?.value||d.administeredBy||currentSession()?.name||'Unassigned';d.administeredQty=Number($('#w_administeredQty')?.value)||1;}
  if(wiz.step===4){['rxTitle','rxInstructions','parentMsg'].forEach(k=>d[k]=$('#w_'+k)?.value);d.printGrowth=$('#w_printGrowth')?.checked;d.printAssessment=$('#w_printAssessment')?.checked;d.printDocs=$('#w_printDocs')?.checked}
 }
 function saveDraft(){if(!wiz.data.childId&&wiz.step>0){alert('Please select a child in Patient Profile');return}if(!wiz.caseId)wiz.caseId=uid();const item={id:wiz.caseId,...wiz.data,updatedAt:new Date().toISOString(),status:wiz.step===5?'Complete':'Draft'};const i=db.cases.findIndex(x=>x.id===item.id);i>=0?db.cases[i]=item:db.cases.push(item);save();if($('#draftStatus'))$('#draftStatus').textContent='Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-function reviewHtml(){const d=wiz.data,c=child(d.childId)||{};return`<div class="metricrow"><div class="metric"><span>Child</span><b>${esc(c.name||'-')}</b></div><div class="metric"><span>Date</span><b>${fmt(d.date)}</b></div><div class="metric"><span>Dose</span><b>${esc(d.dose||'-')}</b></div><div class="metric"><span>BMI</span><b>${d.bmi||'-'}</b></div></div><div class="section"><h4>Clinical Impression</h4><p>${esc(d.impression||'-')}</p></div>`}
+function reviewHtml(){const d=wiz.data,c=child(d.childId)||{};return`<div class="metricrow"><div class="metric"><span>Child</span><b>${esc(c.name||'-')}</b></div><div class="metric"><span>Date</span><b>${fmt(d.date)}</b></div><div class="metric"><span>Dose</span><b>${esc(d.dose||'-')}</b><small>${esc(d.administeredBy||'Not recorded')}</small></div><div class="metric"><span>BMI</span><b>${d.bmi||'-'}</b></div></div><div class="section"><h4>Clinical Impression</h4><p>${esc(d.impression||'-')}</p></div>`}
 async function generateCaseReport(scroll=true){
  const d=wiz.data,c=child(d.childId)||{},docs=(await getDocs()).filter(x=>x.childId===d.childId),el=$('#caseReportPreview')||$('#reportPaper');if(!el)return;
  let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
  el.innerHTML=`${letterhead(fmt(d.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(d.date)}</div>`)}
  <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name||'-')}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Height / Weight</span><b>${d.height||'-'} cm / ${d.weight||'-'} kg</b></div><div class="metric"><span>BMI</span><b>${d.bmi||'-'}</b></div></div></div>
  <div class="reportsection"><h3>Clinical Assessment</h3><p><b>Complaint:</b> ${esc(d.complaint||'-')}</p><p><b>Impression:</b> ${esc(d.impression||'-')}</p><p><b>Vitals:</b> Pulse ${d.pulse||'-'} • RR ${d.rr||'-'} • SpO₂ ${d.spo2||'-'}% • BP ${d.sys||'-'}/${d.dia||'-'}</p><p><b>Safety / Red flags:</b> ${esc(d.redflags||'None recorded')}</p></div>
- <div class="reportsection"><h3>Swarnaprashan & Treatment</h3><p><b>Swarnaprashan Dose:</b> ${esc(d.dose||'-')} &nbsp; <b>Preparation/Batch:</b> ${esc(d.batch||'-')}</p><p><b>Other medicines:</b> ${esc(d.medicines||'-')}</p><p><b>Next follow-up:</b> ${fmt(d.next)}</p></div>
+ <div class="reportsection"><h3>Swarnaprashan & Treatment</h3><p><b>Swarnaprashan Dose:</b> ${esc(d.dose||'-')} &nbsp; <b>Preparation/Batch:</b> ${esc(d.batch||'-')}</p><p><b>Administered by:</b> ${esc(d.administeredBy||'Not recorded')} ${d.administeredQty?`• <b>Doses:</b> ${d.administeredQty}`:''}</p><p><b>Other medicines:</b> ${esc(d.medicines||'-')}</p><p><b>Next follow-up:</b> ${fmt(d.next)}</p></div>
  <div class="reportsection"><h3>Diet • Pathya • Lifestyle</h3><p><b>Pathya:</b> ${esc(d.pathya||'-')}</p><p><b>Apathya:</b> ${esc(d.apathya||'-')}</p><p><b>Activity/Lifestyle:</b> ${esc(d.lifestyle||'-')}</p><p><b>Learning/School advice:</b> ${esc(d.cognitive||'-')}</p></div>
  <div class="reportsection"><h3>Instructions</h3><p>${esc(d.rxInstructions||'-')}</p><p><b>Parent message:</b> ${esc(d.parentMsg||'-')}</p></div>
  ${d.printDocs!==false?`<div class="reportsection"><h3>Attached Clinical Documents</h3><ul>${docs.map(x=>`<li>${esc(x.type)} — ${esc(x.name)} (${fmt(x.date)})</li>`).join('')||'<li>No document attached</li>'}</ul></div>`:''}
@@ -800,6 +821,7 @@ async function editChild(id=''){
         <label>Parent / Guardian<input id="c_parent" value="${esc(c.parent||'')}"></label>
         <label>Mobile / WhatsApp *<input id="c_mobile" inputmode="tel" value="${esc(c.mobile||'')}" placeholder="Guardian contact for reminders"></label>
         <label>Registration ID<input id="c_reg" value="${esc(regDefault)}"></label>
+        <label>Registered By<select id="c_registeredBy">${staffOptions(c.registeredBy||currentSession()?.name||'Dr Rajesh Sao')}</select></label>
         <label>School / Class<input id="c_school" value="${esc(c.school||'')}"></label>
         <label>Short Address<input id="c_address" value="${esc(c.address||'')}"></label>
         <label>Allergies<input id="c_allergy" value="${esc(c.allergies||'')}"></label>
@@ -866,6 +888,10 @@ async function editChild(id=''){
         parent:$('#c_parent').value||'',
         mobile:$('#c_mobile').value||'',
         regId:($('#c_reg').value||regDefault).trim(),
+        registeredBy:$('#c_registeredBy')?.value||c.registeredBy||currentSession()?.name||'Unassigned',
+        registeredAt:c.registeredAt||(id?'':new Date().toISOString()),
+        lastUpdatedBy:currentSession()?.name||'Unassigned',
+        lastUpdatedAt:new Date().toISOString(),
         school:$('#c_school').value||'',
         address:$('#c_address').value||'',
         allergies:$('#c_allergy').value||'',
@@ -939,7 +965,7 @@ async function drawChildren(q=''){
 
   const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
   const arr=normalizedChildren()
-    .filter(c=>[c.name,c.parent,c.mobile,c.regId,c.address].join(' ').toLowerCase().includes(q))
+    .filter(c=>{const a=childAudit(c);return [c.name,c.parent,c.mobile,c.regId,c.address,a.registeredBy,a.administeredBy,a.paymentBy].join(' ').toLowerCase().includes(q)})
     .filter(c=>!statusFilter||c.currentStatus===statusFilter)
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
     .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
@@ -965,12 +991,14 @@ async function drawChildren(q=''){
         </div>
       </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
+      <td>${(()=>{const a=childAudit(c);return `<div class="audit-mini"><span>Registered</span><b>${esc(a.registeredBy)}</b><span>Administered</span><b>${esc(a.administeredBy)}</b><span>Payment</span><b>${esc(a.paymentBy)}</b></div>`})()}</td>
       <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}<br><span>Dose: ${esc(paymentAdministeredBy(p))}</span><br><span>Payment: ${esc(paymentReceivedBy(p))}</span></div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
         <button onclick="app.openChildDetails('${c.id}')">Open</button>
         <button class="ghost" onclick="app.editChild('${c.id}')">Edit</button>
         <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button>
+        <button class="ghost pay-quick-btn" onclick="app.openChildDetails('${c.id}');setTimeout(()=>app.recordPayment('${c.id}'),120)">₹ Payment</button>
         ${c.mobile?`<a class="button-anchor" href="${callLink(c.mobile)}">Call</a>`:''}
         ${c.mobile?`<a class="button-anchor" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a>`:''}
       </div></td>
@@ -979,8 +1007,8 @@ async function drawChildren(q=''){
 
   $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> shown • <b>${db.children.length}</b> total saved</div>
   <table class="children-table operations-table">
-    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Payment</th><th>Appointment</th><th>Actions</th></tr></thead>
-    <tbody>${rows.join('')||'<tr><td colspan="9" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
+    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Staff Audit</th><th>Payment</th><th>Appointment</th><th>Actions</th></tr></thead>
+    <tbody>${rows.join('')||'<tr><td colspan="10" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
   </table>`;
 }
 async function openChildDetails(id){
@@ -1005,6 +1033,9 @@ async function openChildDetails(id){
       <div><span>Appointment</span><b>${c.appointmentDate?fmt(c.appointmentDate):'-'}</b></div>
       <div><span>Reminder</span><b>${c.reminderDate?fmt(c.reminderDate):'-'}</b></div>
       <div><span>Home Medicine</span><b>${esc(c.homeMedicineQty||'-')}</b></div>
+      <div><span>Registered By</span><b>${esc(auditName(c.registeredBy))}</b><small>${c.registeredAt?fmt(c.registeredAt):'Legacy record'}</small></div>
+      <div><span>Last Swarnaprashan By</span><b>${esc(auditName(latestAdministeredClinical(c.id)?.administeredBy))}</b><small>${latestAdministeredClinical(c.id)?.date?fmt(latestAdministeredClinical(c.id).date):'No attributed clinical entry'}</small></div>
+      <div><span>Payment Known/Received By</span><b>${esc(latestPayment(c.id)?paymentReceivedBy(latestPayment(c.id)):'Not recorded (legacy)')}</b></div>
       <div><span>Payment Status</span>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p);return `<b class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</b>${p?`<small>${money(p.paid)} paid • ${money(paymentBalance(p))} due</small>`:''}`})()}</div>
       <div><span>Total Follow-ups</span><b>${visits.length}</b></div>
       <div><span>Next Action</span><b>${esc(c.nextAction||'-')}</b></div>

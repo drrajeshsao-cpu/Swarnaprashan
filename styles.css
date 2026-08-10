@@ -1075,3 +1075,12 @@ nav button[data-view="inventory"]{--tab:#3c7769}
   .payment-history-row{grid-template-columns:1fr}
   .receipt-actions{display:grid;grid-template-columns:1fr}
 }
+
+/* V11.10 STAFF AUDIT TRAIL */
+.audit-mini{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;min-width:180px;line-height:1.25}
+.audit-mini span{font-size:8px;text-transform:uppercase;letter-spacing:.04em;color:#8a8176;font-weight:800}
+.audit-mini b{font-size:9.5px;color:#28364a;font-weight:750}
+.pay-quick-btn{color:#247253!important;border-color:#cce5d7!important}
+.staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.35fr .65fr .55fr .6fr 1fr .9fr .9fr .9fr 1fr}
+@media(max-width:1350px){.staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.35fr .65fr .55fr .9fr .9fr .9fr}.staff-audit-wide .staff-finance-head span:nth-child(4),.staff-audit-wide .staff-finance-row span:nth-child(4),.staff-audit-wide .staff-finance-head span:nth-child(n+8),.staff-audit-wide .staff-finance-row span:nth-child(n+8){display:none}}
+@media(max-width:760px){.audit-mini{min-width:150px}.staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.4fr .6fr .6fr}.staff-audit-wide .staff-finance-head span:nth-child(n+4),.staff-audit-wide .staff-finance-row span:nth-child(n+4){display:none}}
