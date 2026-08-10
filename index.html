@@ -6,9 +6,39 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=11.1.0">
+<link rel="stylesheet" href="styles.css?v=11.2.0">
 </head>
 <body>
+
+<div id="firebaseAuthGate" class="firebase-auth-gate">
+  <div class="firebase-auth-card">
+    <div class="firebase-auth-brand">
+      <div class="brandmark sparkle-mark firebase-logo">✨</div>
+      <div>
+        <span class="eyebrow">MAHAMAYA CLINIC • SECURE CLOUD</span>
+        <h2>Swarnaprashan Cloud Sign In</h2>
+      </div>
+    </div>
+    <p class="muted">Sign in once to synchronize structured child and clinical records between laptop and mobile.</p>
+    <label>Email
+      <input id="firebaseEmail" type="email" value="dr.raju2010@gmail.com" autocomplete="username">
+    </label>
+    <label>Password
+      <input id="firebasePassword" type="password" autocomplete="current-password" placeholder="Firebase password">
+    </label>
+    <div id="firebaseLoginMessage" class="firebase-login-message">Waiting for secure sign in.</div>
+    <div class="firebase-auth-actions">
+      <button id="firebaseLoginBtn">Sign In & Sync</button>
+      <button id="firebaseForgotBtn" class="ghost">Forgot Password</button>
+    </div>
+    <div class="firebase-auth-note">
+      <b>First laptop sign-in:</b> existing structured records will be uploaded if cloud is empty.<br>
+      <b>Mobile sign-in:</b> the same records will download automatically.<br>
+      <b>Phase 1:</b> uploaded images/PDF/manual-card blobs remain on the device; cloud file storage will be a separate step.
+    </div>
+  </div>
+</div>
+
 <div id="authGate" class="auth-gate">
   <div class="auth-shell">
     <section class="auth-panel auth-brand-panel">
@@ -50,7 +80,7 @@
         <button id="resetLoginBtn" class="ghost emergency-login-btn">Reset Login Access</button>
       </div>
       <div id="loginStatus" class="login-status">Authentication module ready.</div><div id="demoUsersBox" class="auth-demo-box" style="display:none"></div>
-      <div class="auth-footnote">Real Gmail OTP / email reset links need backend auth integration (Firebase or similar). This version includes professional local multi-user login and password recovery workflow.</div>
+      <div class="auth-footnote">Firebase cloud authentication is enabled in this version. Local login remains only as a fallback interface.</div>
     </section>
   </div>
 </div>
@@ -98,7 +128,7 @@
       <button data-view="backup">⤓ Backup / Restore</button>
       <button data-view="settings">⚙ Settings</button>
     </nav>
-    <div class="side-note">Clinical records are stored locally in this browser. Keep regular backups.</div>
+    <div class="side-note">Structured clinical records sync securely with Firebase after sign-in. Files/photos remain device-local in this phase; keep regular backups.</div>
   </aside>
 
   <main class="main">
@@ -108,9 +138,10 @@
         <p id="pageSubtitle">Premium longitudinal Swarnaprashan clinical tracking</p>
       </div>
       <div class="top-actions">
+        <div id="cloudStatus" class="cloud-status cloud-offline"><span class="cloud-dot"></span><b>Cloud sign-in required</b></div>
         <input id="globalSearch" placeholder="Search child / mobile / ID">
         <button id="topNewChild">+ New Child</button>
-        <button id="topNewCase">+ Clinical Entry</button><span id="currentUserBadge" class="pill auth-pill"></span><button id="logoutBtn" class="ghost">Logout</button>
+        <button id="topNewCase">+ Clinical Entry</button><span id="currentUserBadge" class="pill auth-pill"></span><button id="cloudAccountBtn" class="ghost">☁ Cloud</button><button id="logoutBtn" class="ghost">Logout</button>
       </div>
     </header>
     <section id="view"></section>
@@ -483,6 +514,7 @@
 })();
 </script>
 
-<script src="app.js?v=11.1.0"></script>
+<script src="app.js?v=11.2.0"></script>
+<script type="module" src="cloud-sync.js?v=11.2.0"></script>
 </body>
 </html>

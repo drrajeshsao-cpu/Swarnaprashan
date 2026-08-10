@@ -1,6 +1,6 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan Digital Health Suite V11",
-  "short_name": "Mahamaya Swarna",
+  "name": "Mahamaya Clinic Swarnaprashan V11.2 Cloud Sync",
+  "short_name": "Swarnaprashan",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f7f4ed",
@@ -13,5 +13,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Child registry, Swarnaprashan status tracking, appointments, reminders, clinical records and reports."
+  "description": "Mahamaya Clinic Swarnaprashan Digital Health Suite with Firebase structured clinical data synchronization."
 }

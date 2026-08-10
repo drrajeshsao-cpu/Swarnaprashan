@@ -384,3 +384,49 @@ nav button{min-height:46px}
   .guardian-contact-cell{min-width:220px}
   .mobile-display b{font-size:15px}
 }
+
+
+/* V11.2 FIREBASE CLOUD SYNC */
+.cloud-status{
+  display:flex;align-items:center;gap:7px;padding:9px 11px;border-radius:12px;border:1px solid #ded7ca;
+  font-size:11px;background:#fff;white-space:nowrap;color:#655b4f
+}
+.cloud-dot{width:9px;height:9px;border-radius:50%;background:#a6a6a6;box-shadow:0 0 0 3px rgba(166,166,166,.12)}
+.cloud-synced{background:#edf8f1;border-color:#bfe1ca;color:#2d7550}.cloud-synced .cloud-dot{background:#39a46b}
+.cloud-syncing{background:#eef7fd;border-color:#bddbec;color:#2d6f96}.cloud-syncing .cloud-dot{background:#4d9dcc}
+.cloud-offline{background:#fff7e8;border-color:#efd59c;color:#85621e}.cloud-offline .cloud-dot{background:#dfa92e}
+.cloud-error{background:#fff0ef;border-color:#ebc0bd;color:#a34a45}.cloud-error .cloud-dot{background:#c44f4f}
+
+.firebase-auth-gate{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:linear-gradient(135deg,rgba(251,246,236,.98),rgba(239,248,253,.98));backdrop-filter:blur(8px)
+}
+.firebase-auth-gate.hidden{display:none}
+.firebase-auth-card{
+  width:min(560px,96vw);background:#fff;border:1px solid #e1d7c6;border-radius:24px;padding:24px;
+  box-shadow:0 24px 70px rgba(82,62,42,.16)
+}
+.firebase-auth-brand{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.firebase-logo{width:54px;height:54px;display:grid;place-items:center;font-size:26px}
+.firebase-auth-card h2{margin:3px 0 0;color:#3e2d1f}
+.firebase-auth-card label{display:block;font-weight:700;margin:11px 0;color:#4f443b}
+.firebase-auth-card input{width:100%;margin-top:6px;min-height:48px;font-size:15px}
+.firebase-login-message{margin:12px 0;padding:10px 12px;border-radius:10px;background:#f5f3ef;color:#625a52;font-size:12px}
+.firebase-login-message.ok{background:#edf8f1;color:#2d7550}
+.firebase-login-message.error{background:#fff0ef;color:#a34a45}
+.firebase-auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.firebase-auth-note{margin-top:15px;background:#fff9e9;border:1px solid #ecd69f;border-radius:12px;padding:11px;color:#705d32;font-size:11px;line-height:1.55}
+.cloud-popover{
+  position:fixed;right:22px;top:84px;z-index:8500;width:min(380px,92vw);background:#fff;border:1px solid #e1d7c6;
+  box-shadow:0 16px 45px rgba(82,62,42,.16);border-radius:16px;padding:14px
+}
+.cloud-popover h4{margin:0 0 5px}.cloud-popover p{font-size:11px;color:#6e655d;margin:3px 0 10px}
+.cloud-scope-note{font-size:10px;background:#f7f4ee;border:1px solid #e7ded0;border-radius:9px;padding:8px;margin-top:8px;color:#6a6056}
+@media(max-width:900px){
+  .top-actions{flex-wrap:wrap}
+  .cloud-status{order:10;width:100%;justify-content:center}
+}
+@media(max-width:640px){
+  .firebase-auth-card{padding:18px}
+  .firebase-auth-actions{grid-template-columns:1fr}
+}

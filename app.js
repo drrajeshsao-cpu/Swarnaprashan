@@ -3,10 +3,18 @@ const app=(()=>{
 const KEY='mahamaya_swarnaprashan_v7';
 const defaults={clinicName:'MAHAMAYA CLINIC',prescriptionTitle:'Swarnaprashan Digital Prescription',doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',designation:'Consultant Physician • Ayurveda',doctor2:'Dr. Ravi Chandrakar, B.A.M.S.',designation2:'Consultant Physician • Ayurveda',phone:'',address:'In front of India 1 ATM, Sheetla Chowk, Bhatagaon, Raipur',footer:'Clinical follow-up record and parent education. Seek urgent medical care for emergency symptoms.'};
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
+let currentView='dashboard';
+let suppressCloudEvent=false;
 db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+save=()=>{
+  localStorage.setItem(KEY,JSON.stringify(db));
+  if(!suppressCloudEvent){
+    window.dispatchEvent(new CustomEvent('swarnaprashan-local-save',{detail:{at:Date.now()}}));
+  }
+};
 const fmt=d=>d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';
 const child=id=>db.children.find(x=>x.id===id),fups=id=>db.followups.filter(x=>x.childId===id).sort((a,b)=>new Date(a.date)-new Date(b.date));
 
@@ -309,7 +317,7 @@ function letterhead(dateText='', rightHtml=''){
  </div>`;
 }
 
-function showView(name){ if(!currentSession()) return; 
+function showView(name){ if(!currentSession()) return; currentView=name; 
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   $('#pageTitle').textContent=titles[name][0];$('#pageSubtitle').textContent=titles[name][1];
   const v=$('#view');v.innerHTML='';v.appendChild(tpl(name+'Tpl'));
@@ -966,7 +974,36 @@ function printParentReport(){
   printHtmlContent(el.innerHTML,'Mahamaya Clinic - Swarnaprashan Progress Report');
 }
 
+
+function normalizeCloudDb(incoming){
+  incoming=incoming||{};
+  return {
+    children:(incoming.children||[]).map(normalizeChild),
+    cases:incoming.cases||[],
+    followups:incoming.followups||[],
+    vaccines:incoming.vaccines||[],
+    plans:incoming.plans||[],
+    settings:{...defaults,...(incoming.settings||{})}
+  };
+}
+function getCloudSnapshot(){
+  return JSON.parse(JSON.stringify(db));
+}
+function applyCloudSnapshot(incoming){
+  if(!incoming || typeof incoming!=='object') return false;
+  suppressCloudEvent=true;
+  try{
+    db=normalizeCloudDb(incoming);
+    localStorage.setItem(KEY,JSON.stringify(db));
+    try{ showView(currentView||'dashboard'); }catch(e){ console.warn('Cloud render refresh',e); }
+  } finally {
+    setTimeout(()=>{suppressCloudEvent=false},0);
+  }
+  return true;
+}
+
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,getCloudSnapshot,applyCloudSnapshot};
 })();
+window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);
