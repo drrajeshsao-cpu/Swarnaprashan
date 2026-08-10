@@ -1107,3 +1107,326 @@ nav button[data-view="inventory"]{--tab:#3c7769}
   .audit-under-name{min-width:175px}
   .audit-card-mini{min-width:150px}
 }
+
+
+/* ============================================================
+   V11.12 — MOBILE-FIRST RESPONSIVE HOTFIX
+   Fixes the narrow 288px sticky sidebar/header seen on phones.
+   Authentication and application data logic are intentionally untouched.
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%;height:auto}
+.app,.main,.sidebar,#view{min-width:0;max-width:100%}
+
+@media (max-width:760px){
+  :root{--mobile-pad:14px}
+
+  body{
+    margin:0;
+    width:100%;
+    min-width:0;
+    background:#f8f7f3;
+    overflow-x:hidden;
+  }
+
+  /* Header becomes a genuine full-width mobile app header */
+  .app{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    grid-template-columns:none!important;
+  }
+
+  .sidebar{
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    padding:12px var(--mobile-pad) 8px!important;
+    margin:0!important;
+    border-right:0!important;
+    border-bottom:1px solid #e8e1d7!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:0 5px 18px rgba(38,31,23,.05)!important;
+    overflow:hidden!important;
+  }
+
+  .brand{
+    width:100%!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:12px!important;
+    padding:0 0 12px!important;
+    margin:0 0 8px!important;
+  }
+  .brandmark{
+    width:52px!important;
+    height:52px!important;
+    flex:0 0 52px!important;
+    border-radius:16px!important;
+  }
+  .brand>div:last-child{
+    min-width:0!important;
+    flex:1 1 auto!important;
+  }
+  .brand strong{
+    display:block!important;
+    font-size:21px!important;
+    line-height:1.12!important;
+    white-space:normal!important;
+  }
+  .brand span{
+    display:block!important;
+    max-width:none!important;
+    margin-top:4px!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+  }
+  .brand-mini-banner,.side-note{display:none!important}
+
+  /* Navigation is a clean horizontal swipe row */
+  #nav,nav{
+    width:100%!important;
+    max-width:100%!important;
+    display:flex!important;
+    flex-direction:row!important;
+    gap:8px!important;
+    padding:2px 0 7px!important;
+    margin:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    scroll-snap-type:x proximity;
+  }
+  #nav::-webkit-scrollbar,nav::-webkit-scrollbar{display:none}
+  nav button{
+    flex:0 0 auto!important;
+    width:auto!important;
+    max-width:none!important;
+    min-width:max-content!important;
+    min-height:42px!important;
+    padding:9px 14px!important;
+    margin:0!important;
+    border:1px solid #e9e2d8!important;
+    border-radius:12px!important;
+    font-size:12px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    scroll-snap-align:start;
+  }
+
+  /* Main page always fills phone viewport */
+  .main{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:16px var(--mobile-pad) 28px!important;
+    overflow:visible!important;
+  }
+
+  .topbar{
+    position:relative!important;
+    top:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    display:block!important;
+    padding:0 0 12px!important;
+    margin:0 0 8px!important;
+    background:transparent!important;
+    border:0!important;
+    backdrop-filter:none!important;
+  }
+  .topbar>div:first-child{min-width:0!important}
+  .topbar h1{
+    margin:0!important;
+    font-size:28px!important;
+    line-height:1.08!important;
+  }
+  .topbar p{
+    margin:7px 0 0!important;
+    max-width:100%!important;
+    font-size:12px!important;
+    line-height:1.35!important;
+  }
+
+  .top-actions{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:9px!important;
+    margin-top:14px!important;
+    align-items:stretch!important;
+  }
+  .top-actions>*{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .top-actions #globalSearch{
+    grid-column:1/-1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-height:52px!important;
+    font-size:15px!important;
+    padding:0 14px!important;
+  }
+  .top-actions #topNewChild,
+  .top-actions #topNewCase{
+    width:100%!important;
+    min-height:52px!important;
+    padding:10px!important;
+    font-size:14px!important;
+  }
+  .top-actions #currentUserBadge{
+    grid-column:1/-1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-height:46px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    white-space:normal!important;
+    font-size:12px!important;
+  }
+  .top-actions #cloudAccountBtn,
+  .top-actions #logoutBtn{
+    width:100%!important;
+    min-height:50px!important;
+    font-size:14px!important;
+  }
+  .top-actions #cloudStatus{
+    grid-column:1/-1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-height:46px!important;
+    justify-content:center!important;
+  }
+
+  /* Compact utility chips: never crop the page */
+  .workspace-strip{
+    width:100%!important;
+    max-width:100%!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:7px!important;
+    margin:2px 0 14px!important;
+    padding:0 0 4px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .workspace-strip::-webkit-scrollbar{display:none}
+  .ws-chip{
+    flex:0 0 auto!important;
+    min-width:max-content!important;
+    white-space:nowrap!important;
+  }
+
+  /* Home/dashboard cards use the complete viewport */
+  #view,.hero,.card,.wizard-card,.reportpaper,
+  .staff-finance-card,.inventory-dash-strip,
+  .dashboard-utility-grid,.knowledge-shell,.inventory-shell{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  .hero{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    padding:18px!important;
+    gap:14px!important;
+    overflow:hidden!important;
+  }
+  .hero h2{
+    max-width:100%!important;
+    font-size:25px!important;
+    overflow-wrap:anywhere;
+  }
+  .hero p{max-width:100%!important}
+  .hero-side{min-width:0!important}
+  .hero-art{
+    width:100%!important;
+    height:auto!important;
+    max-height:240px!important;
+    object-fit:cover!important;
+  }
+
+  .kpis,.finance-grid,.finance-kpis,.registry-kpis,.inventory-kpis{
+    width:100%!important;
+    max-width:100%!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .kpi,.finance-kpi,.ops-kpi,.inventory-kpi{min-width:0!important}
+
+  .grid2,.dashboard-utility-grid,.formgrid,.metricrow,.scalegrid,.upload-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .card,.wizard-card,.reportpaper{
+    margin:10px 0!important;
+    padding:15px!important;
+    overflow:hidden!important;
+  }
+
+  /* Wide data remains horizontally scrollable only inside its own container */
+  .tablewrap,.children-list,.inventory-ledger-table,.staff-finance-table{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .children-table{
+    width:max-content!important;
+    min-width:900px!important;
+    max-width:none!important;
+  }
+
+  /* Prevent fixed/min widths from widening the entire page */
+  input,select,textarea,button,label{
+    max-width:100%;
+  }
+  input,select,textarea{
+    width:100%;
+  }
+
+  .staff-audit-legend,.audit-under-name,.audit-card-mini{
+    max-width:100%!important;
+  }
+}
+
+@media (max-width:430px){
+  :root{--mobile-pad:12px}
+  .brand strong{font-size:20px!important}
+  .topbar h1{font-size:27px!important}
+
+  .top-actions{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .top-actions #globalSearch,
+  .top-actions #currentUserBadge,
+  .top-actions #cloudStatus{
+    grid-column:1/-1!important;
+  }
+
+  .kpis,.finance-grid,.finance-kpis,.registry-kpis,.inventory-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .hero-actions,.actionrow{
+    grid-template-columns:1fr!important;
+  }
+}

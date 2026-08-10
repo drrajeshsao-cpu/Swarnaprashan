@@ -1,0 +1,22 @@
+MAHAMAYA SWARNAPRASHAN V11.12 — MOBILE RESPONSIVE HOTFIX
+
+Fixed specifically for phone/PWA layout:
+- Sidebar/header now uses true 100% mobile viewport width.
+- Removed inherited desktop 288px sidebar width on phones.
+- Brand/header no longer leaves a blank white area on the right.
+- Horizontal navigation remains swipeable inside its own row.
+- Child page title and subtitle use full width.
+- Search is full-width.
+- New Child and Clinical Entry are balanced two-column buttons.
+- User badge is full-width.
+- Cloud and Logout are balanced mobile buttons.
+- Synced/cloud status is full-width.
+- Workspace chips scroll inside their own strip rather than widening the page.
+- Dashboard cards and grids are constrained to viewport.
+- Tables scroll only inside table containers.
+- Images and form controls cannot overflow the screen.
+- Existing Staff Audit, billing, inventory, cloud sync and clinical features retained.
+- Firebase authentication/login code was not changed.
+
+Suggested GitHub commit:
+Fix V11.12 mobile responsive layout without changing login or clinical data
