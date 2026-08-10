@@ -211,30 +211,34 @@ function setLoginStatus(text,ok=false){
   el.classList.toggle('error',!ok);
 }
 
-function loginUser(){
-  const identifier=$('#loginIdentifier').value.trim();
-  const password=$('#loginPassword').value;
-  setLoginStatus('Checking login…',true);
+async function loginUser(){
+  const identifier=$("#loginIdentifier").value.trim();
+  const password=$("#loginPassword").value;
 
-  // Guaranteed built-in access: independent of browser local-storage state.
-  let user=guaranteedUser(identifier,password);
-
-  // Then allow any user created in Settings.
-  if(!user){
-    const local=findUser(identifier);
-    if(local && String(local.password)===String(password)) user=local;
-  }
-
-  if(!user){
-    setLoginStatus('Login failed. Use Quick Login • Dr Rajesh, or enter drrajesh / rajesh123.',false);
-    alert('Login failed. Please use Quick Login • Dr Rajesh, or type Login ID: drrajesh and Password: rajesh123.');
+  if(!identifier || !password){
+    setLoginStatus("Please enter email and password.",false);
     return;
   }
 
-  setSession(user);
-  $('#loginPassword').value='';
-  setLoginStatus('Login successful. Opening dashboard…',true);
-  ensureAuthUI();
+  if(!identifier.includes("@")){
+    setLoginStatus("Please use your registered email address for secure login.",false);
+    return;
+  }
+
+  const firebaseEmail=document.getElementById("firebaseEmail");
+  const firebasePassword=document.getElementById("firebasePassword");
+  const firebaseLoginBtn=document.getElementById("firebaseLoginBtn");
+
+  if(!firebaseEmail || !firebasePassword || !firebaseLoginBtn){
+    setLoginStatus("Secure Firebase login is unavailable. Please refresh the page.",false);
+    return;
+  }
+
+  firebaseEmail.value=identifier;
+  firebasePassword.value=password;
+
+  setLoginStatus("Signing in securely with Firebase...",true);
+  firebaseLoginBtn.click();
 }
 function recoverPassword(){
   const identifier=$('#fpIdentifier').value.trim();
