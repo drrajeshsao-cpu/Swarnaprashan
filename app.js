@@ -103,11 +103,7 @@ function getUsers(){
 function saveUsers(users){
   try{ localStorage.setItem(AUTH_KEY,JSON.stringify(users)); }catch(e){}
 }
-const DEFAULT_AUTH_USERS=[
-  {name:'Super Admin',loginId:'superadmin',mobile:'9000000001',email:'',password:'admin123',recoveryEmail:'',role:'Super Admin'},
-  {name:'Dr Rajesh Sao',loginId:'drrajesh',mobile:'9000000002',email:'dr.raju2010@gmail.com',password:'rajesh123',recoveryEmail:'dr.raju2010@gmail.com',role:'Doctor'},
-  {name:'Dr Ravi Chandrakar',loginId:'drravi',mobile:'9000000003',email:'',password:'ravi123',recoveryEmail:'',role:'Doctor'}
-];
+const DEFAULT_AUTH_USERS=[];
 function seedUsers(){
   let users=getUsers();
   let changed=false;
@@ -193,17 +189,7 @@ function toggleDemoUsers(){
   box.innerHTML=`<b>Available login accounts</b><div class="small-note">You can use Login ID, Mobile or Email shown below.</div>`+users.map(u=>`<div class="docitem"><b>${esc(u.name)}</b><div class="docmeta">Login ID: ${esc(u.loginId)} • Mobile: ${esc(u.mobile||'-')} • Role: ${esc(u.role)} • Password: ${esc(u.password)}</div></div>`).join('');
 }
 
-function guaranteedUser(identifier,password){
-  const i=String(identifier||'').trim().toLowerCase();
-  const p=String(password||'');
-  const map=[
-    {ids:['drrajesh','dr.raju2010@gmail.com','9000000002'],password:'rajesh123',name:'Dr Rajesh Sao',loginId:'drrajesh',role:'Doctor'},
-    {ids:['drravi','9000000003'],password:'ravi123',name:'Dr Ravi Chandrakar',loginId:'drravi',role:'Doctor'},
-    {ids:['superadmin','9000000001'],password:'admin123',name:'Super Admin',loginId:'superadmin',role:'Super Admin'}
-  ];
-  const hit=map.find(x=>x.ids.includes(i)&&x.password===p);
-  return hit?{id:'builtin-'+hit.loginId,...hit}:null;
-}
+
 function setLoginStatus(text,ok=false){
   const el=$('#loginStatus'); if(!el)return;
   el.textContent=text;
