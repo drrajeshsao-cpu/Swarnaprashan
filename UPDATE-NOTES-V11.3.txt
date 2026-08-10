@@ -1,0 +1,14 @@
+MAHAMAYA SWARNAPRASHAN V11.3 — AYURVEDA PARIKSHA UPDATE
+
+Updated Examination module:
+1. Functional / developmental outcome grading remains 0–4 for longitudinal tracking only.
+2. Ashtavidha Pariksha now uses Ayurveda-specific categorical findings for Nadi, Mala, Mutra, Jihva, Shabda, Sparsha, Drik and Akruti.
+3. Dashavidha Atura Pariksha now uses Ayurveda-specific categories for Prakriti, Vikriti, Sara, Samhanana, Pramana, Satmya, Satva, Ahara Shakti, Vyayama Shakti and Vaya.
+4. Ahara Shakti is recorded as Abhyavaharana Shakti and Jarana Shakti.
+5. Existing old numeric Ayurveda values are not reinterpreted; they default to Not assessed until re-entered.
+6. Firebase multi-user role mapping retained for Dr Rajesh (Super Admin) and Dr Ravi (Doctor).
+7. Legacy hard-coded quick-login credentials removed/disabled.
+8. PWA cache/version bumped to V11.3 to force updated app files.
+
+Suggested GitHub commit message:
+Upgrade Swarnaprashan V11.3 with Ayurveda-specific Ashtavidha and Dashavidha Pariksha

@@ -123,13 +123,8 @@ function seedUsers(){
   if(changed || !localStorage.getItem(AUTH_KEY)) saveUsers(users);
 }
 function resetLoginAccess(){
-  const repaired=DEFAULT_AUTH_USERS.map(d=>({id:uid(),...d}));
-  saveUsers(repaired);
   clearSession();
-  $('#loginIdentifier').value='drrajesh';
-  $('#loginPassword').value='rajesh123';
-  setLoginStatus('Login access repaired. Tap Login or Quick Login • Dr Rajesh.',true);
-  alert('Login access repaired. Credentials are already filled: drrajesh / rajesh123');
+  setLoginStatus('Use your registered Firebase email and password.',true);
 }
 function currentSession(){
   if(MEMORY_SESSION) return MEMORY_SESSION;
@@ -167,13 +162,18 @@ function ensureAuthUI(){
 function bindAuth(){
   seedUsers();
   $('#loginBtn').onclick=loginUser;
-  $('#oneTapRajeshBtn').onclick=()=>{
-    $('#loginIdentifier').value='drrajesh';
-    $('#loginPassword').value='rajesh123';
-    loginUser();
-  };
+  $('#oneTapRajeshBtn').onclick=()=>setLoginStatus('Quick login is disabled. Use your registered Firebase email.',false);
   $('#demoUsersBtn').onclick=toggleDemoUsers;
-  $('#forgotBtn').onclick=()=>$('#forgotModal').classList.add('open');
+  $('#forgotBtn').onclick=()=>{
+    const email=$('#loginIdentifier').value.trim();
+    if(!email || !email.includes('@')){setLoginStatus('Enter your registered email address first.',false);return}
+    const firebaseEmail=document.getElementById('firebaseEmail');
+    const firebaseForgotBtn=document.getElementById('firebaseForgotBtn');
+    if(!firebaseEmail || !firebaseForgotBtn){setLoginStatus('Firebase password reset is unavailable. Please refresh.',false);return}
+    firebaseEmail.value=email;
+    firebaseForgotBtn.click();
+    setLoginStatus('Password reset request sent. Check Inbox and Spam.',true);
+  };
   $('#resetLoginBtn').onclick=resetLoginAccess;
   $('#forgotCloseBtn').onclick=()=>$('#forgotModal').classList.remove('open');
   $('#forgotCancelBtn').onclick=()=>$('#forgotModal').classList.remove('open');
@@ -188,7 +188,6 @@ function toggleDemoUsers(){
   const users=getUsers();
   box.innerHTML=`<b>Available login accounts</b><div class="small-note">You can use Login ID, Mobile or Email shown below.</div>`+users.map(u=>`<div class="docitem"><b>${esc(u.name)}</b><div class="docmeta">Login ID: ${esc(u.loginId)} • Mobile: ${esc(u.mobile||'-')} • Role: ${esc(u.role)} • Password: ${esc(u.password)}</div></div>`).join('');
 }
-
 
 function setLoginStatus(text,ok=false){
   const el=$('#loginStatus'); if(!el)return;
@@ -395,10 +394,45 @@ function renderWizard(){
  $('#wizardBody').innerHTML=wizardHtml(wiz.step);bindWizard();
 }
 function scaleOptions(v=2){return[0,1,2,3,4].map(n=>`<option value="${n}" ${Number(v)===n?'selected':''}>${n} - ${scoreLabel(n)}</option>`).join('')}
+
+// Classical Ayurveda examination choices. Numeric 0–4 grading is reserved for longitudinal functional outcomes only.
+const ASHTAVIDHA_OPTIONS={
+  Nadi:['Not assessed','Vataja','Pittaja','Kaphaja','Vata-Pittaja','Vata-Kaphaja','Pitta-Kaphaja','Tridoshaja / Sannipataja','Sama / Prakrita'],
+  Mala:['Not assessed','Samanya','Vibandha / Baddha','Mridu','Drava / Atisara','Picchila','Ama-yukta','Rakta-yukta','Krimi-yukta','Durgandhita','Other'],
+  Mutra:['Not assessed','Samanya','Alpamutrata','Bahumutrata','Peeta','Shweta','Rakta-varna','Avila / Turbid','Daha-yukta','Krichchhra','Other'],
+  Jihva:['Not assessed','Nirama / Shuddha','Sama / Coated','Shweta-lepa','Peeta-lepa','Ruksha','Snigdha','Rakta','Vivarna','Other'],
+  Shabda:['Not assessed','Samanya','Manda','Karkasha','Bhinna / Hoarse','Uchcha','Aspashta','Other'],
+  Sparsha:['Not assessed','Samanya','Sheeta','Ushna','Ruksha','Snigdha','Mridu','Kathina','Khara','Other'],
+  Drik:['Not assessed','Samanya / Prasanna','Shweta','Peeta','Rakta','Ruksha / Shushka','Malina','Other'],
+  Akruti:['Not assessed','Samanya','Krisha','Madhyama','Sthula','Hrasva','Dirgha','Other']
+};
+
+const DASHAVIDHA_OPTIONS={
+  Prakriti:['Not assessed','Vataja','Pittaja','Kaphaja','Vata-Pittaja','Vata-Kaphaja','Pitta-Kaphaja','Sama / Tridoshaja'],
+  Vikriti:['Not assessed','No evident dosha vikriti','Vataja','Pittaja','Kaphaja','Vata-Pittaja','Vata-Kaphaja','Pitta-Kaphaja','Tridoshaja / Sannipataja'],
+  Sara:['Not assessed','Tvak Sara','Rakta Sara','Mamsa Sara','Meda Sara','Asthi Sara','Majja Sara','Shukra Sara','Satva Sara','Mixed / Multiple Sara'],
+  Samhanana:['Not assessed','Pravara','Madhyama','Avara'],
+  Pramana:['Not assessed','Sama / Pramana-sampat','Adhika','Hina','Measured separately'],
+  Satmya:['Not assessed','Sarvarasa Satmya / Pravara','Madhyama Satmya','Avara / Ekarasa Satmya'],
+  Satva:['Not assessed','Pravara','Madhyama','Avara'],
+  'Ahara Shakti — Abhyavaharana':['Not assessed','Pravara','Madhyama','Avara'],
+  'Ahara Shakti — Jarana':['Not assessed','Pravara','Madhyama','Avara'],
+  'Vyayama Shakti':['Not assessed','Pravara','Madhyama','Avara'],
+  Vaya:['Not assessed','Bala','Madhyama','Jirna / Vriddha']
+};
+
+function ayurOptions(options,value){
+  const current=(typeof value==='string'&&options.includes(value))?value:'Not assessed';
+  return options.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v)}</option>`).join('');
+}
+function ayurSelect(prefix,name,options,value){
+  const key=prefix+name;
+  return `<label>${name}<select data-w="${esc(key)}" data-ayur="1">${ayurOptions(options,value)}</select></label>`;
+}
 function wizardHtml(i){
  const d=wiz.data,scale=(name,val=2)=>`<label>${name}<select data-w="${name}">${scaleOptions(val)}</select></label>`;
  if(i===0)return`<div class="card"><h3>1. Patient Profile</h3><div class="formgrid"><label>Existing Child<select id="w_child"></select></label><label>Date<input id="w_date" type="date" value="${d.date||''}"></label><label>Visit Type<select id="w_type"><option>Initial Swarnaprashan</option><option>Monthly Follow-up</option><option>Clinical Review</option></select></label><label>Present Complaint<input id="w_complaint" value="${esc(d.complaint||'')}"></label><label>Allergy / Sensitivity<input id="w_allergy" value="${esc(d.allergy||'')}"></label><label>Current Medication<input id="w_currentMeds" value="${esc(d.currentMeds||'')}"></label></div><label>Relevant History<textarea id="w_history">${esc(d.history||'')}</textarea></label></div>`;
- if(i===1)return`<div class="card"><h3>2. Examination</h3><div class="formgrid"><label>Height cm<input id="w_height" type="number" step=".1" value="${d.height||''}"></label><label>Weight kg<input id="w_weight" type="number" step=".1" value="${d.weight||''}"></label><label>Temperature °F<input id="w_temp" type="number" step=".1" value="${d.temp||''}"></label><label>Pulse /min<input id="w_pulse" type="number" value="${d.pulse||''}"></label><label>RR /min<input id="w_rr" type="number" value="${d.rr||''}"></label><label>SpO₂ %<input id="w_spo2" type="number" value="${d.spo2||''}"></label><label>BP Systolic<input id="w_sys" type="number" value="${d.sys||''}"></label><label>BP Diastolic<input id="w_dia" type="number" value="${d.dia||''}"></label><label>General Appearance<input id="w_ga" value="${esc(d.ga||'')}"></label></div><div class="section"><h4>Functional Grading 0–4</h4><div class="scalegrid">${['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy'].map(x=>scale(x,d.examScores?.[x]??2)).join('')}</div></div><div class="section"><h4>Ashtavidha Pariksha</h4><div class="scalegrid">${['Nadi','Mala','Mutra','Jihva','Shabda','Sparsha','Drik','Akruti'].map(x=>scale('A:'+x,d.examScores?.['A:'+x]??2)).join('')}</div></div><div class="section"><h4>Dashavidha Pariksha</h4><div class="scalegrid">${['Prakriti','Vikriti','Sara','Samhanana','Pramana','Satmya','Satva','Ahara Shakti','Vyayama Shakti','Vaya'].map(x=>scale('D:'+x,d.examScores?.['D:'+x]??2)).join('')}</div></div><label>Examination Notes<textarea id="w_examNotes">${esc(d.examNotes||'')}</textarea></label></div>`;
+ if(i===1)return`<div class="card"><h3>2. Examination</h3><div class="formgrid"><label>Height cm<input id="w_height" type="number" step=".1" value="${d.height||''}"></label><label>Weight kg<input id="w_weight" type="number" step=".1" value="${d.weight||''}"></label><label>Temperature °F<input id="w_temp" type="number" step=".1" value="${d.temp||''}"></label><label>Pulse /min<input id="w_pulse" type="number" value="${d.pulse||''}"></label><label>RR /min<input id="w_rr" type="number" value="${d.rr||''}"></label><label>SpO₂ %<input id="w_spo2" type="number" value="${d.spo2||''}"></label><label>BP Systolic<input id="w_sys" type="number" value="${d.sys||''}"></label><label>BP Diastolic<input id="w_dia" type="number" value="${d.dia||''}"></label><label>General Appearance<input id="w_ga" value="${esc(d.ga||'')}"></label></div><div class="section"><h4>Functional Grading 0–4</h4><div class="scalegrid">${['Appetite','Bladder','Bowel','Sleep','Learning','Memory','Playing','School Performance','Energy'].map(x=>scale(x,d.examScores?.[x]??2)).join('')}</div></div><div class="section"><h4>Ashtavidha Pariksha — Ayurveda-specific findings</h4><div class="scalegrid">${Object.entries(ASHTAVIDHA_OPTIONS).map(([x,opts])=>ayurSelect('A:',x,opts,d.examScores?.['A:'+x])).join('')}</div></div><div class="section"><h4>Dashavidha Atura Pariksha — Ayurveda-specific assessment</h4><div class="scalegrid">${Object.entries(DASHAVIDHA_OPTIONS).map(([x,opts])=>ayurSelect('D:',x,opts,d.examScores?.['D:'+x])).join('')}</div><p class="tiny muted">Ahara Shakti is documented through Abhyavaharana Shakti and Jarana Shakti.</p></div><label>Examination Notes<textarea id="w_examNotes">${esc(d.examNotes||'')}</textarea></label></div>`;
  if(i===2)return`<div class="card"><h3>3. Investigations & Clinical Attachments</h3><div class="formgrid"><label>Investigation Summary<textarea id="w_invest">${esc(d.invest||'')}</textarea></label><label>Clinical Impression<textarea id="w_impression">${esc(d.impression||'')}</textarea></label><label>Red Flags / Safety Notes<textarea id="w_redflags">${esc(d.redflags||'')}</textarea></label></div><div class="upload-grid"><button type="button" id="w_direct_camera" class="uploadbox direct-camera-btn">📷 Open Camera Now<br><span>Live camera preview → Capture</span></button><label class="uploadbox">🖼 Gallery / 📎 File / PDF<input id="w_files" type="file" multiple accept="image/*,.pdf,.doc,.docx"></label></div><div id="w_camera_capture_name" class="selected-files"></div><p class="tiny muted">Files will be linked to this clinical entry when you press Save & Next.</p></div>`;
  if(i===3)return`<div class="card"><h3>4. Treatment Plan</h3><div class="formgrid"><label>Swarnaprashan Dose<input id="w_dose" value="${esc(d.dose||'')}"></label><label>Preparation / Batch<input id="w_batch" value="${esc(d.batch||'')}"></label><label>Next Follow-up<input id="w_next" type="date" value="${d.next||''}"></label><label>Other Medicines<textarea id="w_medicines">${esc(d.medicines||'')}</textarea></label><label>Diet / Pathya<textarea id="w_pathya">${esc(d.pathya||'')}</textarea></label><label>Apathya / Avoid<textarea id="w_apathya">${esc(d.apathya||'')}</textarea></label><label>Activity / Lifestyle<textarea id="w_lifestyle">${esc(d.lifestyle||'')}</textarea></label><label>School / Cognitive Advice<textarea id="w_cognitive">${esc(d.cognitive||'')}</textarea></label><label>Safety / Referral Advice<textarea id="w_safety">${esc(d.safety||'')}</textarea></label></div></div>`;
  if(i===4)return`<div class="card"><h3>5. Prescription Builder</h3><div class="formgrid"><label>Prescription Title<input id="w_rxTitle" value="${esc(d.rxTitle||'Digital Swarnaprashan Prescription')}"></label><label>Special Instructions<textarea id="w_rxInstructions">${esc(d.rxInstructions||'')}</textarea></label><label>Parent Message<textarea id="w_parentMsg">${esc(d.parentMsg||'')}</textarea></label></div><div class="section"><h4>Print Options</h4><label><input id="w_printGrowth" type="checkbox" ${d.printGrowth!==false?'checked':''}> Include growth summary</label><br><label><input id="w_printAssessment" type="checkbox" ${d.printAssessment!==false?'checked':''}> Include assessment summary</label><br><label><input id="w_printDocs" type="checkbox" ${d.printDocs!==false?'checked':''}> Include uploaded-document list</label></div></div>`;
@@ -417,7 +451,7 @@ function bindWizard(){
 async function collectWizard(){
  const d=wiz.data;
  if(wiz.step===0){d.childId=$('#w_child')?.value||d.childId;d.date=$('#w_date')?.value;d.type=$('#w_type')?.value;d.complaint=$('#w_complaint')?.value;d.allergy=$('#w_allergy')?.value;d.currentMeds=$('#w_currentMeds')?.value;d.history=$('#w_history')?.value}
- if(wiz.step===1){['height','weight','temp','pulse','rr','spo2','sys','dia','ga','examNotes'].forEach(k=>d[k]=$('#w_'+k)?.value);d.examScores={};$$('[data-w]').forEach(e=>d.examScores[e.dataset.w]=Number(e.value));d.bmi=d.height&&d.weight?(+d.weight/((+d.height/100)**2)).toFixed(2):''}
+ if(wiz.step===1){['height','weight','temp','pulse','rr','spo2','sys','dia','ga','examNotes'].forEach(k=>d[k]=$('#w_'+k)?.value);d.examScores={};$$('[data-w]').forEach(e=>d.examScores[e.dataset.w]=e.dataset.ayur==='1'?e.value:Number(e.value));d.bmi=d.height&&d.weight?(+d.weight/((+d.height/100)**2)).toFixed(2):''}
  if(wiz.step===2){d.invest=$('#w_invest')?.value;d.impression=$('#w_impression')?.value;d.redflags=$('#w_redflags')?.value;if(!wiz.caseId)wiz.caseId=uid();const arr=[];if(wizardCameraFile)arr.push(wizardCameraFile);if($('#w_files')?.files?.length)arr.push(...$('#w_files').files);for(const f of arr)await putDoc({id:uid(),childId:d.childId||'',caseId:wiz.caseId,type:'Investigation / Clinical Attachment',date:d.date||new Date().toISOString().slice(0,10),name:f.name,mime:f.type,size:f.size,blob:f,note:''});wizardCameraFile=null}
  if(wiz.step===3)['dose','batch','next','medicines','pathya','apathya','lifestyle','cognitive','safety'].forEach(k=>d[k]=$('#w_'+k)?.value);
  if(wiz.step===4){['rxTitle','rxInstructions','parentMsg'].forEach(k=>d[k]=$('#w_'+k)?.value);d.printGrowth=$('#w_printGrowth')?.checked;d.printAssessment=$('#w_printAssessment')?.checked;d.printDocs=$('#w_printDocs')?.checked}
