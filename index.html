@@ -64,23 +64,23 @@
       <div class="auth-card-head">
         <span class="eyebrow">SECURE SIGN IN</span>
         <h2>Login to Swarnaprashan Suite</h2>
-        <p class="muted">Use your login ID, mobile number or email address.</p>
+        <p class="muted">Use your registered email address.</p>
       </div>
       <div class="formgrid auth-grid">
-        <label>Login ID / Mobile / Email<input id="loginIdentifier" placeholder="e.g. drrajesh / 9876543210 / clinic@example.com"></label>
+        <label>Email<input id="loginIdentifier" type="email" placeholder="Enter registered email address"></label>
         <label>Password<input id="loginPassword" type="password" placeholder="Enter password"></label>
       </div>
       <div class="actionrow auth-actions">
-        <button id="loginBtn">Login</button><button id="oneTapRajeshBtn" class="ghost"
+        <button id="loginBtn">Login</button><button id="oneTapRajeshBtn" class="ghost" style="display:none"
       onclick="window.__mahamayaQuickLogin && window.__mahamayaQuickLogin()">
       Quick Login • Dr Rajesh
     </button>
-        <button id="demoUsersBtn" class="ghost">View Demo Users</button>
+        <button id="demoUsersBtn" class="ghost" style="display:none">View Demo Users</button>
         <button id="forgotBtn" class="ghost">Forgot Password</button>
-        <button id="resetLoginBtn" class="ghost emergency-login-btn">Reset Login Access</button>
+        <button id="resetLoginBtn" class="ghost emergency-login-btn" style="display:none">Reset Login Access</button>
       </div>
       <div id="loginStatus" class="login-status">Authentication module ready.</div><div id="demoUsersBox" class="auth-demo-box" style="display:none"></div>
-      <div class="auth-footnote">Firebase cloud authentication is enabled in this version. Local login remains only as a fallback interface.</div>
+      <div class="auth-footnote">Secure Firebase email authentication enabled.</div>
     </section>
   </div>
 </div>
