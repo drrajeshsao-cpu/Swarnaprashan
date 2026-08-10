@@ -1,0 +1,17 @@
+MAHAMAYA SWARNAPRASHAN V11.11 — PROMINENT STAFF AUDIT
+
+Staff Audit is now visible without horizontal scrolling:
+- Registered By
+- Swarnaprashan Administered By
+- Payment Received / Status Known By
+
+Added:
+- Staff audit directly below every child's Name + Age.
+- Dedicated Staff Audit column retained.
+- Staff filter in Child Registry.
+- Search continues to match staff names.
+- Legacy records remain marked Not recorded (legacy) if historical staff data never existed.
+- Existing billing, inventory, cloud sync and login architecture preserved.
+
+Suggested GitHub commit:
+Make V11.11 staff audit prominently visible in Child Registry with staff filters

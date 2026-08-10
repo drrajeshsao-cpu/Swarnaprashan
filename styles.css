@@ -1084,3 +1084,26 @@ nav button[data-view="inventory"]{--tab:#3c7769}
 .staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.35fr .65fr .55fr .6fr 1fr .9fr .9fr .9fr 1fr}
 @media(max-width:1350px){.staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.35fr .65fr .55fr .9fr .9fr .9fr}.staff-audit-wide .staff-finance-head span:nth-child(4),.staff-audit-wide .staff-finance-row span:nth-child(4),.staff-audit-wide .staff-finance-head span:nth-child(n+8),.staff-audit-wide .staff-finance-row span:nth-child(n+8){display:none}}
 @media(max-width:760px){.audit-mini{min-width:150px}.staff-audit-wide .staff-finance-head,.staff-audit-wide .staff-finance-row{grid-template-columns:1.4fr .6fr .6fr}.staff-audit-wide .staff-finance-head span:nth-child(n+4),.staff-audit-wide .staff-finance-row span:nth-child(n+4){display:none}}
+
+/* V11.11 — Staff Audit made impossible to miss */
+.staff-audit-legend{
+  margin:8px 0 10px;padding:10px 12px;border:1px solid #eadcc8;border-radius:12px;
+  background:linear-gradient(135deg,#fffaf2,#fff);color:#6f604d;font-size:10px;line-height:1.45
+}
+.staff-audit-legend b{color:#5d3e1d}
+.audit-under-name{
+  display:grid;gap:4px;margin-top:8px;padding:8px;border:1px solid #eadfd2;border-radius:10px;background:#fbf8f3;
+  min-width:205px
+}
+.audit-under-name>div{display:grid;grid-template-columns:78px 1fr;gap:6px}
+.audit-under-name span{font-size:8px;text-transform:uppercase;letter-spacing:.045em;color:#8b8174;font-weight:800}
+.audit-under-name b{font-size:9.5px;line-height:1.25;color:#2e4057}
+.audit-card-mini{display:grid;gap:5px;min-width:170px}
+.audit-card-mini>div{padding:6px 7px;border:1px solid #e8e2d9;border-radius:9px;background:#fff}
+.audit-card-mini span{display:block;font-size:7.8px;text-transform:uppercase;letter-spacing:.05em;color:#8a8176;font-weight:850}
+.audit-card-mini b{display:block;margin-top:2px;font-size:9.5px;line-height:1.25;color:#27384f}
+#childStaffFilter{min-width:160px}
+@media(max-width:760px){
+  .audit-under-name{min-width:175px}
+  .audit-card-mini{min-width:150px}
+}

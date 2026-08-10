@@ -752,11 +752,12 @@ function renderChildren(){
   db.children=db.children.map(normalizeChild);
   save();
   $('#registerChildBtn').onclick=()=>editChild();
-  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; if($('#childPaymentFilter'))$('#childPaymentFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
+  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; if($('#childPaymentFilter'))$('#childPaymentFilter').value=''; if($('#childStaffFilter'))$('#childStaffFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
   $('#childSearch').oninput=()=>drawChildren($('#childSearch').value);
   $('#childStatusFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childPaymentFilter').onchange=()=>drawChildren($('#childSearch').value);
+  $('#childStaffFilter').onchange=()=>drawChildren($('#childSearch').value);
   if($('#childAlphaBar')) $('#childAlphaBar').innerHTML='<button class="alpha-btn active" data-alpha="">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" data-alpha="${l}">${l}</button>`).join('');
   $$('#childAlphaBar .alpha-btn').forEach(b=>b.onclick=()=>{childAlpha=b.dataset.alpha||'';$$('#childAlphaBar .alpha-btn').forEach(x=>x.classList.toggle('active',x===b));drawChildren($('#childSearch').value)});
   renderRegistryKpis();
@@ -961,6 +962,7 @@ async function drawChildren(q=''){
   const statusFilter=$('#childStatusFilter')?.value||'';
   const taskFilter=$('#childTaskFilter')?.value||'';
   const paymentFilter=$('#childPaymentFilter')?.value||'';
+  const staffFilter=$('#childStaffFilter')?.value||'';
   q=(q||'').toLowerCase();
 
   const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
@@ -969,6 +971,7 @@ async function drawChildren(q=''){
     .filter(c=>!statusFilter||c.currentStatus===statusFilter)
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
     .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
+    .filter(c=>{if(!staffFilter)return true;const a=childAudit(c);return [a.registeredBy,a.administeredBy,a.paymentBy].includes(staffFilter)})
     .filter(c=>!childAlpha||String(c.name||'').trim().toUpperCase().startsWith(childAlpha))
     .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})||num(a.regId)-num(b.regId));
 
@@ -981,7 +984,15 @@ async function drawChildren(q=''){
       <td><span class="seqno">${idx+1}</span></td>
       <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
       <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
-      <td><div class="child-name">${esc(c.name)}</div><div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div></td>
+      <td>
+        <div class="child-name">${esc(c.name)}</div>
+        <div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div>
+        ${(()=>{const a=childAudit(c);return `<div class="audit-under-name">
+          <div><span>Registered</span><b>${esc(a.registeredBy)}</b></div>
+          <div><span>Swarnaprashan</span><b>${esc(a.administeredBy)}</b></div>
+          <div><span>Payment</span><b>${esc(a.paymentBy)}</b></div>
+        </div>`})()}
+      </td>
       <td class="guardian-contact-cell">
         <div class="guardian-name"><span>Guardian</span><b>${esc(c.parent||'Not entered')}</b></div>
         <div class="mobile-display"><span>Mobile</span><b>${esc(c.mobile||'Not entered')}</b></div>
@@ -991,7 +1002,11 @@ async function drawChildren(q=''){
         </div>
       </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
-      <td>${(()=>{const a=childAudit(c);return `<div class="audit-mini"><span>Registered</span><b>${esc(a.registeredBy)}</b><span>Administered</span><b>${esc(a.administeredBy)}</b><span>Payment</span><b>${esc(a.paymentBy)}</b></div>`})()}</td>
+      <td>${(()=>{const a=childAudit(c);return `<div class="audit-card-mini">
+        <div><span>Registered By</span><b>${esc(a.registeredBy)}</b></div>
+        <div><span>Administered By</span><b>${esc(a.administeredBy)}</b></div>
+        <div><span>Payment By</span><b>${esc(a.paymentBy)}</b></div>
+      </div>`})()}</td>
       <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}<br><span>Dose: ${esc(paymentAdministeredBy(p))}</span><br><span>Payment: ${esc(paymentReceivedBy(p))}</span></div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
