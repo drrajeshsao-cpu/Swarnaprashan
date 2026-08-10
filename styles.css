@@ -980,3 +980,35 @@ nav button[data-view="reports"]{--tab:#9c563e}
   .finance-kpi b{font-size:15px}
   .payment-history-row{grid-template-columns:1fr}
 }
+
+/* V11.7 BILLING DASHBOARD */
+#paymentKpis{display:block;margin:12px 0 16px}
+.billing-rate-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 16px;margin-bottom:10px;border:1px solid #ead7b8;border-radius:16px;
+  background:linear-gradient(135deg,#fffaf0,#fff);box-shadow:var(--pro-shadow-sm)
+}
+.billing-rate-banner>div{display:grid;gap:2px}
+.billing-rate-banner span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#87642f;font-weight:800}
+.billing-rate-banner b{font-size:22px;color:#5f3d1d;letter-spacing:-.03em}
+.finance-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.finance-kpi{min-height:94px}
+.finance-kpi small{font-size:9.5px;color:#818792;line-height:1.25}
+.finance-kpi.violet{border-top:3px solid #7763a4}
+.finance-kpi.teal{border-top:3px solid #3b8b88}
+.payment-formgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.payment-formgrid label.wide{grid-column:span 2}
+@media(max-width:1280px){.finance-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.payment-formgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){
+  .finance-grid{grid-template-columns:repeat(2,1fr)}
+  .billing-rate-banner{align-items:flex-start}
+  .payment-formgrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .finance-grid{grid-template-columns:1fr 1fr}
+  .billing-rate-banner{display:grid}
+  .billing-rate-banner button{width:100%}
+  .payment-formgrid{grid-template-columns:1fr}
+  .payment-formgrid label.wide{grid-column:auto}
+}

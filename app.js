@@ -1,7 +1,7 @@
 
 const app=(()=>{
 const KEY='mahamaya_swarnaprashan_v7';
-const defaults={clinicName:'MAHAMAYA CLINIC',prescriptionTitle:'Swarnaprashan Digital Prescription',doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',designation:'Consultant Physician • Ayurveda',doctor2:'Dr. Ravi Chandrakar, B.A.M.S.',designation2:'Consultant Physician • Ayurveda',phone:'',address:'In front of India 1 ATM, Sheetla Chowk, Bhatagaon, Raipur',footer:'Clinical follow-up record and parent education. Seek urgent medical care for emergency symptoms.'};
+const defaults={swarnaprashanRate:250,clinicName:'MAHAMAYA CLINIC',prescriptionTitle:'Swarnaprashan Digital Prescription',doctor:'Dr. Rajesh Sao, M.D. (Ayurveda)',designation:'Consultant Physician • Ayurveda',doctor2:'Dr. Ravi Chandrakar, B.A.M.S.',designation2:'Consultant Physician • Ayurveda',phone:'',address:'In front of India 1 ATM, Sheetla Chowk, Bhatagaon, Raipur',footer:'Clinical follow-up record and parent education. Seek urgent medical care for emergency symptoms.'};
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
 let currentView='dashboard';
 let suppressCloudEvent=false;
@@ -340,6 +340,23 @@ function paymentStatusClass(s){
   return 'pay-none';
 }
 function money(n){return '₹'+(Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+
+function currentSwarnaprashanRate(){
+  const r=Number(db?.settings?.swarnaprashanRate);
+  return Number.isFinite(r)&&r>=0?r:250;
+}
+function expectedDoseBilling(scope='month'){
+  const now=new Date();
+  const entries=(db.payments||[]).filter(p=>{
+    if(scope!=='month')return true;
+    const d=new Date((p.date||'')+'T00:00:00');
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  });
+  const doseEntries=entries.filter(p=>String(p.purpose||'').toLowerCase().includes('swarnaprashan'));
+  const expected=doseEntries.reduce((s,p)=>s+(Number(p.amount)||currentSwarnaprashanRate()),0);
+  return {count:doseEntries.length,expected};
+}
+
 function paymentSummary(scope='all'){
   const list=(db.payments||[]).filter(p=>{
     if(scope==='month'){
@@ -354,21 +371,37 @@ function paymentSummary(scope='all'){
   const dueChildren=new Set(list.filter(p=>paymentBalance(p)>0).map(p=>p.childId)).size;
   const cash=list.filter(p=>p.method==='Cash').reduce((s,p)=>s+(Number(p.paid)||0),0);
   const upi=list.filter(p=>p.method==='UPI').reduce((s,p)=>s+(Number(p.paid)||0),0);
-  return {billed,collected,due,dueChildren,cash,upi,count:list.length};
+  const card=list.filter(p=>p.method==='Card').reduce((s,p)=>s+(Number(p.paid)||0),0);
+  const bank=list.filter(p=>p.method==='Bank Transfer').reduce((s,p)=>s+(Number(p.paid)||0),0);
+  const credit=list.filter(p=>['Credit / Udhari','Pay Later'].includes(paymentStatus(p))).reduce((s,p)=>s+paymentBalance(p),0);
+  const pending=list.filter(p=>['Pending','Part Paid'].includes(paymentStatus(p))).reduce((s,p)=>s+paymentBalance(p),0);
+  const prepaid=list.filter(p=>paymentStatus(p)==='Home Use - Already Paid').reduce((s,p)=>s+(Number(p.paid)||0),0);
+  return {billed,collected,due,dueChildren,cash,upi,card,bank,credit,pending,prepaid,count:list.length};
 }
 function renderPaymentKpis(){
   const el=$('#paymentKpis');if(!el)return;
-  const m=paymentSummary('month'),all=paymentSummary('all');
-  el.innerHTML=[
-    ['Collected This Month',money(m.collected),'green'],
-    ['Cash This Month',money(m.cash),'gold'],
-    ['UPI This Month',money(m.upi),'blue'],
-    ['Total Outstanding',money(all.due),'red'],
-    ['Children With Due',all.dueChildren,'orange'],
-    ['Payment Entries',all.count,'neutral']
-  ].map(x=>`<div class="finance-kpi ${x[2]}"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+  const m=paymentSummary('month'),all=paymentSummary('all'),exp=expectedDoseBilling('month');
+  const rate=currentSwarnaprashanRate();
+  el.innerHTML=`
+    <div class="billing-rate-banner">
+      <div><span>Current Swarnaprashan Rate</span><b>${money(rate)} / dose</b></div>
+      <button class="ghost" onclick="app.showView('settings')">Change Rate</button>
+    </div>
+    <div class="finance-grid">
+      ${[
+        ['Expected Billing This Month',money(exp.expected),'gold',`${exp.count} recorded dose${exp.count===1?'':'s'}`],
+        ['Collected This Month',money(m.collected),'green','All received payments'],
+        ['Cash Collection',money(m.cash),'gold','This month'],
+        ['UPI Collection',money(m.upi),'blue','This month'],
+        ['Card / Bank',money(m.card+m.bank),'violet','This month'],
+        ['Pending Balance',money(m.pending),'orange','Pending + part-paid'],
+        ['Credit / Udhari',money(m.credit),'red','Outstanding credit'],
+        ['Total Outstanding',money(all.due),'red',`${all.dueChildren} children with due`],
+        ['Home-use Prepaid',money(m.prepaid),'teal','Already paid home-use'],
+        ['Payment Entries',all.count,'neutral','All-time ledger entries']
+      ].map(x=>`<div class="finance-kpi ${x[2]}"><span>${x[0]}</span><b>${x[1]}</b><small>${x[3]}</small></div>`).join('')}
+    </div>`;
 }
-
 async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
   const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
@@ -830,7 +863,7 @@ async function drawChildren(q=''){
         </div>
       </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
-      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${esc(p.method||'-')} • ${money(p.paid)} paid${bal?`<br><b>${money(bal)} due</b>`:''}</div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
+      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}</div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
         <button onclick="app.openChildDetails('${c.id}')">Open</button>
@@ -896,7 +929,7 @@ function paymentHistoryHtml(childId){
   return `<div class="payment-history-list">${ps.map(p=>`<div class="payment-history-row">
     <div><b>${fmt(p.date)}</b><span>${esc(p.purpose||'Swarnaprashan')}</span></div>
     <div><span class="payment-badge ${paymentStatusClass(paymentStatus(p))}">${esc(paymentStatus(p))}</span><small>${esc(p.method||'-')}</small></div>
-    <div><span>Billed</span><b>${money(p.amount)}</b></div>
+    <div><span>Billed</span><b>${money(p.amount)}</b><small>${p.quantity?`${p.quantity} × ${money(p.rate||currentSwarnaprashanRate())}`:''}</small></div>
     <div><span>Paid</span><b>${money(p.paid)}</b></div>
     <div><span>Due</span><b class="${paymentBalance(p)>0?'due-money':''}">${money(paymentBalance(p))}</b></div>
     <div><small>${esc(p.reference||p.note||'')}</small></div>
@@ -916,9 +949,11 @@ function recordPayment(childId){
         <option>Previous Due Collection</option>
         <option>Other</option>
       </select></label>
+      <label>Quantity / Doses<input id="pay_qty" type="number" min="1" step="1" value="1"></label>
+      <label>Rate per Dose ₹<input id="pay_rate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Payment Status<select id="pay_status">${PAYMENT_STATUSES.map(s=>`<option>${s}</option>`).join('')}</select></label>
       <label>Payment Method<select id="pay_method">${PAYMENT_METHODS.map(s=>`<option>${s}</option>`).join('')}</select></label>
-      <label>Total Amount ₹<input id="pay_amount" type="number" min="0" step="1" value=""></label>
+      <label>Total Amount ₹<input id="pay_amount" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Amount Received ₹<input id="pay_paid" type="number" min="0" step="1" value=""></label>
       <label>Balance Due ₹<input id="pay_due" type="number" readonly value="0"></label>
       <label>UPI / Receipt / Reference<input id="pay_ref" placeholder="Optional transaction / receipt reference"></label>
@@ -933,9 +968,20 @@ function recordPayment(childId){
     </div>
     <div class="actionrow"><button id="savePaymentBtn">Save Payment Transaction</button></div>
   </div>`);
-  const calc=()=>{const a=Number($('#pay_amount').value)||0,p=Number($('#pay_paid').value)||0;$('#pay_due').value=Math.max(0,a-p)};
-  $('#pay_amount').oninput=calc;$('#pay_paid').oninput=calc;
-  $('#pay_status').onchange=()=>{const s=$('#pay_status').value;if(['Paid','Home Use - Already Paid'].includes(s)){const a=Number($('#pay_amount').value)||0;if(a)$('#pay_paid').value=a}else if(['Pending','Credit / Udhari','Pay Later'].includes(s)){$('#pay_paid').value=0}else if(['Complimentary / Free','Waived / No Charge'].includes(s)){if(!$('#pay_amount').value)$('#pay_amount').value=0;$('#pay_paid').value=0}calc()};
+  const recalcBill=()=>{
+    const purpose=$('#pay_purpose').value;
+    const qty=Math.max(1,Number($('#pay_qty').value)||1);
+    const rate=Math.max(0,Number($('#pay_rate').value)||0);
+    if(['Clinic Swarnaprashan Dose','Home Use Medicine / Doses'].includes(purpose)){
+      $('#pay_amount').value=(qty*rate).toFixed(0);
+    }
+    const a=Number($('#pay_amount').value)||0,p=Number($('#pay_paid').value)||0;
+    $('#pay_due').value=Math.max(0,a-p);
+  };
+  $('#pay_qty').oninput=recalcBill;$('#pay_rate').oninput=recalcBill;$('#pay_purpose').onchange=recalcBill;
+  $('#pay_amount').oninput=recalcBill;$('#pay_paid').oninput=recalcBill;
+  recalcBill();
+  $('#pay_status').onchange=()=>{const s=$('#pay_status').value;if(['Paid','Home Use - Already Paid'].includes(s)){const a=Number($('#pay_amount').value)||0;$('#pay_paid').value=a}else if(['Pending','Credit / Udhari','Pay Later'].includes(s)){$('#pay_paid').value=0}else if(['Complimentary / Free','Waived / No Charge'].includes(s)){if(!$('#pay_amount').value)$('#pay_amount').value=0;$('#pay_paid').value=0}calc()};
   $('#savePaymentBtn').onclick=()=>savePaymentTransaction(childId);
   $('#paymentEditorCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -955,8 +1001,9 @@ function savePaymentTransaction(childId){
   if(status==='Part Paid' && paid>=amount && amount>0)status='Paid';
   const p={
     id:uid(),childId,date:$('#pay_date').value||isoToday(),purpose:$('#pay_purpose').value,
-    status,method:$('#pay_method').value,amount,paid,reference:$('#pay_ref').value||'',
-    note:$('#pay_note').value||'',createdAt:new Date().toISOString(),
+    status,method:$('#pay_method').value,amount,paid,
+    quantity:Number($('#pay_qty')?.value)||1,rate:Number($('#pay_rate')?.value)||currentSwarnaprashanRate(),
+    reference:$('#pay_ref').value||'',note:$('#pay_note').value||'',createdAt:new Date().toISOString(),
     recordedBy:currentSession()?.name||currentSession()?.loginId||'Clinic User'
   };
   db.payments=db.payments||[];db.payments.push(p);save();
@@ -1148,8 +1195,10 @@ function renderBackup(){$('#backupBtn').onclick=()=>download('swarnaprashan-v7-b
 function exportCSV(){const head=['Child','RegID','Date','Dose','Height','Weight','BMI','Pulse','RR','SpO2','BP','Issue',...scales],rows=db.followups.map(f=>{const c=child(f.childId)||{};return[c.name,c.regId,f.date,f.dose,f.height,f.weight,f.bmi,f.pulse,f.rr,f.spo2,f.bp,f.issue,...scales.map(k=>f.scores?.[k])]});download('swarnaprashan-followups.csv',[head,...rows].map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'),'text/csv')}
 function download(n,t,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function renderSettings(){
+  setTimeout(()=>{const e=$('#s_swarnaprashanRate');if(e)e.value=currentSwarnaprashanRate()},0);
  $('#settingsForm').innerHTML=`<div class="section"><h4>Prescription Letterhead</h4><div class="formgrid">
  <label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label>
+ <label>Swarnaprashan Rate / Dose ₹<input id="s_swarnaprashanRate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
  <label>Prescription Title<input id="s_rxTitle" value="${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}"></label>
  <label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label>
  </div></div>
@@ -1179,7 +1228,18 @@ function renderSettings(){
  <div class="actionrow"><button id="saveUserBtn">Save User</button></div>
  <div id="usersList"></div></div>`;
  $('#saveSettings').onclick=()=>{
-   db.settings={...db.settings,clinicName:$('#s_clinic').value,prescriptionTitle:$('#s_rxTitle').value,doctor:$('#s_doctor').value,designation:$('#s_desig').value,doctor2:$('#s_doctor2').value,designation2:$('#s_desig2').value,phone:$('#s_phone').value,address:$('#s_address').value,footer:$('#s_footer').value};
+   db.settings={...db.settings,
+      clinicName:$('#s_clinic').value,
+      swarnaprashanRate:Number($('#s_swarnaprashanRate').value)||250,
+      prescriptionTitle:$('#s_rxTitle').value,
+      doctor:$('#s_doctor').value,
+      designation:$('#s_desig').value,
+      doctor2:$('#s_doctor2').value,
+      designation2:$('#s_desig2').value,
+      phone:$('#s_phone').value,
+      address:$('#s_address').value,
+      footer:$('#s_footer').value
+    };
    save();alert('Letterhead and clinic settings saved');
  };
  $('#saveUserBtn').onclick=saveUserFromSettings;

@@ -1,0 +1,35 @@
+MAHAMAYA SWARNAPRASHAN V11.7 — CONFIGURABLE BILLING DASHBOARD
+
+Default billing:
+- Swarnaprashan default rate = ₹250 per dose.
+- Configurable from Settings > Swarnaprashan Rate / Dose.
+- New payment entry defaults to quantity 1 × current rate.
+- Total amount auto-calculates from Quantity × Rate.
+- Paid in Full automatically fills received amount equal to bill.
+- Home-use multiple doses can be billed by quantity × same configurable rate.
+
+Dashboard finance intelligence:
+- Expected billing this month
+- Total collection this month
+- Cash collection
+- UPI collection
+- Card + Bank collection
+- Pending balance
+- Credit/Udhari outstanding
+- Total outstanding
+- Children with due
+- Home-use prepaid
+- All payment ledger entries
+
+Per-child:
+- billed, paid, due
+- method
+- status
+- quantity × rate
+- transaction history
+- child name + ID + age retained
+
+Authentication/login design not changed.
+
+Suggested GitHub commit:
+Upgrade Swarnaprashan V11.7 with configurable 250 per dose billing and collection dashboard
