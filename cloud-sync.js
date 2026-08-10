@@ -261,6 +261,45 @@ async function initializeCloudUser(user){
   }
 }
 
+
+// V12.0.1 robust public auth bridge for the visible app login form.
+window.mahamayaFirebaseLogin=async function(email,pw){
+  email=String(email||'').trim();
+  pw=String(pw||'');
+  if(!email||!pw) return {ok:false,message:'Enter email and password.'};
+  try{
+    setMessage('Signing in securely…');
+    const cred=await signInWithEmailAndPassword(auth,email,pw);
+    setMessage('Signed in successfully.','ok');
+    return {ok:true,email:cred?.user?.email||email};
+  }catch(e){
+    console.error('Firebase sign-in failed',e);
+    const code=e?.code||'error';
+    const message=(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')
+      ? 'Email or password is incorrect.'
+      : (code==='auth/too-many-requests' ? 'Too many attempts. Please wait and try again.' : 'Sign-in failed: '+code);
+    setMessage(message,'error');
+    return {ok:false,code,message};
+  }
+};
+
+window.mahamayaFirebaseSignOut=async function(){ try{await signOut(auth);return {ok:true}}catch(e){return {ok:false,code:e?.code||'error'}} };
+
+window.mahamayaFirebaseReset=async function(email){
+  email=String(email||'').trim();
+  if(!email) return {ok:false,message:'Enter your registered email first.'};
+  try{
+    await sendPasswordResetEmail(auth,email);
+    setMessage('Password reset email sent. Check Inbox and Spam.','ok');
+    return {ok:true};
+  }catch(e){
+    const code=e?.code||'error';
+    const message='Could not send reset email: '+code;
+    setMessage(message,'error');
+    return {ok:false,code,message};
+  }
+};
+
 window.addEventListener('swarnaprashan-local-save',()=>scheduleSync());
 window.addEventListener('online',()=>{if(currentUser){setStatus('syncing','Reconnecting…');scheduleSync('reconnect')}});
 window.addEventListener('offline',()=>setStatus('offline','● Offline • changes stay local'));

@@ -1,0 +1,8 @@
+V12.0.1 LOGIN HOTFIX
+- Visible login form now calls Firebase Authentication directly through a robust window bridge.
+- Login errors are shown on the visible login screen.
+- Logout signs out both Firebase and local session.
+- Cache/version bumped to force clients to receive the fix.
+
+Commit message:
+Fix V12 Firebase login bridge and synchronized logout

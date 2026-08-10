@@ -196,7 +196,7 @@ function bindAuth(){
   $('#forgotCloseBtn').onclick=()=>$('#forgotModal').classList.remove('open');
   $('#forgotCancelBtn').onclick=()=>$('#forgotModal').classList.remove('open');
   $('#recoverBtn').onclick=recoverPassword;
-  $('#logoutBtn').onclick=()=>{if(confirm('Logout current user?')){clearSession();ensureAuthUI()}};
+  $('#logoutBtn').onclick=async()=>{if(confirm('Logout current user?')){try{await window.mahamayaFirebaseSignOut?.()}catch{} clearSession();ensureAuthUI()}};
   $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')loginUser()});
 }
 function toggleDemoUsers(){
@@ -215,34 +215,36 @@ function setLoginStatus(text,ok=false){
 }
 
 async function loginUser(){
-  const identifier=$("#loginIdentifier").value.trim();
+  const identifier=$("#loginIdentifier").value.trim().toLowerCase();
   const password=$("#loginPassword").value;
 
   if(!identifier || !password){
     setLoginStatus("Please enter email and password.",false);
     return;
   }
-
   if(!identifier.includes("@")){
     setLoginStatus("Please use your registered email address for secure login.",false);
     return;
   }
 
-  const firebaseEmail=document.getElementById("firebaseEmail");
-  const firebasePassword=document.getElementById("firebasePassword");
-  const firebaseLoginBtn=document.getElementById("firebaseLoginBtn");
-
-  if(!firebaseEmail || !firebasePassword || !firebaseLoginBtn){
-    setLoginStatus("Secure Firebase login is unavailable. Please refresh the page.",false);
+  setLoginStatus("Signing in securely…",true);
+  const started=Date.now();
+  while(typeof window.mahamayaFirebaseLogin!=="function" && Date.now()-started<5000){
+    await new Promise(r=>setTimeout(r,100));
+  }
+  if(typeof window.mahamayaFirebaseLogin!=="function"){
+    setLoginStatus("Secure login module did not load. Please refresh once and try again.",false);
     return;
   }
-
-  firebaseEmail.value=identifier;
-  firebasePassword.value=password;
-
-  setLoginStatus("Signing in securely with Firebase...",true);
-  firebaseLoginBtn.click();
+  const result=await window.mahamayaFirebaseLogin(identifier,password);
+  if(result?.ok){
+    $("#loginPassword").value="";
+    setLoginStatus("Login successful. Opening dashboard…",true);
+  }else{
+    setLoginStatus(result?.message||"Unable to login.",false);
+  }
 }
+
 function recoverPassword(){
   const identifier=$('#fpIdentifier').value.trim();
   const recoveryEmail=$('#fpRecoveryEmail').value.trim().toLowerCase();
