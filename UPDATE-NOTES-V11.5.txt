@@ -1,0 +1,24 @@
+MAHAMAYA SWARNAPRASHAN PROFESSIONAL V11.5
+
+DESIGN-ONLY POLISH ON STABLE V11.4 BASE
+
+Authentication safety:
+- app.js authentication logic unchanged.
+- cloud-sync.js Firebase logic unchanged.
+- No hard-coded password added.
+- Existing Firebase persistence retained.
+- Only index wording/navigation presentation, CSS visual system and PWA cache label changed.
+
+Visual upgrades:
+- Premium clinical gold/brown/ivory design system.
+- Cleaner typography, hierarchy, spacing and card system.
+- Professional navigation labels and compact icon treatment.
+- More restrained, meaningful status colors.
+- Refined dashboard hero, KPI cards, Pushya calendar and A-Z registry.
+- Improved clinical forms, wizard, tables, report paper and knowledge centre.
+- Responsive tablet/mobile navigation and compact dashboard behavior.
+- Improved focus states and touch targets for accessibility.
+- Print layout remains conservative and clinical.
+
+Suggested GitHub commit:
+Polish Swarnaprashan V11.5 professional UI without changing stable Firebase login

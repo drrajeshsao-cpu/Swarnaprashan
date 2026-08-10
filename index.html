@@ -112,39 +112,45 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brandmark sparkle-mark">✨</div>
-      <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan Digital Health Suite</span></div>
+      <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan • Child Growth & Clinical Intelligence</span></div>
     </div>
-    <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Branded Clinical App</b><span>Child-centric premium workflow</span></div></div>
+    <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Clinical Intelligence Suite</b><span>Longitudinal child-health workflow</span></div></div>
     <nav id="nav">
-      <button data-view="dashboard" class="active">⌂ Dashboard</button>
-      <button data-view="clinical">✚ Clinical Workspace</button>
-      <button data-view="children">👶 Children</button>
-      <button data-view="followup">↻ Monthly Follow-up</button>
-      <button data-view="analytics">◫ Growth & Analytics</button>
-      <button data-view="vaccination">✓ Vaccination & Schedule</button>
-      <button data-view="documents">▣ Documents & Camera</button>
-      <button data-view="reports">▤ Reports & Prescription</button>
-      <button data-view="knowledge">📚 Swarnaprashan Guide</button>
-      <button data-view="education">♡ Diet • Pathya • Lifestyle</button>
-      <button data-view="backup">⤓ Backup / Restore</button>
-      <button data-view="settings">⚙ Settings</button>
+      <button data-view="dashboard" class="active"><span class="nav-ico">⌂</span><span>Dashboard</span></button>
+      <button data-view="clinical"><span class="nav-ico">✚</span><span>Clinical Workspace</span></button>
+      <button data-view="children"><span class="nav-ico">◉</span><span>Child Registry</span></button>
+      <button data-view="followup"><span class="nav-ico">↻</span><span>Follow-up & Outcomes</span></button>
+      <button data-view="analytics"><span class="nav-ico">◫</span><span>Growth Analytics</span></button>
+      <button data-view="vaccination"><span class="nav-ico">✓</span><span>Vaccination & Schedule</span></button>
+      <button data-view="documents"><span class="nav-ico">▣</span><span>Documents & Imaging</span></button>
+      <button data-view="reports"><span class="nav-ico">▤</span><span>Prescription & Reports</span></button>
+      <button data-view="knowledge"><span class="nav-ico">◈</span><span>Swarnaprashan Knowledge</span></button>
+      <button data-view="education"><span class="nav-ico">♡</span><span>Pathya & Lifestyle</span></button>
+      <button data-view="backup"><span class="nav-ico">⤓</span><span>Backup & Restore</span></button>
+      <button data-view="settings"><span class="nav-ico">⚙</span><span>Settings</span></button>
     </nav>
-    <div class="side-note">Structured clinical records sync securely with Firebase after sign-in. Files/photos remain device-local in this phase; keep regular backups.</div>
+    <div class="side-note"><b>Secure Clinical Workspace</b><span>Structured records sync with Firebase. Keep periodic backups for device-local files and images.</span></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
       <div>
         <h1 id="pageTitle">Dashboard</h1>
-        <p id="pageSubtitle">Premium longitudinal Swarnaprashan clinical tracking</p>
+        <p id="pageSubtitle">Longitudinal Swarnaprashan • Growth • Development • Clinical Documentation</p>
       </div>
       <div class="top-actions">
         <div id="cloudStatus" class="cloud-status cloud-offline"><span class="cloud-dot"></span><b>Cloud sign-in required</b></div>
-        <input id="globalSearch" placeholder="Search child / mobile / ID">
+        <input id="globalSearch" placeholder="Search child name, ID, guardian or mobile…">
         <button id="topNewChild">+ New Child</button>
         <button id="topNewCase">+ Clinical Entry</button><span id="currentUserBadge" class="pill auth-pill"></span><button id="cloudAccountBtn" class="ghost">☁ Cloud</button><button id="logoutBtn" class="ghost">Logout</button>
       </div>
     </header>
+    <div class="workspace-strip">
+      <span class="ws-chip"><i class="dot green"></i> Cloud Sync</span>
+      <span class="ws-chip"><i class="dot gold"></i> Clinical Workflow</span>
+      <span class="ws-chip"><i class="dot blue"></i> Growth Intelligence</span>
+      <span class="ws-chip"><i class="dot violet"></i> Parent Education</span>
+    </div>
     <section id="view"></section>
   </main>
 </div>
@@ -152,20 +158,20 @@
 <template id="dashboardTpl">
   <div class="hero">
     <div>
-      <span class="eyebrow">SWARNAPRASHAN • GROWTH • DEVELOPMENT • DOCUMENTATION</span>
-      <h2>One complete digital Swarnaprashan record for every child.</h2>
-      <p>Registration → Examination → Investigations → Treatment → Prescription → Print/PDF/WhatsApp, with month-by-month growth and outcome analysis.</p>
+      <span class="eyebrow">CHILD HEALTH • SWARNAPRASHAN • GROWTH INTELLIGENCE</span>
+      <h2>A complete longitudinal Swarnaprashan record for every child.</h2>
+      <p>From registration to examination, investigations, treatment, prescription and parent communication — with structured month-by-month growth and outcome tracking.</p>
       <div class="hero-actions">
-        <button onclick="app.startClinical()">Start Clinical Workspace</button>
-        <button class="ghost" onclick="app.openQuickUpload()">Quick Manual Card / Camera Upload</button>
+        <button onclick="app.startClinical()">Start Clinical Entry</button>
+        <button class="ghost" onclick="app.openQuickUpload()">Quick Upload / Camera</button>
       </div>
     </div>
     <div class="hero-side">
       <img src="swarna-baby.png" alt="Swarnaprashan child" class="hero-art">
       <div class="hero-mini">
-        <div><b>6-step</b><span>Save & Next clinical flow</span></div>
-        <div><b>Camera</b><span>baby photo + reports + manual card</span></div>
-        <div><b>PDF</b><span>print-ready parent report</span></div>
+        <div><b>Guided</b><span>Save & Next clinical workflow</span></div>
+        <div><b>Capture</b><span>photos, reports & clinical documents</span></div>
+        <div><b>Share</b><span>prescription, PDF & WhatsApp</span></div>
       </div>
     </div>
   </div>
@@ -460,7 +466,7 @@
 
 
 
-<script src="app.js?v=11.4.0"></script>
-<script type="module" src="cloud-sync.js?v=11.4.0"></script>
+<script src="app.js?v=11.5.0"></script>
+<script type="module" src="cloud-sync.js?v=11.5.0"></script>
 </body>
 </html>
