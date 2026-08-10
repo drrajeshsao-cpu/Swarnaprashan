@@ -1,0 +1,22 @@
+MAHAMAYA SWARNAPRASHAN — STABLE PLUS V11.4
+
+IMPORTANT AUTHENTICATION POLICY:
+- Built from the last stable Firebase-login base.
+- Firebase email/password code was NOT redesigned.
+- browserLocalPersistence remains enabled: once signed in, the same browser/PWA should reopen the authenticated session without typing again until explicit sign-out/session invalidation.
+- No password is hard-coded into public source code.
+
+UPGRADES:
+- Dashboard Pushya Nakshatra reference calendar through Aug 2027.
+- Responsive quick utility centre.
+- A–Z child registry filter; name-first sorting with Registration ID visible.
+- Global search continues to search name/mobile/ID.
+- Swarnaprashan bilingual English/Hindi parent knowledge centre.
+- WhatsApp/text share and Print/Save PDF for parent guide.
+- Evidence-aware safety language, including infant honey caution and metal-product quality caution.
+- Growth analytics adds serial growth velocity and WHO pediatric interpretation note.
+- Prescription/Reports include complete latest clinical entry, investigations, exam notes, Ashtavidha, Dashavidha, treatment, safety/referral advice and parent message.
+- Responsive CSS improvements retained.
+
+Suggested GitHub commit:
+Upgrade stable Swarnaprashan V11.4 with bilingual guide Pushya calendar A-Z registry growth analytics and complete prescription

@@ -430,3 +430,38 @@ nav button{min-height:46px}
   .firebase-auth-card{padding:18px}
   .firebase-auth-actions{grid-template-columns:1fr}
 }
+
+/* V11.4 stable-plus responsive utility upgrades */
+.dashboard-utility-grid{margin:14px 0}
+.pushya-card{background:linear-gradient(135deg,#fffaf0,#fff)}
+.next-pushya{display:grid;gap:4px;padding:14px;border:1px solid #ead9b9;border-radius:14px;background:#fff}
+.next-pushya span{font-size:11px;font-weight:800;letter-spacing:.08em;color:#8a612c;text-transform:uppercase}
+.next-pushya b{font-size:21px;color:#5f3d1d}
+.next-pushya small{color:#777}
+.pushya-year{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.pushya-chip{display:inline-flex;padding:7px 10px;border-radius:999px;border:1px solid #eadcc6;background:#fff;font-size:11px;font-weight:700}
+.pushya-chip.next{background:#6a431c;color:#fff;border-color:#6a431c}
+.alpha-strip{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 12px}
+.alpha-btn{min-width:34px;padding:7px 8px;border-radius:9px;background:#fff;color:#5f4327;border:1px solid #e4d8c5}
+.alpha-btn.active,.alpha-btn:hover{background:#6a431c;color:#fff}
+.dashboard-quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.child-dashboard-row{cursor:pointer}
+.child-dashboard-row:hover{background:#fff8ec}
+.clinical-note{margin:10px 0 16px;padding:12px 14px;border-left:4px solid #b68733;border-radius:10px;background:#fffaf1;font-size:12px;line-height:1.5}
+.knowledge-shell{display:grid;gap:14px}
+.knowledge-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-end}
+.knowledge-hero h2{margin:5px 0}
+.knowledge-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.knowledge-paper{max-width:1000px;margin:auto}
+.evidence-box{background:#fffaf1;border:1px solid #eadbc3;border-radius:12px;padding:12px}
+@media(max-width:900px){
+  .knowledge-hero{display:block}
+  .knowledge-actions{justify-content:flex-start;margin-top:12px}
+  .dashboard-quick-actions{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .dashboard-quick-actions{grid-template-columns:1fr}
+  .alpha-strip{max-height:94px;overflow:auto}
+  .pushya-chip{font-size:10px}
+  .knowledge-actions>*{width:100%}
+}

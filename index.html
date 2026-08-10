@@ -124,6 +124,7 @@
       <button data-view="vaccination">✓ Vaccination & Schedule</button>
       <button data-view="documents">▣ Documents & Camera</button>
       <button data-view="reports">▤ Reports & Prescription</button>
+      <button data-view="knowledge">📚 Swarnaprashan Guide</button>
       <button data-view="education">♡ Diet • Pathya • Lifestyle</button>
       <button data-view="backup">⤓ Backup / Restore</button>
       <button data-view="settings">⚙ Settings</button>
@@ -169,6 +170,25 @@
     </div>
   </div>
   <div id="kpis" class="kpis"></div><div id="opsKpis" class="registry-kpis"></div>
+  <div class="grid2 dashboard-utility-grid">
+    <div class="card pushya-card">
+      <div class="cardhead"><div><span class="eyebrow">PUSHYA NAKSHATRA CALENDAR</span><h3>Upcoming Swarnaprashan Dates</h3></div><button class="linkbtn" onclick="app.showView('knowledge')">Full guide</button></div>
+      <div id="pushyaNext"></div>
+      <div id="pushyaYear" class="pushya-year"></div>
+      <p class="tiny muted">Reference dates for India. Confirm exact Raipur local Panchang start/end time before publishing clinic hours.</p>
+    </div>
+    <div class="card quick-utility-card">
+      <div class="cardhead"><div><span class="eyebrow">QUICK CLINIC UTILITY</span><h3>Find • Open • Record • Print</h3></div></div>
+      <div id="dashboardAlpha" class="alpha-strip"></div>
+      <div class="dashboard-quick-actions">
+        <button onclick="app.showView('children')">A–Z Children</button>
+        <button class="ghost" onclick="app.startClinical()">+ Clinical Entry</button>
+        <button class="ghost" onclick="app.showView('analytics')">Growth Analytics</button>
+        <button class="ghost" onclick="app.showView('reports')">Prescription / PDF</button>
+      </div>
+      <p class="tiny muted">Search from the top bar by child name, ID, guardian or mobile.</p>
+    </div>
+  </div>
   <div class="grid2">
     <div class="card"><div class="cardhead"><h3>Recent Children</h3><button class="linkbtn" onclick="app.showView('children')">View all</button></div><div id="recentChildren"></div></div>
     <div class="card"><div class="cardhead"><h3>Upcoming / Due Follow-up</h3><button class="linkbtn" onclick="app.showView('followup')">Record visit</button></div><div id="dueChildren"></div></div>
@@ -212,6 +232,7 @@
 
     <div id="registryKpis" class="registry-kpis"></div>
 
+    <div id="childAlphaBar" class="alpha-strip registry-alpha"></div>
     <div class="registry-toolbar">
       <input id="childSearch" placeholder="Search child / guardian / mobile / registration ID">
       <select id="childStatusFilter">
@@ -256,7 +277,7 @@
 <template id="analyticsTpl">
   <div class="card">
     <div class="cardhead"><div><h3>Growth & Functional Analytics</h3><p class="muted">Automatic line, column and pie analysis from saved follow-ups.</p></div><select id="analyticsChild"></select></div>
-    <div id="analyticSummary" class="metricrow"></div>
+    <div id="analyticSummary" class="metricrow"></div><div id="growthInterpretation" class="clinical-note"></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Line Trend</h3><canvas id="lineChart" width="900" height="360"></canvas></div>
@@ -361,6 +382,26 @@
   <div id="reportPaper" class="reportpaper"></div>
 </template>
 
+
+<template id="knowledgeTpl">
+  <div class="knowledge-shell">
+    <div class="card knowledge-hero">
+      <div>
+        <span class="eyebrow">PARENT EDUCATION • DOCTOR-REVIEWED CONTENT</span>
+        <h2>Swarnaprashan Knowledge Centre</h2>
+        <p>Classical Ayurveda context, practical clinic guidance, safety notes and modern evidence — available in English or Hindi for parent sharing.</p>
+      </div>
+      <div class="knowledge-actions">
+        <select id="knowledgeLang"><option value="en">English</option><option value="hi">हिन्दी</option></select>
+        <button id="knowledgeShare">Share Text</button>
+        <button id="knowledgeWA" class="ghost">WhatsApp</button>
+        <button id="knowledgePrint" class="ghost">Print / Save PDF</button>
+      </div>
+    </div>
+    <div id="knowledgePaper" class="reportpaper knowledge-paper"></div>
+  </div>
+</template>
+
 <template id="educationTpl">
   <div class="card">
     <div class="cardhead"><div><h3>Diet • Pathya • Apathya • Lifestyle</h3><p class="muted">Parent guidance can be printed with the prescription.</p></div><span class="pill">Parent Education</span></div>
@@ -419,7 +460,7 @@
 
 
 
-<script src="app.js?v=11.3.0"></script>
-<script type="module" src="cloud-sync.js?v=11.3.0"></script>
+<script src="app.js?v=11.4.0"></script>
+<script type="module" src="cloud-sync.js?v=11.4.0"></script>
 </body>
 </html>

@@ -86,7 +86,7 @@ const age=dob=>{if(!dob)return'-';const b=new Date(dob),n=new Date();let y=n.get
 const scoreLabel=n=>['Poor','Reduced','Stable/Normal','Improved','Best'][Number(n)]||'-';
 const avg=o=>{const a=Object.values(o||{}).map(Number).filter(x=>!isNaN(x));return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const trend=(a,b)=>a==null||b==null?'<span class="stable">No baseline</span>':(+b>+a?'<span class="good">Improved ↑</span>':+b<+a?'<span class="bad">Reduced ↓</span>':'<span class="stable">Stable →</span>');
-const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Print, Save PDF, Share and WhatsApp'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
+const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Complete clinical printout, PDF, Share and WhatsApp'],knowledge:['Swarnaprashan Guide','Bilingual parent education, Pushya calendar, safety and evidence'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
 const tpl=id=>document.getElementById(id).content.cloneNode(true);
 
 const AUTH_KEY='mahamaya_swarnaprashan_users_v1';
@@ -310,30 +310,35 @@ function showView(name){ if(!currentSession()) return; currentView=name;
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   $('#pageTitle').textContent=titles[name][0];$('#pageSubtitle').textContent=titles[name][1];
   const v=$('#view');v.innerHTML='';v.appendChild(tpl(name+'Tpl'));
-  ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,education:renderEducation,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
+  ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
 }
 
 async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
-  const thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===new Date().getMonth()&&new Date(v.date).getFullYear()===new Date().getFullYear()).length;
+  const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
   $('#kpis').innerHTML=[['Registered Children',db.children.length],['Clinical Entries',db.cases.length],['Visits This Month',thisMonth],['Saved Documents',docs.length]].map(x=>`<div class="kpi"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
   const oc=childOperationalCounts();
   if($('#opsKpis')) $('#opsKpis').innerHTML=[
-    ['Active',oc.active,'green'],
-    ['Ready',oc.ready,'gold'],
-    ['Appointments Today',oc.apptToday,'blue'],
-    ['Dose Taken Today',oc.doseToday,'green'],
-    ['Reminders Today',oc.remindersToday,'orange'],
-    ['Home Use',oc.home,'violet'],
-    ['Health Hold',oc.hold,'red'],
-    ['Stopped',oc.stopped,'gray']
+    ['Active',oc.active,'green'],['Ready',oc.ready,'gold'],['Appointments Today',oc.apptToday,'blue'],['Dose Taken Today',oc.doseToday,'green'],
+    ['Reminders Today',oc.remindersToday,'orange'],['Home Use',oc.home,'violet'],['Health Hold',oc.hold,'red'],['Stopped',oc.stopped,'gray']
   ].map(x=>`<button class="ops-kpi ${x[2]}" onclick="app.openChildrenStatus('${x[0]}')"><b>${x[1]}</b><span>${x[0]}</span></button>`).join('');
 
-  $('#recentChildren').innerHTML=db.children.slice(-6).reverse().map(c=>`<div class="docitem"><b>${esc(c.name)}</b><div class="docmeta">${age(c.dob)} • ${esc(c.mobile||'')}</div></div>`).join('')||'<p class="muted">No child registered.</p>';
-  $('#dueChildren').innerHTML=db.children.slice(0,7).map(c=>{const f=fups(c.id).at(-1);return`<div class="docitem"><b>${esc(c.name)}</b><div class="docmeta">Last follow-up: ${f?fmt(f.date):'Not recorded'}</div></div>`}).join('')||'<p class="muted">Register a child to begin.</p>';
+  const sorted=[...db.children].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
+  $('#recentChildren').innerHTML=sorted.slice(0,8).map(c=>`<div class="docitem child-dashboard-row" onclick="app.openChildFromDashboard('${c.id}')"><b>${esc(c.name)}</b><div class="docmeta"><span class="id-badge">${esc(c.regId||'-')}</span> • ${age(c.dob)} • ${esc(c.mobile||'')}</div></div>`).join('')||'<p class="muted">No child registered.</p>';
+  $('#dueChildren').innerHTML=sorted.slice(0,8).map(c=>{const f=fups(c.id).at(-1);return`<div class="docitem"><b>${esc(c.name)}</b><div class="docmeta">${esc(c.regId||'-')} • Last follow-up: ${f?fmt(f.date):'Not recorded'}</div></div>`}).join('')||'<p class="muted">Register a child to begin.</p>';
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const upcoming=PUSHYA_DATES.filter(x=>new Date(x.date+'T00:00:00')>=today);
+  const next=upcoming[0]||PUSHYA_DATES[0];
+  if($('#pushyaNext')) $('#pushyaNext').innerHTML=next?`<div class="next-pushya"><span>Next Pushya</span><b>${esc(next.label)}</b><small>Reference date • verify local Raipur Panchang timing</small></div>`:'<p class="muted">Update Pushya calendar.</p>';
+  if($('#pushyaYear')) $('#pushyaYear').innerHTML=upcoming.slice(0,13).map((x,i)=>`<span class="pushya-chip ${i===0?'next':''}">${esc(x.label.split(' • ')[0])}</span>`).join('');
+  if($('#dashboardAlpha')) $('#dashboardAlpha').innerHTML='<button class="alpha-btn active" onclick="app.openAlpha(\'ALL\')">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" onclick="app.openAlpha('${l}')">${l}</button>`).join('');
+
   options($('#dashChild'));$('#dashChild').onchange=()=>drawSnapshot($('#dashChild').value);$('#dashSnapshot').innerHTML='<p class="muted">Select a child for baseline-to-latest analysis.</p>';
   $('#dashDocs').innerHTML=docs.slice(-5).reverse().map(d=>`<div class="docitem"><b>${esc(d.name)}</b><div class="docmeta">${esc(d.type)} • ${fmt(d.date)}</div></div>`).join('')||'<p class="muted">No documents uploaded.</p>';
 }
+function openChildFromDashboard(id){showView('children');setTimeout(()=>openChildDetails(id),80)}
+function openAlpha(letter){showView('children');setTimeout(()=>{childAlpha=letter==='ALL'?'':letter;drawChildren($('#childSearch')?.value||'')},80)}
 function drawSnapshot(id){const fs=fups(id);if(fs.length<2){$('#dashSnapshot').innerHTML='<p class="muted">At least 2 follow-ups required.</p>';return}const a=fs[0],b=fs.at(-1);$('#dashSnapshot').innerHTML=`<div class="metricrow">${['Learning','Memory','Playing','School Performance'].map(k=>`<div class="metric"><span>${k}</span><b>${scoreLabel(b.scores?.[k])}</b>${trend(a.scores?.[k],b.scores?.[k])}</div>`).join('')}</div>`}
 
 
@@ -421,6 +426,58 @@ const DASHAVIDHA_OPTIONS={
   Vaya:['Not assessed','Bala','Madhyama','Jirna / Vriddha']
 };
 
+
+const PUSHYA_DATES=[
+  {date:'2026-08-11',label:'11 Aug 2026 • Tuesday'},
+  {date:'2026-09-07',label:'07 Sep 2026 • Monday'},
+  {date:'2026-10-05',label:'05 Oct 2026 • Monday'},
+  {date:'2026-11-01',label:'01 Nov 2026 • Sunday'},
+  {date:'2026-11-28',label:'28 Nov 2026 • Saturday'},
+  {date:'2026-12-25',label:'25 Dec 2026 • Friday'},
+  {date:'2027-01-22',label:'22 Jan 2027 • Friday'},
+  {date:'2027-02-18',label:'18 Feb 2027 • Thursday'},
+  {date:'2027-03-18',label:'18 Mar 2027 • Thursday'},
+  {date:'2027-04-14',label:'14 Apr 2027 • Wednesday'},
+  {date:'2027-05-11',label:'11 May 2027 • Tuesday'},
+  {date:'2027-06-07',label:'07 Jun 2027 • Monday'},
+  {date:'2027-07-05',label:'05 Jul 2027 • Monday'},
+  {date:'2027-08-01',label:'01 Aug 2027 • Sunday'},
+  {date:'2027-08-29',label:'29 Aug 2027 • Sunday'}
+];
+
+const SWARNA_GUIDE={
+en:{
+ title:'Swarnaprashan — Parent Information Guide',
+ intro:'Swarnaprashan (Suvarna Prashana) is a traditional Ayurvedic pediatric practice described in the context of Lehana/Jatakarma. Classical descriptions use processed gold (Swarna/Swarna Bhasma) with suitable vehicles such as ghrita and madhu; contemporary formulations vary and may also contain Medhya/Rasayana herbs. The exact formulation and dose should therefore be documented product-wise and prescribed by a qualified Ayurvedic physician.',
+ sections:[
+  ['What is Swarnaprashan?','A physician-supervised Ayurvedic child-health practice intended as supportive preventive care. It should not be presented as a replacement for vaccination, balanced nutrition, breastfeeding/complementary feeding, hygiene, sleep, developmental surveillance or indicated pediatric treatment.'],
+  ['Ingredients','Commonly described core ingredients include properly prepared/standardized Swarna Bhasma, Ghrita and Madhu. Some contemporary formulations add Brahmi, Shankhapushpi, Guduchi, Yashtimadhu, Vacha, Ashwagandha or other herbs. Record the exact clinic formulation, manufacturer/batch, quality documentation and dose in every visit.'],
+  ['Dose','There is no single universal dose that should be copied across all products or ages. Dose depends on the formulation, concentration, age/weight and physician assessment. One published randomized infant trial used a specific study formulation and age-based drops for 28 days; that study dose should not be generalized to every commercial or clinic preparation.'],
+  ['Timing & Pushya Nakshatra','Many contemporary Swarnaprashan programmes schedule administration on Pushya Nakshatra, traditionally associated with nourishment. Pushya recurs roughly every 27 days. The dashboard provides the upcoming reference dates; exact Raipur start/end timings should be verified from a local Panchang before announcing clinic hours.'],
+  ['Pathya / Practical advice','Keep the child’s regular age-appropriate nutritious diet, adequate hydration, sleep, play and hygiene. Follow the prescribing physician’s product-specific fasting/food-gap instructions. Avoid unnecessary self-medication and do not delay evaluation of fever, dehydration, breathing difficulty, persistent vomiting/diarrhoea, poor feeding, lethargy, seizures or other red flags.'],
+  ['Important safety note for infants','Modern pediatric guidance advises that honey should not be given to children younger than 12 months because of infant botulism risk. If a Swarnaprashan preparation contains honey, the physician must explicitly reconcile the classical formulation with current infant-safety guidance and use an age-appropriate alternative protocol where required.'],
+  ['Quality & metal safety','Use only appropriately manufactured, quality-tested preparations from a reliable regulated source. Products containing metals require particular attention to identity, processing, batch documentation and contamination testing.'],
+  ['What does modern evidence say?','A randomized controlled infant study of a specific Swarna Bhasma + Ghrita + honey formulation reported tolerability and exploratory immunological findings, but between-group IgG differences were not statistically significant and larger, standardized studies are still needed. Claims of guaranteed immunity, IQ enhancement or prevention/cure of specific diseases should therefore be avoided.'],
+  ['Growth & development tracking','Serial height/length, weight and BMI should be interpreted using age- and sex-specific pediatric growth standards. For children 0–5 years, WHO Child Growth Standards are appropriate; for 5–19 years, WHO Growth Reference 2007 applies. The trend over time is more clinically useful than a single isolated number.']
+ ]
+},
+hi:{
+ title:'स्वर्णप्राशन — अभिभावक जानकारी',
+ intro:'स्वर्णप्राशन आयुर्वेद में बाल-स्वास्थ्य से संबंधित एक पारंपरिक अभ्यास है, जिसका वर्णन लेहन/जातकर्म के संदर्भ में मिलता है। शास्त्रीय वर्णनों में सुवर्ण/स्वर्ण भस्म को घृत तथा मधु जैसे अनुपान के साथ दिया जाता है; आधुनिक formulations अलग-अलग हो सकती हैं और उनमें मेध्य/रसायन द्रव्य भी जोड़े जा सकते हैं। इसलिए formulation और dose को उत्पाद व बच्चे के अनुसार योग्य आयुर्वेद चिकित्सक द्वारा तय व दर्ज किया जाना चाहिए।',
+ sections:[
+  ['स्वर्णप्राशन क्या है?','यह चिकित्सकीय देखरेख में किया जाने वाला आयुर्वेदिक बाल-स्वास्थ्य कार्यक्रम है। इसे vaccination, संतुलित आहार, breastfeeding/complementary feeding, hygiene, sleep, developmental surveillance या आवश्यक pediatric treatment का विकल्प नहीं बताना चाहिए।'],
+  ['मुख्य ingredients','सामान्यतः उचित रूप से तैयार/standardized स्वर्ण भस्म, घृत और मधु का उल्लेख मिलता है। कुछ आधुनिक formulations में ब्राह्मी, शंखपुष्पी, गुडूची, यष्टिमधु, वचा, अश्वगंधा आदि जोड़े जाते हैं। हर visit में exact formulation, manufacturer/batch, quality details और dose दर्ज करें।'],
+  ['Dose / मात्रा','सभी products और सभी आयु के लिए एक ही universal dose सही नहीं है। Dose formulation concentration, age/weight और physician assessment पर निर्भर होनी चाहिए। किसी research trial की dose को हर clinic/product पर सीधे लागू नहीं करना चाहिए।'],
+  ['समय एवं पुष्य नक्षत्र','कई वर्तमान Swarnaprashan programmes पुष्य नक्षत्र के दिन administration करते हैं। पुष्य लगभग प्रत्येक 27 दिन में आता है। Dashboard में आने वाली reference dates दी गई हैं; clinic timing प्रकाशित करने से पहले Raipur के local Panchang से exact start/end time verify करें।'],
+  ['पथ्य / practical advice','बच्चे का आयु-अनुसार पौष्टिक आहार, पर्याप्त hydration, नींद, खेल और hygiene नियमित रखें। Product-specific food-gap/fasting instructions केवल prescribing physician के अनुसार रखें। तेज बुखार, dehydration, breathing difficulty, लगातार vomiting/diarrhoea, poor feeding, अत्यधिक सुस्ती, seizure आदि में medical evaluation delay न करें।'],
+  ['12 माह से कम शिशु के लिए महत्वपूर्ण safety note','आधुनिक pediatric guidance के अनुसार 12 माह से कम आयु के शिशु को honey नहीं देना चाहिए क्योंकि infant botulism का जोखिम होता है। यदि formulation में मधु है तो physician को classical formulation और वर्तमान infant-safety guidance का स्पष्ट समन्वय करना चाहिए तथा आवश्यकतानुसार age-appropriate alternative protocol चुनना चाहिए।'],
+  ['Quality एवं metal safety','केवल विश्वसनीय regulated source से properly manufactured और quality-tested preparation का उपयोग करें। Metal-containing products में identity, processing, batch documentation और contamination testing पर विशेष ध्यान रखें।'],
+  ['आधुनिक evidence क्या कहता है?','एक randomized infant study में specific Swarna Bhasma + Ghrita + honey formulation की tolerability और exploratory immunological findings देखी गईं; लेकिन between-group IgG difference statistically significant नहीं था और बड़े standardized studies अभी भी आवश्यक हैं। इसलिए guaranteed immunity, IQ increase या specific diseases की prevention/cure जैसे अतिशयोक्त claims से बचें।'],
+  ['Growth और development tracking','Height/length, weight और BMI को age- तथा sex-specific pediatric growth standards के अनुसार serially interpret करना चाहिए। 0–5 वर्ष में WHO Child Growth Standards तथा 5–19 वर्ष में WHO Growth Reference 2007 उपयोगी हैं। एक single value से अधिक महत्वपूर्ण उसका longitudinal trend है।']
+ ]
+}
+};
+
 function ayurOptions(options,value){
   const current=(typeof value==='string'&&options.includes(value))?value:'Not assessed';
   return options.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v)}</option>`).join('');
@@ -476,6 +533,7 @@ async function shareCurrent(){const t=currentText();if(!t){alert('Generate repor
 function whatsappCurrent(){const t=currentText();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 
 // children & baby photo
+let childAlpha='';
 
 function renderChildren(){
   db.children=db.children.map(normalizeChild);
@@ -485,6 +543,8 @@ function renderChildren(){
   $('#childSearch').oninput=()=>drawChildren($('#childSearch').value);
   $('#childStatusFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
+  if($('#childAlphaBar')) $('#childAlphaBar').innerHTML='<button class="alpha-btn active" data-alpha="">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" data-alpha="${l}">${l}</button>`).join('');
+  $$('#childAlphaBar .alpha-btn').forEach(b=>b.onclick=()=>{childAlpha=b.dataset.alpha||'';$$('#childAlphaBar .alpha-btn').forEach(x=>x.classList.toggle('active',x===b));drawChildren($('#childSearch').value)});
   renderRegistryKpis();
   renderTodayPanel();
   drawChildren('');
@@ -687,7 +747,8 @@ async function drawChildren(q=''){
     .filter(c=>[c.name,c.parent,c.mobile,c.regId,c.address].join(' ').toLowerCase().includes(q))
     .filter(c=>!statusFilter||c.currentStatus===statusFilter)
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
-    .sort((a,b)=>num(a.regId)-num(b.regId)||String(a.name).localeCompare(String(b.name)));
+    .filter(c=>!childAlpha||String(c.name||'').trim().toUpperCase().startsWith(childAlpha))
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})||num(a.regId)-num(b.regId));
 
   const rows=[];
   for(let idx=0;idx<arr.length;idx++){
@@ -825,7 +886,17 @@ function drawTimeline(id){const fs=fups(id);$('#followupTimeline').innerHTML=!id
 
 // Analytics
 function renderAnalytics(){options($('#analyticsChild'));$('#analyticsChild').onchange=()=>drawAnalytics($('#analyticsChild').value);$('#analyticSummary').innerHTML='<p class="muted">Select a child.</p>'}
-function drawAnalytics(id){const fs=fups(id);if(!fs.length){$('#analyticSummary').innerHTML='<p class="muted">No follow-up data.</p>';return}const a=fs[0],b=fs.at(-1);$('#analyticSummary').innerHTML=`<div class="metric"><span>Visits</span><b>${fs.length}</b></div><div class="metric"><span>Latest Height</span><b>${b.height||'-'} cm</b></div><div class="metric"><span>Latest Weight</span><b>${b.weight||'-'} kg</b></div><div class="metric"><span>Functional Avg</span><b>${(avg(b.scores)||0).toFixed(1)}/4</b></div>`;drawLine($('#lineChart'),fs);drawBars($('#barChart'),a,b);drawPie($('#pieChart'),b);$('#baselineLatest').innerHTML=`<table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${scales.map(k=>`<tr><td>${k}</td><td>${scoreLabel(a.scores?.[k])}</td><td>${scoreLabel(b.scores?.[k])}</td><td>${trend(a.scores?.[k],b.scores?.[k])}</td></tr>`).join('')}</tbody></table>`}
+function drawAnalytics(id){
+ const fs=fups(id);if(!fs.length){$('#analyticSummary').innerHTML='<p class="muted">No follow-up data.</p>';if($('#growthInterpretation'))$('#growthInterpretation').innerHTML='';return}
+ const a=fs[0],b=fs.at(-1);
+ let months=0;if(a.date&&b.date)months=Math.max(0,(new Date(b.date)-new Date(a.date))/(1000*60*60*24*30.4375));
+ const hv=(months&&a.height&&b.height)?((+b.height-+a.height)/months).toFixed(2):'';
+ const wv=(months&&a.weight&&b.weight)?((+b.weight-+a.weight)/months).toFixed(2):'';
+ $('#analyticSummary').innerHTML=`<div class="metric"><span>Visits</span><b>${fs.length}</b></div><div class="metric"><span>Latest Height</span><b>${b.height||'-'} cm</b></div><div class="metric"><span>Latest Weight</span><b>${b.weight||'-'} kg</b></div><div class="metric"><span>Latest BMI</span><b>${b.bmi||'-'}</b></div><div class="metric"><span>Height Velocity</span><b>${hv?hv+' cm/month':'-'}</b></div><div class="metric"><span>Weight Velocity</span><b>${wv?wv+' kg/month':'-'}</b></div>`;
+ if($('#growthInterpretation'))$('#growthInterpretation').innerHTML='<b>Clinical interpretation:</b> Plot serial values against age- and sex-specific pediatric standards. WHO Child Growth Standards apply to 0–5 years and WHO Growth Reference 2007 to 5–19 years. Do not interpret a child using adult BMI cut-offs; trend and z-score/percentile trajectory matter.';
+ drawLine($('#lineChart'),fs);drawBars($('#barChart'),a,b);drawPie($('#pieChart'),b);
+ $('#baselineLatest').innerHTML=`<table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${scales.map(k=>`<tr><td>${k}</td><td>${scoreLabel(a.scores?.[k])}</td><td>${scoreLabel(b.scores?.[k])}</td><td>${trend(a.scores?.[k],b.scores?.[k])}</td></tr>`).join('')}</tbody></table>`;
+}
 function drawLine(c,fs){const ctx=c.getContext('2d'),W=c.width,H=c.height;ctx.clearRect(0,0,W,H);ctx.strokeStyle='#e5e5e5';for(let i=1;i<6;i++){let y=i*H/6;ctx.beginPath();ctx.moveTo(50,y);ctx.lineTo(W-20,y);ctx.stroke()}[['weight','#2d7755'],['height','#b68733'],['bmi','#3f6d9c']].forEach(([k,col])=>{const vals=fs.map(f=>+f[k]).filter(Boolean);if(!vals.length)return;const min=Math.min(...vals),max=Math.max(...vals);ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();fs.forEach((f,i)=>{let v=+f[k];if(!v)return;let x=55+i*(W-90)/Math.max(1,fs.length-1),y=H-35-(v-min)/Math.max(1,max-min)*(H-75);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()})}
 function drawBars(c,a,b){const ctx=c.getContext('2d'),W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const keys=['Learning','Memory','Playing','School Performance','Appetite','Sleep'],bw=(W-80)/(keys.length*2.4);keys.forEach((k,i)=>{const x=45+i*(W-80)/keys.length,va=+a.scores?.[k]||0,vb=+b.scores?.[k]||0;ctx.fillStyle='#d7c6aa';ctx.fillRect(x,H-35-va*(H-80)/4,bw,va*(H-80)/4);ctx.fillStyle='#5f4327';ctx.fillRect(x+bw+5,H-35-vb*(H-80)/4,bw,vb*(H-80)/4);ctx.fillStyle='#555';ctx.font='12px sans-serif';ctx.fillText(k.slice(0,8),x,H-12)})}
 function drawPie(c,b){const ctx=c.getContext('2d'),W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const vals=Object.values(b.scores||{}).map(Number),counts=[0,0,0,0,0],cols=['#b14f4f','#d58b55','#d4b25c','#5f9d78','#2d7755'];vals.forEach(v=>counts[v]++);let start=-Math.PI/2,total=Math.max(1,vals.length);counts.forEach((n,i)=>{const ang=2*Math.PI*n/total;ctx.beginPath();ctx.moveTo(W/2,H/2);ctx.fillStyle=cols[i];ctx.arc(W/2,H/2,120,start,start+ang);ctx.fill();start+=ang});ctx.fillStyle='#555';ctx.font='13px sans-serif';counts.forEach((n,i)=>ctx.fillText(`${scoreLabel(i)}: ${n}`,20,28+i*22))}
@@ -883,17 +954,48 @@ async function drawRxAttachments(){
   const docs=(await getDocs()).filter(d=>(!childId||d.childId===childId)&&d.type==='Manual / Previous Prescription').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   $('#rxSavedAttachments').innerHTML=docs.map(d=>`<div class="docitem"><b>${esc(d.name)}</b><div class="docmeta">${fmt(d.date)} ${d.note?'• '+esc(d.note):''}</div><div class="actionrow"><button class="ghost" onclick="app.openDoc('${d.id}')">Open</button><button class="ghost" onclick="app.downloadDoc('${d.id}')">Download</button></div></div>`).join('')||'<p class="muted">No manual prescription attachment saved for the selected child.</p>';
 }
-async function generateSelectedReport(){const id=$('#reportChild').value;if(!id){alert('Select child');return}const c=child(id),fs=fups(id),latest=fs.at(-1),cases=db.cases.filter(x=>x.childId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))),cs=cases.at(-1),docs=(await getDocs()).filter(x=>x.childId===id),first=fs[0];let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
-$('#reportPaper').innerHTML=`${letterhead(fmt(latest?.date||cs?.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(latest?.date||cs?.date)}</div>`)}
-<div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name)}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Follow-ups</span><b>${fs.length}</b></div><div class="metric"><span>Clinical Entries</span><b>${cases.length}</b></div></div></div>
-${latest?`<div class="reportsection"><h3>Latest Growth & Vitals</h3><p>Height ${latest.height||'-'} cm • Weight ${latest.weight||'-'} kg • BMI ${latest.bmi||'-'} • Pulse ${latest.pulse||'-'} • RR ${latest.rr||'-'} • SpO₂ ${latest.spo2||'-'}% • BP ${esc(latest.bp||'-')}</p><p><b>Latest dose:</b> ${esc(latest.dose||'-')}</p></div>`:''}
-${first&&latest?`<div class="reportsection"><h3>Baseline vs Latest Functional Progress</h3><table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${scales.map(k=>`<tr><td>${k}</td><td>${scoreLabel(first.scores?.[k])}</td><td>${scoreLabel(latest.scores?.[k])}</td><td>${trend(first.scores?.[k],latest.scores?.[k])}</td></tr>`).join('')}</tbody></table></div>`:''}
-${cs?`<div class="reportsection"><h3>Latest Clinical Assessment & Prescription</h3><p><b>Impression:</b> ${esc(cs.impression||'-')}</p><p><b>Swarnaprashan:</b> ${esc(cs.dose||'-')} • ${esc(cs.batch||'')}</p><p><b>Other medicines:</b> ${esc(cs.medicines||'-')}</p><p><b>Pathya:</b> ${esc(cs.pathya||'-')}</p><p><b>Apathya:</b> ${esc(cs.apathya||'-')}</p><p><b>Lifestyle:</b> ${esc(cs.lifestyle||'-')}</p><p><b>Instructions:</b> ${esc(cs.rxInstructions||'-')}</p></div>`:''}
-${$('#incDocs').checked?`<div class="reportsection"><h3>Documents</h3><ul>${docs.map(d=>`<li>${esc(d.type)} — ${esc(d.name)} — ${fmt(d.date)}</li>`).join('')||'<li>No attachment</li>'}</ul></div>`:''}
-<div class="signature"><div class="signature-grid"><div><b>${esc(db.settings.doctor)}</b><br><span>${esc(db.settings.designation)}</span></div><div><b>${esc(db.settings.doctor2)}</b><br><span>${esc(db.settings.designation2)}</span></div></div><div class="signature-address">${esc(db.settings.address)} ${db.settings.phone?'• '+esc(db.settings.phone):''}<br>${esc(db.settings.footer)}</div></div>`}
+async function generateSelectedReport(){
+ const id=$('#reportChild').value;if(!id){alert('Select child');return}
+ const c=child(id),fs=fups(id),latest=fs.at(-1),cases=db.cases.filter(x=>x.childId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))),cs=cases.at(-1),docs=(await getDocs()).filter(x=>x.childId===id),first=fs[0];
+ let photo='';if(c.photoDocId){const pd=await docById(c.photoDocId);if(pd)photo=URL.createObjectURL(pd.blob)}
+ const functional=cs?.examScores?Object.entries(cs.examScores).filter(([k,v])=>!k.startsWith('A:')&&!k.startsWith('D:')):[];
+ const ashta=cs?.examScores?Object.entries(cs.examScores).filter(([k,v])=>k.startsWith('A:')):[];
+ const dasha=cs?.examScores?Object.entries(cs.examScores).filter(([k,v])=>k.startsWith('D:')):[];
+ const table=(rows)=>rows.length?`<table><tbody>${rows.map(([k,v])=>`<tr><td>${esc(k.replace(/^[AD]:/,''))}</td><td><b>${esc(String(v))}</b></td></tr>`).join('')}</tbody></table>`:'<p class="muted">Not recorded.</p>';
+ $('#reportPaper').innerHTML=`${letterhead(fmt(latest?.date||cs?.date), `${photo?`<img src="${photo}" class="avatar-lg">`:''}<div class="patient-head-id">${esc(c.regId||'')}<br>${fmt(latest?.date||cs?.date)}</div>`)}
+ <div class="reportsection"><h3>Child Profile</h3><div class="metricrow"><div class="metric"><span>Name</span><b>${esc(c.name)}</b><small>${age(c.dob)} • ${esc(c.sex||'')}</small></div><div class="metric"><span>Parent</span><b>${esc(c.parent||'-')}</b><small>${esc(c.mobile||'')}</small></div><div class="metric"><span>Follow-ups</span><b>${fs.length}</b></div><div class="metric"><span>Clinical Entries</span><b>${cases.length}</b></div></div><p><b>Allergies:</b> ${esc(c.allergies||cs?.allergy||'-')} &nbsp; <b>School/Class:</b> ${esc(c.school||'-')}</p><p><b>Relevant history:</b> ${esc(cs?.history||c.history||'-')}</p></div>
+ ${latest?`<div class="reportsection"><h3>Latest Growth & Vitals</h3><p>Height ${latest.height||'-'} cm • Weight ${latest.weight||'-'} kg • BMI ${latest.bmi||'-'} • Pulse ${latest.pulse||'-'} • RR ${latest.rr||'-'} • SpO₂ ${latest.spo2||'-'}% • BP ${esc(latest.bp||'-')}</p><p><b>Latest dose:</b> ${esc(latest.dose||'-')} &nbsp; <b>Health issue:</b> ${esc(latest.issue||'None recorded')}</p></div>`:''}
+ ${cs?`<div class="reportsection"><h3>Complete Latest Clinical Entry</h3><p><b>Date / Visit:</b> ${fmt(cs.date)} • ${esc(cs.type||'-')}</p><p><b>Present complaint:</b> ${esc(cs.complaint||'-')}</p><p><b>Current medicines:</b> ${esc(cs.currentMeds||'-')}</p><p><b>General appearance:</b> ${esc(cs.ga||'-')}</p><p><b>Examination notes:</b> ${esc(cs.examNotes||'-')}</p><p><b>Investigation summary:</b> ${esc(cs.invest||'-')}</p><p><b>Clinical impression:</b> ${esc(cs.impression||'-')}</p><p><b>Red flags / safety:</b> ${esc(cs.redflags||'None recorded')}</p></div>
+ <div class="reportsection"><h3>Functional Assessment</h3>${table(functional)}</div>
+ <div class="reportsection"><h3>Ashtavidha Pariksha</h3>${table(ashta)}</div>
+ <div class="reportsection"><h3>Dashavidha Atura Pariksha</h3>${table(dasha)}</div>
+ <div class="reportsection"><h3>Treatment & Prescription</h3><p><b>Swarnaprashan:</b> ${esc(cs.dose||'-')} • ${esc(cs.batch||'-')}</p><p><b>Other medicines:</b> ${esc(cs.medicines||'-')}</p><p><b>Pathya:</b> ${esc(cs.pathya||'-')}</p><p><b>Apathya:</b> ${esc(cs.apathya||'-')}</p><p><b>Lifestyle:</b> ${esc(cs.lifestyle||'-')}</p><p><b>Cognitive/School advice:</b> ${esc(cs.cognitive||'-')}</p><p><b>Safety/Referral advice:</b> ${esc(cs.safety||'-')}</p><p><b>Special instructions:</b> ${esc(cs.rxInstructions||'-')}</p><p><b>Parent message:</b> ${esc(cs.parentMsg||'-')}</p><p><b>Next follow-up:</b> ${fmt(cs.next)}</p></div>`:''}
+ ${first&&latest?`<div class="reportsection"><h3>Baseline vs Latest Functional Progress</h3><table><thead><tr><th>Parameter</th><th>Baseline</th><th>Latest</th><th>Trend</th></tr></thead><tbody>${scales.map(k=>`<tr><td>${k}</td><td>${scoreLabel(first.scores?.[k])}</td><td>${scoreLabel(latest.scores?.[k])}</td><td>${trend(first.scores?.[k],latest.scores?.[k])}</td></tr>`).join('')}</tbody></table></div>`:''}
+ ${$('#incDocs').checked?`<div class="reportsection"><h3>Documents</h3><ul>${docs.map(d=>`<li>${esc(d.type)} — ${esc(d.name)} — ${fmt(d.date)}</li>`).join('')||'<li>No attachment</li>'}</ul></div>`:''}
+ <div class="signature"><div class="signature-grid"><div><b>${esc(db.settings.doctor)}</b><br><span>${esc(db.settings.designation)}</span></div><div><b>${esc(db.settings.doctor2)}</b><br><span>${esc(db.settings.designation2)}</span></div></div><div class="signature-address">${esc(db.settings.address)} ${db.settings.phone?'• '+esc(db.settings.phone):''}<br>${esc(db.settings.footer)}</div></div>`;
+}
 async function shareReport(){const t=$('#reportPaper').innerText.trim();if(!t){alert('Generate report first');return}if(navigator.share)await navigator.share({title:'Swarnaprashan Report',text:t});else{await navigator.clipboard.writeText(t);alert('Copied')}}
 function waReport(){const t=$('#reportPaper').innerText.trim();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function quickReport(id){showView('reports');$('#reportChild').value=id;generateSelectedReport()}
+
+// Swarnaprashan Knowledge Centre
+function knowledgeHtml(lang='en'){
+ const g=SWARNA_GUIDE[lang]||SWARNA_GUIDE.en;
+ const upcoming=PUSHYA_DATES.filter(x=>new Date(x.date+'T00:00:00')>=new Date(new Date().toISOString().slice(0,10)+'T00:00:00')).slice(0,13);
+ return `${letterhead(new Date().toLocaleDateString('en-IN'),'<div class="patient-head-id">Parent Education</div>')}
+ <div class="reportsection"><h2>${esc(g.title)}</h2><p>${esc(g.intro)}</p></div>
+ ${g.sections.map(([h,p])=>`<div class="reportsection"><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join('')}
+ <div class="reportsection"><h3>${lang==='hi'?'आगामी पुष्य नक्षत्र reference dates':'Upcoming Pushya Nakshatra reference dates'}</h3><div class="pushya-year">${upcoming.map(x=>`<span class="pushya-chip">${esc(x.label)}</span>`).join('')}</div><p class="tiny">Exact local Raipur timings should be verified before clinic publication.</p></div>
+ <div class="reportsection evidence-box"><h3>${lang==='hi'?'साक्ष्य एवं सुरक्षा':'Evidence & Safety'}</h3><p>${lang==='hi'?'यह जानकारी parent education के लिए है और individual prescription का विकल्प नहीं है। Vaccination और आवश्यक pediatric care जारी रखें।':'This information is for parent education and is not a substitute for an individual prescription. Continue vaccination and indicated pediatric care.'}</p></div>`;
+}
+function renderKnowledge(){
+ const lang=$('#knowledgeLang');const paper=$('#knowledgePaper');
+ const draw=()=>paper.innerHTML=knowledgeHtml(lang.value);
+ lang.onchange=draw;draw();
+ $('#knowledgeShare').onclick=async()=>{const t=paper.innerText.trim();if(navigator.share)await navigator.share({title:'Swarnaprashan Parent Guide',text:t});else{await navigator.clipboard.writeText(t);alert('Guide copied to clipboard')}};
+ $('#knowledgeWA').onclick=()=>{const t=paper.innerText.trim();window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
+ $('#knowledgePrint').onclick=()=>printHtmlContent(paper.innerHTML,'Mahamaya Clinic - Swarnaprashan Parent Guide');
+}
 
 // Education
 function renderEducation(){options($('#eduChild'));$('#buildPlan').onclick=buildPlan}
@@ -1027,7 +1129,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);
