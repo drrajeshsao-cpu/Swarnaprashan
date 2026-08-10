@@ -1046,3 +1046,32 @@ nav button[data-view="inventory"]{--tab:#3c7769}
 }
 @media(max-width:800px){.inventory-formgrid{grid-template-columns:1fr 1fr}.inventory-hero{display:block}.inventory-hero .actionrow{margin-top:12px}}
 @media(max-width:520px){.inventory-kpis{grid-template-columns:1fr 1fr}.inventory-dash-strip{grid-template-columns:1fr 1fr}.inventory-formgrid{grid-template-columns:1fr}.inventory-formgrid .wide{grid-column:auto}.staff-finance-head,.staff-finance-row{grid-template-columns:1.6fr 1fr 1fr}.staff-finance-head span:nth-child(n+4),.staff-finance-row span:nth-child(n+4){display:none}}
+
+/* V11.9 STAFF ACCOUNTABILITY + RECEIPTS */
+.staff-finance-wide .staff-finance-head,
+.staff-finance-wide .staff-finance-row{
+  grid-template-columns:1.45fr .65fr repeat(6,1fr);
+}
+.staff-finance-row strong:first-of-type{color:#356e9d}
+.payment-mini span{color:#687181;font-weight:700}
+.payment-history-row{grid-template-columns:1.25fr 1.05fr .75fr .75fr .75fr 1.6fr auto}
+.payment-history-actions button{white-space:nowrap;font-size:9px;padding:7px 9px}
+.receipt-preview-card{margin:0 0 14px;border-top:4px solid #356e9d}
+.receipt-preview-card .reportpaper{margin-top:8px;max-width:900px}
+.receipt-actions{margin-top:12px}
+.receipt-title h2{margin:0;color:#1b2a42;letter-spacing:-.03em}
+.receipt-footer{margin-top:18px;padding-top:10px;border-top:1px solid #e5ded4;color:#757b84;font-size:9.5px;text-align:center}
+@media(max-width:1300px){
+  .staff-finance-wide .staff-finance-head,.staff-finance-wide .staff-finance-row{grid-template-columns:1.4fr .6fr repeat(4,1fr)}
+  .staff-finance-wide .staff-finance-head span:nth-child(n+7),.staff-finance-wide .staff-finance-row span:nth-child(n+7){display:none}
+  .payment-history-row{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:760px){
+  .staff-finance-wide .staff-finance-head,.staff-finance-wide .staff-finance-row{grid-template-columns:1.5fr .6fr 1fr}
+  .staff-finance-wide .staff-finance-head span:nth-child(n+4),.staff-finance-wide .staff-finance-row span:nth-child(n+4){display:none}
+  .payment-history-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .payment-history-row{grid-template-columns:1fr}
+  .receipt-actions{display:grid;grid-template-columns:1fr}
+}

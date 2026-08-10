@@ -1,0 +1,41 @@
+MAHAMAYA SWARNAPRASHAN V11.9 — STAFF ACCOUNTABILITY + SHAREABLE RECEIPTS
+
+Added without redesigning Firebase login/authentication:
+
+1. Separate staff accountability
+- Swarnaprashan Administered By
+- Payment Received / Status Known By
+- Choices include Dr Rajesh Sao, Dr Ravi Chandrakar, Miss Mansi, Other
+- Staff list remains editable from Settings
+
+2. Dashboard staff analytics
+- Administered Swarnaprashan doses per staff
+- Total collected per staff
+- Cash per staff
+- UPI per staff
+- Card/Bank per staff
+- Pending balance per staff
+- Credit/Udhari per staff
+
+3. Child Registry
+- Payment cell shows billed, paid, due
+- Also shows who administered medicine
+- Also shows who knows/received payment
+
+4. Receipt / Bill automation
+- Per payment transaction digital receipt
+- Print / Save PDF
+- WhatsApp text
+- Native Share / Copy text fallback
+- Receipt contains child name, ID, age, date, quantity, rate, bill, received, due, status, payment mode, administered by, received/status known by, reference and notes
+
+5. Existing modules preserved
+- ₹250 default configurable rate
+- Payment ledger
+- Inventory & stock ledger
+- Child Name + ID + Age
+- Cloud synchronization
+- Stable Firebase authentication flow
+
+Suggested GitHub commit:
+Upgrade Swarnaprashan V11.9 with staff accountability dose tracking and shareable billing receipts

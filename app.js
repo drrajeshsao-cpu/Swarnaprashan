@@ -323,7 +323,9 @@ function salesStaffList(){
 function staffOptions(selected=''){
   return salesStaffList().map(s=>`<option ${s===selected?'selected':''}>${esc(s)}</option>`).join('');
 }
-function paymentStaff(p){return p?.soldBy||p?.recordedBy||'Unassigned'}
+function paymentAdministeredBy(p){return p?.administeredBy||p?.soldBy||p?.recordedBy||'Unassigned'}
+function paymentReceivedBy(p){return p?.receivedBy||p?.soldBy||p?.recordedBy||'Unassigned'}
+function paymentStaff(p){return paymentReceivedBy(p)}
 function staffFinanceSummary(scope='month'){
   const now=new Date();
   const list=(db.payments||[]).filter(p=>{
@@ -332,20 +334,20 @@ function staffFinanceSummary(scope='month'){
     return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
   });
   const map={};
+  const ensure=(name)=>map[name] ||= {administered:0,paymentEntries:0,billed:0,collected:0,cash:0,upi:0,cardBank:0,credit:0,pending:0};
   for(const p of list){
-    const name=paymentStaff(p); map[name] ||= {count:0,billed:0,collected:0,cash:0,upi:0,credit:0,pending:0};
-    const x=map[name],bal=paymentBalance(p),st=paymentStatus(p);
-    x.count++;x.billed+=Number(p.amount)||0;x.collected+=Number(p.paid)||0;
+    const admin=paymentAdministeredBy(p);
+    ensure(admin).administered += Math.max(1,Number(p.quantity)||1);
+    const recv=paymentReceivedBy(p),x=ensure(recv),bal=paymentBalance(p),st=paymentStatus(p);
+    x.paymentEntries++;x.billed+=Number(p.amount)||0;x.collected+=Number(p.paid)||0;
     if(p.method==='Cash')x.cash+=Number(p.paid)||0;
     if(p.method==='UPI')x.upi+=Number(p.paid)||0;
+    if(['Card','Bank Transfer'].includes(p.method))x.cardBank+=Number(p.paid)||0;
     if(['Credit / Udhari','Pay Later'].includes(st))x.credit+=bal;
     if(['Pending','Part Paid'].includes(st))x.pending+=bal;
   }
   return map;
 }
-
-const INVENTORY_ITEMS=['Swarnabrahma Yog Tablet','Cow Ghee','Honey','Feeding Spoon','Other'];
-const INVENTORY_ACTIONS=['Purchase','Clinic Use','Home Use / Sale','Self Use','Family / Relative Free','Wastage / Damage','Adjustment +','Adjustment -'];
 function inventoryEntries(){return db.inventory||[]}
 function inventoryBaseQty(e){
   const q=Number(e.qty)||0;
@@ -385,9 +387,16 @@ function renderStaffFinanceDashboard(){
   const el=$('#staffFinancePanel');if(!el)return;
   const m=staffFinanceSummary('month'),rows=Object.entries(m).sort((a,b)=>b[1].collected-a[1].collected);
   el.innerHTML=`<div class="card staff-finance-card">
-    <div class="cardhead"><div><span class="eyebrow">STAFF-WISE COLLECTION</span><h3>Who handled the Swarnaprashan sale?</h3></div><button class="linkbtn" onclick="app.showView('inventory')">Inventory</button></div>
-    ${rows.length?`<div class="staff-finance-table"><div class="staff-finance-head"><span>Staff</span><span>Collected</span><span>Cash</span><span>UPI</span><span>Pending</span><span>Credit/Udhari</span></div>
-    ${rows.map(([n,x])=>`<div class="staff-finance-row"><b>${esc(n)}</b><strong>${money(x.collected)}</strong><span>${money(x.cash)}</span><span>${money(x.upi)}</span><span>${money(x.pending)}</span><span>${money(x.credit)}</span></div>`).join('')}</div>`:'<p class="muted">No payment transactions this month.</p>'}
+    <div class="cardhead">
+      <div><span class="eyebrow">STAFF ACCOUNTABILITY • THIS MONTH</span><h3>Swarnaprashan administration & collection by staff</h3><p class="muted">Administration and payment responsibility are tracked separately.</p></div>
+      <button class="linkbtn" onclick="app.showView('children')">Open Child Registry</button>
+    </div>
+    ${rows.length?`<div class="staff-finance-table staff-finance-wide">
+      <div class="staff-finance-head"><span>Staff</span><span>Doses</span><span>Collected</span><span>Cash</span><span>UPI</span><span>Card/Bank</span><span>Pending</span><span>Credit/Udhari</span></div>
+      ${rows.map(([n,x])=>`<div class="staff-finance-row">
+        <b>${esc(n)}</b><strong>${x.administered}</strong><strong>${money(x.collected)}</strong><span>${money(x.cash)}</span><span>${money(x.upi)}</span><span>${money(x.cardBank)}</span><span>${money(x.pending)}</span><span>${money(x.credit)}</span>
+      </div>`).join('')}
+    </div>`:'<p class="muted">No attributed Swarnaprashan/payment transactions this month.</p>'}
   </div>`;
 }
 function renderInventoryDashboard(){
@@ -469,6 +478,8 @@ function paymentSummary(scope='all'){
 function renderPaymentKpis(){
   const el=$('#paymentKpis');if(!el)return;
   const m=paymentSummary('month'),all=paymentSummary('all'),exp=expectedDoseBilling('month');
+  const staffMonth=staffFinanceSummary('month');
+  const administeredThisMonth=Object.values(staffMonth).reduce((s,x)=>s+(Number(x.administered)||0),0);
   const rate=currentSwarnaprashanRate();
   el.innerHTML=`
     <div class="billing-rate-banner">
@@ -477,6 +488,7 @@ function renderPaymentKpis(){
     </div>
     <div class="finance-grid">
       ${[
+        ['Swarnaprashan This Month',administeredThisMonth,'blue','Attributed administered doses'],
         ['Expected Billing This Month',money(exp.expected),'gold',`${exp.count} recorded dose${exp.count===1?'':'s'}`],
         ['Collected This Month',money(m.collected),'green','All received payments'],
         ['Cash Collection',money(m.cash),'gold','This month'],
@@ -953,7 +965,7 @@ async function drawChildren(q=''){
         </div>
       </td>
       <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
-      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}</div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
+      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}<br><span>Dose: ${esc(paymentAdministeredBy(p))}</span><br><span>Payment: ${esc(paymentReceivedBy(p))}</span></div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
       <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
       <td><div class="row-actions">
         <button onclick="app.openChildDetails('${c.id}')">Open</button>
@@ -1022,7 +1034,8 @@ function paymentHistoryHtml(childId){
     <div><span>Billed</span><b>${money(p.amount)}</b><small>${p.quantity?`${p.quantity} × ${money(p.rate||currentSwarnaprashanRate())}`:''}</small></div>
     <div><span>Paid</span><b>${money(p.paid)}</b></div>
     <div><span>Due</span><b class="${paymentBalance(p)>0?'due-money':''}">${money(paymentBalance(p))}</b></div>
-    <div><small><b>${esc(paymentStaff(p))}</b><br>${esc(p.reference||p.note||'')}</small></div>
+    <div><small><b>Dose: ${esc(paymentAdministeredBy(p))}</b><br>Payment: ${esc(paymentReceivedBy(p))}<br>${esc(p.reference||p.note||'')}</small></div>
+    <div class="payment-history-actions"><button class="ghost" onclick="app.openPaymentReceipt('${p.id}')">Receipt / Bill</button></div>
   </div>`).join('')}</div>`;
 }
 function recordPayment(childId){
@@ -1043,7 +1056,8 @@ function recordPayment(childId){
       <label>Rate per Dose ₹<input id="pay_rate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Payment Status<select id="pay_status">${PAYMENT_STATUSES.map(s=>`<option>${s}</option>`).join('')}</select></label>
       <label>Payment Method<select id="pay_method">${PAYMENT_METHODS.map(s=>`<option>${s}</option>`).join('')}</select></label>
-      <label>Sale / Dose Handled By<select id="pay_soldBy">${staffOptions(currentSession()?.name||'Dr Rajesh Sao')}</select></label>
+      <label>Swarnaprashan Administered By<select id="pay_administeredBy">${staffOptions(currentSession()?.name||'Dr Rajesh Sao')}</select></label>
+      <label>Payment Received / Status Known By<select id="pay_receivedBy">${staffOptions(currentSession()?.name||'Dr Rajesh Sao')}</select></label>
       <label>Total Amount ₹<input id="pay_amount" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Amount Received ₹<input id="pay_paid" type="number" min="0" step="1" value=""></label>
       <label>Balance Due ₹<input id="pay_due" type="number" readonly value="0"></label>
@@ -1092,7 +1106,10 @@ function savePaymentTransaction(childId){
   if(status==='Part Paid' && paid>=amount && amount>0)status='Paid';
   const p={
     id:uid(),childId,date:$('#pay_date').value||isoToday(),purpose:$('#pay_purpose').value,
-    status,method:$('#pay_method').value,soldBy:$('#pay_soldBy')?.value||currentSession()?.name||'Unassigned',amount,paid,
+    status,method:$('#pay_method').value,
+    administeredBy:$('#pay_administeredBy')?.value||currentSession()?.name||'Unassigned',
+    receivedBy:$('#pay_receivedBy')?.value||currentSession()?.name||'Unassigned',
+    amount,paid,
     quantity:Number($('#pay_qty')?.value)||1,rate:Number($('#pay_rate')?.value)||currentSwarnaprashanRate(),
     reference:$('#pay_ref').value||'',note:$('#pay_note').value||'',createdAt:new Date().toISOString(),
     recordedBy:currentSession()?.name||currentSession()?.loginId||'Clinic User'
@@ -1101,6 +1118,89 @@ function savePaymentTransaction(childId){
   alert(`Payment saved • ${money(paid)} received • ${money(paymentBalance(p))} due`);
   $('#paymentEditorCard')?.remove();
   openChildDetails(childId);
+}
+
+
+function paymentById(id){return (db.payments||[]).find(p=>p.id===id)||null}
+function paymentReceiptHtml(paymentId){
+  const p=paymentById(paymentId);if(!p)return '';
+  const c=child(p.childId)||{};
+  const bal=paymentBalance(p),st=paymentStatus(p);
+  return `${letterhead(fmt(p.date),'<div class="patient-head-id">Swarnaprashan Receipt / Bill</div>')}
+  <div class="reportsection receipt-title">
+    <h2>Swarnaprashan Payment Receipt</h2>
+    <p class="muted">Digital clinic billing record</p>
+  </div>
+  <div class="metricrow">
+    <div class="metric"><span>Child</span><b>${esc(c.name||'-')}</b><small>${esc(c.regId||'-')} • ${c.dob?age(c.dob):''}</small></div>
+    <div class="metric"><span>Date</span><b>${fmt(p.date)}</b><small>${esc(p.purpose||'Swarnaprashan')}</small></div>
+    <div class="metric"><span>Status</span><b>${esc(st)}</b><small>${esc(p.method||'-')}</small></div>
+  </div>
+  <div class="reportsection">
+    <h3>Billing</h3>
+    <table><tbody>
+      <tr><td>Quantity / Doses</td><td><b>${Number(p.quantity)||1}</b></td></tr>
+      <tr><td>Rate</td><td><b>${money(p.rate||currentSwarnaprashanRate())} / dose</b></td></tr>
+      <tr><td>Total Amount</td><td><b>${money(p.amount)}</b></td></tr>
+      <tr><td>Amount Received</td><td><b>${money(p.paid)}</b></td></tr>
+      <tr><td>Balance Due</td><td><b>${money(bal)}</b></td></tr>
+    </tbody></table>
+  </div>
+  <div class="reportsection">
+    <h3>Clinic Accountability</h3>
+    <p><b>Swarnaprashan administered by:</b> ${esc(paymentAdministeredBy(p))}</p>
+    <p><b>Payment received / status known by:</b> ${esc(paymentReceivedBy(p))}</p>
+    <p><b>Payment mode:</b> ${esc(p.method||'-')}</p>
+    <p><b>Reference:</b> ${esc(p.reference||'-')}</p>
+    <p><b>Note:</b> ${esc(p.note||'-')}</p>
+  </div>
+  <div class="receipt-footer">Thank you. This is a digitally generated clinic transaction record.</div>`;
+}
+function paymentReceiptText(paymentId){
+  const p=paymentById(paymentId);if(!p)return '';
+  const c=child(p.childId)||{};
+  return `MAHAMAYA CLINIC — SWARNAPRASHAN RECEIPT
+Child: ${c.name||'-'} (${c.regId||'-'})
+Date: ${fmt(p.date)}
+Purpose: ${p.purpose||'Swarnaprashan'}
+Quantity: ${Number(p.quantity)||1}
+Rate: ${money(p.rate||currentSwarnaprashanRate())}/dose
+Bill: ${money(p.amount)}
+Received: ${money(p.paid)}
+Due: ${money(paymentBalance(p))}
+Status: ${paymentStatus(p)}
+Mode: ${p.method||'-'}
+Administered by: ${paymentAdministeredBy(p)}
+Payment received/status known by: ${paymentReceivedBy(p)}
+Reference: ${p.reference||'-'}
+Note: ${p.note||'-'}`;
+}
+function openPaymentReceipt(paymentId){
+  const html=paymentReceiptHtml(paymentId);if(!html){alert('Receipt not found.');return}
+  const host=$('#childDetailsPanel');if(!host)return;
+  host.insertAdjacentHTML('afterbegin',`<div id="paymentReceiptCard" class="card receipt-preview-card">
+    <div class="cardhead"><div><span class="eyebrow">BILL / RECEIPT</span><h3>Shareable Swarnaprashan Receipt</h3></div><button class="ghost" onclick="document.getElementById('paymentReceiptCard')?.remove()">Close</button></div>
+    <div id="paymentReceiptPaper" class="reportpaper">${html}</div>
+    <div class="actionrow receipt-actions">
+      <button onclick="app.printPaymentReceipt('${paymentId}')">Print / Save PDF</button>
+      <button class="ghost" onclick="app.whatsappPaymentReceipt('${paymentId}')">WhatsApp</button>
+      <button class="ghost" onclick="app.sharePaymentReceipt('${paymentId}')">Share Text</button>
+    </div>
+  </div>`);
+  $('#paymentReceiptCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function printPaymentReceipt(paymentId){
+  const html=paymentReceiptHtml(paymentId);if(!html)return;
+  printHtmlContent(html,'Mahamaya Clinic - Swarnaprashan Receipt');
+}
+function whatsappPaymentReceipt(paymentId){
+  const t=paymentReceiptText(paymentId);if(!t)return;
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+}
+async function sharePaymentReceipt(paymentId){
+  const t=paymentReceiptText(paymentId);if(!t)return;
+  if(navigator.share){try{await navigator.share({title:'Swarnaprashan Receipt',text:t});return}catch{}}
+  try{await navigator.clipboard.writeText(t);alert('Receipt text copied.')}catch{alert(t)}
 }
 
 async function shareChildProfile(id){
@@ -1367,7 +1467,7 @@ function renderSettings(){
  $('#settingsForm').innerHTML=`<div class="section"><h4>Prescription Letterhead</h4><div class="formgrid">
  <label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label>
  <label>Swarnaprashan Rate / Dose ₹<input id="s_swarnaprashanRate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
- <label>Sales / Clinic Staff Names<input id="s_salesStaff" value="${esc(salesStaffList().join(', '))}" placeholder="Comma separated names"></label>
+ <label>Swarnaprashan / Payment Staff Names<input id="s_salesStaff" value="${esc(salesStaffList().join(', '))}" placeholder="Comma separated names"></label>
  <label>Prescription Title<input id="s_rxTitle" value="${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}"></label>
  <label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label>
  </div></div>
@@ -1503,7 +1603,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);
