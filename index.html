@@ -124,7 +124,7 @@
       <button data-view="vaccination">✓ Vaccination & Schedule</button>
       <button data-view="documents">▣ Documents & Camera</button>
       <button data-view="reports">▤ Reports & Prescription</button>
-      <button data-view="education">♡ Diet • Pathya • Lifestyle</button>
+      <button data-view="education">📚 Swarnaprashan Guide & Parent Education</button>
       <button data-view="backup">⤓ Backup / Restore</button>
       <button data-view="settings">⚙ Settings</button>
     </nav>
@@ -169,8 +169,29 @@
     </div>
   </div>
   <div id="kpis" class="kpis"></div><div id="opsKpis" class="registry-kpis"></div>
+  <div class="dashboard-utility-grid">
+    <div class="card utility-card">
+      <div class="cardhead"><div><span class="eyebrow">FAST CLINIC UTILITY</span><h3>Quick Actions</h3></div><span class="pill">Responsive</span></div>
+      <div class="utility-actions">
+        <button onclick="app.startClinical()">+ Clinical Entry</button>
+        <button class="ghost" onclick="app.showView('children')">A–Z Child Registry</button>
+        <button class="ghost" onclick="app.showView('followup')">Monthly Follow-up</button>
+        <button class="ghost" onclick="app.showView('reports')">Prescription / PDF</button>
+        <button class="ghost" onclick="app.showView('education')">Parent Education</button>
+      </div>
+      <div class="dashboard-child-search">
+        <input id="dashRegistrySearch" placeholder="Search by starting letter, child name or ID">
+        <div id="dashRegistryResults" class="mini-registry-list"></div>
+      </div>
+    </div>
+    <div class="card pushya-card">
+      <div class="cardhead"><div><span class="eyebrow">PUSHYA NAKSHATRA CALENDAR</span><h3>Upcoming 12 Months</h3></div><span id="nextPushyaBadge" class="pill"></span></div>
+      <div id="pushyaCalendar" class="pushya-calendar"></div>
+      <p class="tiny muted">Reference schedule in IST. Confirm local Panchang before publishing clinic timing; exact clinic session hours may be set separately.</p>
+    </div>
+  </div>
   <div class="grid2">
-    <div class="card"><div class="cardhead"><h3>Recent Children</h3><button class="linkbtn" onclick="app.showView('children')">View all</button></div><div id="recentChildren"></div></div>
+    <div class="card"><div class="cardhead"><h3>A–Z Child Registry Preview</h3><button class="linkbtn" onclick="app.showView('children')">View all</button></div><div id="recentChildren"></div></div>
     <div class="card"><div class="cardhead"><h3>Upcoming / Due Follow-up</h3><button class="linkbtn" onclick="app.showView('followup')">Record visit</button></div><div id="dueChildren"></div></div>
   </div>
   <div class="grid2">
@@ -256,7 +277,7 @@
 <template id="analyticsTpl">
   <div class="card">
     <div class="cardhead"><div><h3>Growth & Functional Analytics</h3><p class="muted">Automatic line, column and pie analysis from saved follow-ups.</p></div><select id="analyticsChild"></select></div>
-    <div id="analyticSummary" class="metricrow"></div>
+    <div id="analyticSummary" class="metricrow"></div><div id="growthInterpretation" class="growth-interpretation"></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Line Trend</h3><canvas id="lineChart" width="900" height="360"></canvas></div>
@@ -331,7 +352,7 @@
       <label>Child<select id="reportChild"></select></label>
       <label>Report Type<select id="reportType"><option>Latest Visit + Longitudinal Progress</option><option>Prescription Only</option><option>Complete Clinical Summary</option></select></label>
       <label><input type="checkbox" id="incGraphs" checked> Include graph summary</label>
-      <label><input type="checkbox" id="incDocs" checked> Include document list</label>
+      <label><input type="checkbox" id="incDocs" checked> Include document list</label><label><input type="checkbox" id="incAyurveda" checked> Include Ashtavidha/Dashavidha findings</label><label><input type="checkbox" id="incFullClinical" checked> Include full latest clinical entry</label>
     </div>
     <div class="actionrow">
       <button id="generateReport">Generate Report</button>
@@ -362,16 +383,19 @@
 </template>
 
 <template id="educationTpl">
-  <div class="card">
-    <div class="cardhead"><div><h3>Diet • Pathya • Apathya • Lifestyle</h3><p class="muted">Parent guidance can be printed with the prescription.</p></div><span class="pill">Parent Education</span></div>
+  <div class="card knowledge-hero">
+    <div class="cardhead"><div><span class="eyebrow">BILINGUAL PARENT EDUCATION</span><h3>Swarnaprashan Knowledge & Share Centre</h3><p class="muted">Clinic-reviewed information in English, Hindi or bilingual format. Share as text, WhatsApp or Print/Save PDF.</p></div><span class="pill">Evidence-aware</span></div>
     <div class="formgrid">
-      <label>Child<select id="eduChild"></select></label>
-      <label>Focus<select id="eduFocus">
-        <option>General Swarnaprashan Support</option><option>Low Appetite</option><option>Constipation</option><option>Poor Sleep</option>
-        <option>Frequent Illness</option><option>Learning / Memory Support</option><option>Underweight / Poor Growth</option>
-      </select></label>
+      <label>Language<select id="guideLanguage"><option value="bi">English + हिन्दी</option><option value="en">English</option><option value="hi">हिन्दी</option></select></label>
+      <label>Topic<select id="guideTopic"><option value="intro">What is Swarnaprashan? / स्वर्णप्राशन क्या है?</option><option value="ingredients">Ingredients & preparation / घटक एवं निर्माण</option><option value="dose">Dose & administration / मात्रा एवं सेवन</option><option value="pushya">Timing & Pushya Nakshatra / समय एवं पुष्य नक्षत्र</option><option value="pathya">Before/after care, Pathya-Apathya / परहेज़ व आहार</option><option value="safety">Safety, precautions & when to defer / सुरक्षा</option><option value="evidence">Evidence, expectations & FAQs / प्रमाण व प्रश्न</option></select></label>
     </div>
-    <button id="buildPlan">Generate Parent Plan</button>
+    <div class="actionrow"><button id="buildGuide">Build Information Sheet</button><button class="ghost" id="shareGuide">Share Text</button><button class="ghost" id="waGuide">WhatsApp</button><button class="ghost" id="printGuide">Print / Save PDF</button></div>
+  </div>
+  <div id="guidePaper" class="reportpaper"></div>
+  <div class="card">
+    <div class="cardhead"><div><h3>Child-specific Diet • Pathya • Lifestyle</h3><p class="muted">Individualized parent guidance can be printed or shared with the prescription.</p></div><span class="pill">Personalized</span></div>
+    <div class="formgrid"><label>Child<select id="eduChild"></select></label><label>Focus<select id="eduFocus"><option>General Swarnaprashan Support</option><option>Low Appetite</option><option>Constipation</option><option>Poor Sleep</option><option>Frequent Illness</option><option>Learning / Memory Support</option><option>Underweight / Poor Growth</option></select></label></div>
+    <div class="actionrow"><button id="buildPlan">Generate Parent Plan</button><button class="ghost" id="printPlan">Print / Save PDF</button></div>
   </div>
   <div id="planPaper" class="reportpaper"></div>
 </template>
@@ -419,7 +443,7 @@
 
 
 
-<script src="app.js?v=11.3.0"></script>
-<script type="module" src="cloud-sync.js?v=11.3.0"></script>
+<script src="app.js?v=12.0.0"></script>
+<script type="module" src="cloud-sync.js?v=12.0.0"></script>
 </body>
 </html>

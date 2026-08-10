@@ -1,5 +1,5 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan V11.3 Ayurveda Pariksha",
+  "name": "Mahamaya Clinic Swarnaprashan V12 Clinical Intelligence",
   "short_name": "Swarnaprashan",
   "start_url": "./",
   "display": "standalone",
@@ -13,5 +13,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Mahamaya Clinic Swarnaprashan Digital Health Suite with Firebase structured clinical data synchronization."
+  "description": "Responsive Swarnaprashan clinical tracking, Ayurveda Pariksha, bilingual parent education, Pushya calendar, growth analytics and complete prescription reports."
 }

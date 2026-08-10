@@ -1,0 +1,24 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V12 — DEPLOY READY
+
+Major upgrades:
+1. Responsive dashboard utility centre for laptop, desktop, tablet and mobile.
+2. A–Z child registry preview + child name/ID/guardian/mobile search.
+3. Upcoming Pushya Nakshatra calendar covering >1 year from Aug 2026.
+4. Bilingual English/Hindi Swarnaprashan knowledge centre.
+5. Parent education topics: introduction, ingredients, dose principles, Pushya timing,
+   Pathya/Apathya, safety, evidence/FAQs.
+6. Share information as text / WhatsApp / Print-Save PDF.
+7. Growth analytics with serial height/weight/BMI plus interval growth velocity.
+8. Prescription/Reports can include complete latest clinical entry and
+   Ashtavidha/Dashavidha findings.
+9. Existing Firebase multi-user authentication and cloud structured-data sync retained.
+10. PWA cache bumped to V12.
+
+IMPORTANT:
+- Pushya timings are reference IST timings; confirm local Panchang before publishing clinic hours.
+- Swarnaprashan education is evidence-aware and does not claim replacement of vaccination,
+  nutrition, hygiene, sleep or indicated pediatric care.
+- Child BMI must be interpreted by age/sex standards, not adult BMI cut-offs.
+
+Suggested GitHub commit message:
+Upgrade Swarnaprashan V12 with clinical intelligence bilingual education and Pushya calendar
