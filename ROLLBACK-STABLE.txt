@@ -1,0 +1,21 @@
+MAHAMAYA SWARNAPRASHAN — STABLE ROLLBACK V11.3
+
+This package restores the pre-V12 stable architecture:
+- Firebase email/password authentication
+- Dr Rajesh Sao = Super Admin
+- Dr Ravi Chandrakar = Doctor
+- Cloud structured-data sync
+- Secure email login screen
+- Legacy hard-coded passwords removed
+- Ayurveda-specific Ashtavidha/Dashavidha fields retained
+- V12 Clinical Intelligence / experimental login hotfix removed
+
+Recommended GitHub commit message:
+Rollback Swarnaprashan to stable V11.3 Firebase login and cloud sync
+
+After deployment:
+1. Wait for GitHub Pages deployment to turn green.
+2. Open the web app in Chrome.
+3. Hard refresh once (Ctrl+Shift+R).
+4. Login with registered Firebase email + current Firebase password.
+5. Verify role badge and Synced status.
