@@ -126,6 +126,7 @@
       <button data-view="reports"><span class="nav-ico">▤</span><span>Prescription & Reports</span></button>
       <button data-view="knowledge"><span class="nav-ico">◈</span><span>Swarnaprashan Knowledge</span></button>
       <button data-view="education"><span class="nav-ico">♡</span><span>Pathya & Lifestyle</span></button>
+      <button data-view="inventory"><span class="nav-ico">▦</span><span>Inventory & Stock</span></button>
       <button data-view="backup"><span class="nav-ico">⤓</span><span>Backup & Restore</span></button>
       <button data-view="settings"><span class="nav-ico">⚙</span><span>Settings</span></button>
     </nav>
@@ -175,7 +176,7 @@
       </div>
     </div>
   </div>
-  <div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="opsKpis" class="registry-kpis"></div>
+  <div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="staffFinancePanel"></div><div id="inventoryDash"></div><div id="opsKpis" class="registry-kpis"></div>
   <div class="grid2 dashboard-utility-grid">
     <div class="card pushya-card">
       <div class="cardhead"><div><span class="eyebrow">PUSHYA NAKSHATRA CALENDAR</span><h3>Upcoming Swarnaprashan Dates</h3></div><button class="linkbtn" onclick="app.showView('knowledge')">Full guide</button></div>
@@ -435,6 +436,33 @@
   <div id="planPaper" class="reportpaper"></div>
 </template>
 
+
+<template id="inventoryTpl">
+  <div class="inventory-shell">
+    <div class="card inventory-hero">
+      <div>
+        <span class="eyebrow">PROCUREMENT • STOCK • UTILIZATION</span>
+        <h2>Swarnaprashan Inventory & Consumables</h2>
+        <p>Track Swarnabrahma Yog tablets, cow ghee, honey, feeding spoons and other clinic consumables from purchase to clinic/home/free use.</p>
+      </div>
+      <div class="actionrow">
+        <button id="newPurchaseBtn">+ Add Purchase</button>
+        <button class="ghost" id="newUsageBtn">− Record Usage / Sale</button>
+      </div>
+    </div>
+    <div id="inventoryKpis" class="inventory-kpis"></div>
+    <div class="grid2 inventory-grid">
+      <div class="card"><div class="cardhead"><h3>Current Stock</h3></div><div id="stockSummary"></div></div>
+      <div class="card"><div class="cardhead"><h3>Purchase & Usage Summary</h3></div><div id="inventorySummary"></div></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h3>Inventory Ledger</h3><select id="inventoryFilter"><option value="">All Items</option><option>Swarnabrahma Yog Tablet</option><option>Cow Ghee</option><option>Honey</option><option>Feeding Spoon</option><option>Other</option></select></div>
+      <div id="inventoryLedger"></div>
+    </div>
+    <div id="inventoryEditor"></div>
+  </div>
+</template>
+
 <template id="backupTpl">
   <div class="card">
     <h3>Backup, Restore & Export</h3>
@@ -478,7 +506,7 @@
 
 
 
-<script src="app.js?v=11.7.0"></script>
-<script type="module" src="cloud-sync.js?v=11.7.0"></script>
+<script src="app.js?v=11.8.0"></script>
+<script type="module" src="cloud-sync.js?v=11.8.0"></script>
 </body>
 </html>

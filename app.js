@@ -5,7 +5,7 @@ const defaults={swarnaprashanRate:250,clinicName:'MAHAMAYA CLINIC',prescriptionT
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
 let currentView='dashboard';
 let suppressCloudEvent=false;
-db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];db.payments=db.payments||[];
+db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];db.payments=db.payments||[];db.inventory=db.inventory||[];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),
@@ -86,7 +86,7 @@ const age=dob=>{if(!dob)return'-';const b=new Date(dob),n=new Date();let y=n.get
 const scoreLabel=n=>['Poor','Reduced','Stable/Normal','Improved','Best'][Number(n)]||'-';
 const avg=o=>{const a=Object.values(o||{}).map(Number).filter(x=>!isNaN(x));return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const trend=(a,b)=>a==null||b==null?'<span class="stable">No baseline</span>':(+b>+a?'<span class="good">Improved ↑</span>':+b<+a?'<span class="bad">Reduced ↓</span>':'<span class="stable">Stable →</span>');
-const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Complete clinical printout, PDF, Share and WhatsApp'],knowledge:['Swarnaprashan Guide','Bilingual parent education, Pushya calendar, safety and evidence'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
+const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Complete clinical printout, PDF, Share and WhatsApp'],knowledge:['Swarnaprashan Guide','Bilingual parent education, Pushya calendar, safety and evidence'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],inventory:['Inventory & Stock','Procurement, stock, usage and consumable tracking'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
 const tpl=id=>document.getElementById(id).content.cloneNode(true);
 
 const AUTH_KEY='mahamaya_swarnaprashan_users_v1';
@@ -310,9 +310,97 @@ function showView(name){ if(!currentSession()) return; currentView=name;
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   $('#pageTitle').textContent=titles[name][0];$('#pageSubtitle').textContent=titles[name][1];
   const v=$('#view');v.innerHTML='';v.appendChild(tpl(name+'Tpl'));
-  ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
+  ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,inventory:renderInventory,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
 }
 
+
+
+const DEFAULT_SALES_STAFF=['Dr Rajesh Sao','Dr Ravi Chandrakar','Miss Mansi','Other'];
+function salesStaffList(){
+  const raw=Array.isArray(db?.settings?.salesStaff)?db.settings.salesStaff:[];
+  return [...new Set([...DEFAULT_SALES_STAFF,...raw].filter(Boolean))];
+}
+function staffOptions(selected=''){
+  return salesStaffList().map(s=>`<option ${s===selected?'selected':''}>${esc(s)}</option>`).join('');
+}
+function paymentStaff(p){return p?.soldBy||p?.recordedBy||'Unassigned'}
+function staffFinanceSummary(scope='month'){
+  const now=new Date();
+  const list=(db.payments||[]).filter(p=>{
+    if(scope!=='month')return true;
+    const d=new Date((p.date||'')+'T00:00:00');
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  });
+  const map={};
+  for(const p of list){
+    const name=paymentStaff(p); map[name] ||= {count:0,billed:0,collected:0,cash:0,upi:0,credit:0,pending:0};
+    const x=map[name],bal=paymentBalance(p),st=paymentStatus(p);
+    x.count++;x.billed+=Number(p.amount)||0;x.collected+=Number(p.paid)||0;
+    if(p.method==='Cash')x.cash+=Number(p.paid)||0;
+    if(p.method==='UPI')x.upi+=Number(p.paid)||0;
+    if(['Credit / Udhari','Pay Later'].includes(st))x.credit+=bal;
+    if(['Pending','Part Paid'].includes(st))x.pending+=bal;
+  }
+  return map;
+}
+
+const INVENTORY_ITEMS=['Swarnabrahma Yog Tablet','Cow Ghee','Honey','Feeding Spoon','Other'];
+const INVENTORY_ACTIONS=['Purchase','Clinic Use','Home Use / Sale','Self Use','Family / Relative Free','Wastage / Damage','Adjustment +','Adjustment -'];
+function inventoryEntries(){return db.inventory||[]}
+function inventoryBaseQty(e){
+  const q=Number(e.qty)||0;
+  if(e.item==='Swarnabrahma Yog Tablet'){
+    if(e.unit==='Box (150 tablets)')return q*150;
+    if(e.unit==='Strip (30 tablets)')return q*30;
+    return q;
+  }
+  if(['Cow Ghee','Honey'].includes(e.item)){
+    if(e.unit==='kg')return q*1000;
+    if(e.unit==='L')return q*1000;
+    return q; // g or ml
+  }
+  return q;
+}
+function inventoryDelta(e){
+  const base=inventoryBaseQty(e);
+  return ['Purchase','Adjustment +'].includes(e.action)?base:-base;
+}
+function inventoryStock(item){
+  return inventoryEntries().filter(e=>e.item===item).reduce((s,e)=>s+inventoryDelta(e),0);
+}
+function inventoryUnitLabel(item){
+  if(item==='Swarnabrahma Yog Tablet')return 'tablets';
+  if(item==='Cow Ghee')return 'g/ml';
+  if(item==='Honey')return 'g/ml';
+  if(item==='Feeding Spoon')return 'pieces';
+  return 'units';
+}
+function inventoryPurchaseValue(){
+  return inventoryEntries().filter(e=>e.action==='Purchase').reduce((s,e)=>s+(Number(e.totalCost)||0),0)
+}
+function inventoryUsageCount(action,item=''){
+  return inventoryEntries().filter(e=>e.action===action&&(!item||e.item===item)).reduce((s,e)=>s+inventoryBaseQty(e),0)
+}
+function renderStaffFinanceDashboard(){
+  const el=$('#staffFinancePanel');if(!el)return;
+  const m=staffFinanceSummary('month'),rows=Object.entries(m).sort((a,b)=>b[1].collected-a[1].collected);
+  el.innerHTML=`<div class="card staff-finance-card">
+    <div class="cardhead"><div><span class="eyebrow">STAFF-WISE COLLECTION</span><h3>Who handled the Swarnaprashan sale?</h3></div><button class="linkbtn" onclick="app.showView('inventory')">Inventory</button></div>
+    ${rows.length?`<div class="staff-finance-table"><div class="staff-finance-head"><span>Staff</span><span>Collected</span><span>Cash</span><span>UPI</span><span>Pending</span><span>Credit/Udhari</span></div>
+    ${rows.map(([n,x])=>`<div class="staff-finance-row"><b>${esc(n)}</b><strong>${money(x.collected)}</strong><span>${money(x.cash)}</span><span>${money(x.upi)}</span><span>${money(x.pending)}</span><span>${money(x.credit)}</span></div>`).join('')}</div>`:'<p class="muted">No payment transactions this month.</p>'}
+  </div>`;
+}
+function renderInventoryDashboard(){
+  const el=$('#inventoryDash');if(!el)return;
+  const tab=inventoryStock('Swarnabrahma Yog Tablet'),ghee=inventoryStock('Cow Ghee'),honey=inventoryStock('Honey'),spoons=inventoryStock('Feeding Spoon');
+  el.innerHTML=`<div class="inventory-dash-strip">
+    <div><span>Swarnabrahma Stock</span><b>${Math.max(0,tab)} tablets</b></div>
+    <div><span>Cow Ghee Stock</span><b>${Math.max(0,ghee)} g/ml</b></div>
+    <div><span>Honey Stock</span><b>${Math.max(0,honey)} g/ml</b></div>
+    <div><span>Feeding Spoons</span><b>${Math.max(0,spoons)} pcs</b></div>
+    <button class="ghost" onclick="app.showView('inventory')">Open Stock Ledger</button>
+  </div>`;
+}
 
 const PAYMENT_STATUSES=['Paid','Part Paid','Pending','Credit / Udhari','Pay Later','Home Use - Already Paid','Complimentary / Free','Waived / No Charge'];
 const PAYMENT_METHODS=['Cash','UPI','Card','Bank Transfer','Credit / Udhari','Pay Later','Home Use Prepaid','Complimentary / Free','Other'];
@@ -407,6 +495,8 @@ async function renderDashboard(){
   const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
   $('#kpis').innerHTML=[['Registered Children',db.children.length],['Clinical Entries',db.cases.length],['Visits This Month',thisMonth],['Saved Documents',docs.length]].map(x=>`<div class="kpi"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
   renderPaymentKpis();
+  renderStaffFinanceDashboard();
+  renderInventoryDashboard();
   const oc=childOperationalCounts();
   if($('#opsKpis')) $('#opsKpis').innerHTML=[
     ['Active',oc.active,'green'],['Ready',oc.ready,'gold'],['Appointments Today',oc.apptToday,'blue'],['Dose Taken Today',oc.doseToday,'green'],
@@ -932,7 +1022,7 @@ function paymentHistoryHtml(childId){
     <div><span>Billed</span><b>${money(p.amount)}</b><small>${p.quantity?`${p.quantity} × ${money(p.rate||currentSwarnaprashanRate())}`:''}</small></div>
     <div><span>Paid</span><b>${money(p.paid)}</b></div>
     <div><span>Due</span><b class="${paymentBalance(p)>0?'due-money':''}">${money(paymentBalance(p))}</b></div>
-    <div><small>${esc(p.reference||p.note||'')}</small></div>
+    <div><small><b>${esc(paymentStaff(p))}</b><br>${esc(p.reference||p.note||'')}</small></div>
   </div>`).join('')}</div>`;
 }
 function recordPayment(childId){
@@ -953,6 +1043,7 @@ function recordPayment(childId){
       <label>Rate per Dose ₹<input id="pay_rate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Payment Status<select id="pay_status">${PAYMENT_STATUSES.map(s=>`<option>${s}</option>`).join('')}</select></label>
       <label>Payment Method<select id="pay_method">${PAYMENT_METHODS.map(s=>`<option>${s}</option>`).join('')}</select></label>
+      <label>Sale / Dose Handled By<select id="pay_soldBy">${staffOptions(currentSession()?.name||'Dr Rajesh Sao')}</select></label>
       <label>Total Amount ₹<input id="pay_amount" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
       <label>Amount Received ₹<input id="pay_paid" type="number" min="0" step="1" value=""></label>
       <label>Balance Due ₹<input id="pay_due" type="number" readonly value="0"></label>
@@ -1001,7 +1092,7 @@ function savePaymentTransaction(childId){
   if(status==='Part Paid' && paid>=amount && amount>0)status='Paid';
   const p={
     id:uid(),childId,date:$('#pay_date').value||isoToday(),purpose:$('#pay_purpose').value,
-    status,method:$('#pay_method').value,amount,paid,
+    status,method:$('#pay_method').value,soldBy:$('#pay_soldBy')?.value||currentSession()?.name||'Unassigned',amount,paid,
     quantity:Number($('#pay_qty')?.value)||1,rate:Number($('#pay_rate')?.value)||currentSwarnaprashanRate(),
     reference:$('#pay_ref').value||'',note:$('#pay_note').value||'',createdAt:new Date().toISOString(),
     recordedBy:currentSession()?.name||currentSession()?.loginId||'Clinic User'
@@ -1190,6 +1281,83 @@ function renderKnowledge(){
 function renderEducation(){options($('#eduChild'));$('#buildPlan').onclick=buildPlan}
 function buildPlan(){const id=$('#eduChild').value;if(!id){alert('Select child');return}const c=child(id),focus=$('#eduFocus').value,map={'General Swarnaprashan Support':['Balanced age-appropriate meals','Regular sleep-wake timing','Daily outdoor play and physical activity','Adequate hydration','Limit excessive packaged foods and late-night screen exposure'],'Low Appetite':['Small frequent nutritious meals','Avoid grazing/snacks just before meals','Track weight and growth trend','Clinical review if persistent appetite loss or weight loss'],'Constipation':['Adequate fluids','Fiber-rich fruits/vegetables','Regular toilet routine','Daily physical activity','Medical review for pain, blood, vomiting or persistent symptoms'],'Poor Sleep':['Consistent sleep routine','Reduce evening screen exposure','Quiet bedtime routine','Avoid heavy late meals','Assess persistent snoring/breathing difficulty'],'Frequent Illness':['Hand hygiene','Adequate sleep','Balanced diet','Vaccination review','Clinical review for recurrent severe infections or poor growth'],'Learning / Memory Support':['Adequate sleep','Structured study-play balance','Reading/recall exercises','Healthy nutrition/hydration','School or developmental assessment if persistent difficulty'],'Underweight / Poor Growth':['Track serial height/weight','Energy and protein adequacy','Review feeding pattern','Assess recurrent illness/GI symptoms','Pediatric/nutrition review when clinically indicated']};$('#planPaper').innerHTML=`<div class="reporthead"><div><h2>${esc(db.settings.clinicName)}</h2><b>Parent Diet • Pathya • Lifestyle Plan</b></div><div>${esc(c.name)}</div></div><div class="reportsection"><h3>${esc(focus)}</h3><ul>${map[focus].map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="reportsection"><h3>Pathya</h3><p>Fresh, simple, seasonal, well-tolerated food; regular routine; adequate hydration, sleep and play.</p><h3>Apathya</h3><p>Excess junk food, irregular meals, chronic sleep deprivation, excessive screen exposure and unnecessary self-medication.</p></div><div class="signature">${esc(db.settings.doctor)}</div>`}
 
+
+// Inventory & stock
+function renderInventory(){
+  drawInventoryDashboard();
+  $('#newPurchaseBtn').onclick=()=>openInventoryEditor('Purchase');
+  $('#newUsageBtn').onclick=()=>openInventoryEditor('Clinic Use');
+  $('#inventoryFilter').onchange=drawInventoryLedger;
+}
+function drawInventoryDashboard(){
+  const k=$('#inventoryKpis'),stock=$('#stockSummary'),sum=$('#inventorySummary');
+  if(k)k.innerHTML=[
+    ['Tablet Stock',Math.max(0,inventoryStock('Swarnabrahma Yog Tablet'))+' tabs'],
+    ['Ghee Stock',Math.max(0,inventoryStock('Cow Ghee'))+' g/ml'],
+    ['Honey Stock',Math.max(0,inventoryStock('Honey'))+' g/ml'],
+    ['Spoons',Math.max(0,inventoryStock('Feeding Spoon'))+' pcs'],
+    ['Purchase Value',money(inventoryPurchaseValue())],
+    ['Free/Family Tablet Use',inventoryUsageCount('Family / Relative Free','Swarnabrahma Yog Tablet')+' tabs']
+  ].map(x=>`<div class="inventory-kpi"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+  if(stock)stock.innerHTML=INVENTORY_ITEMS.slice(0,4).map(i=>`<div class="stock-row"><b>${i}</b><span>${Math.max(0,inventoryStock(i)).toLocaleString('en-IN')} ${inventoryUnitLabel(i)}</span></div>`).join('');
+  if(sum){
+    const acts=['Purchase','Clinic Use','Home Use / Sale','Self Use','Family / Relative Free','Wastage / Damage'];
+    sum.innerHTML=acts.map(a=>`<div class="stock-row"><b>${a}</b><span>${inventoryEntries().filter(e=>e.action===a).length} entries</span></div>`).join('');
+  }
+  drawInventoryLedger();
+}
+function inventoryUnitOptions(item){
+  if(item==='Swarnabrahma Yog Tablet')return ['Tablet','Strip (30 tablets)','Box (150 tablets)'];
+  if(['Cow Ghee','Honey'].includes(item))return ['g','ml','kg','L','Pack'];
+  if(item==='Feeding Spoon')return ['Piece','Pack'];
+  return ['Unit','Pack'];
+}
+function openInventoryEditor(action='Purchase'){
+  const el=$('#inventoryEditor');if(!el)return;
+  el.innerHTML=`<div class="card inventory-editor-card"><div class="cardhead"><div><span class="eyebrow">STOCK TRANSACTION</span><h3>${esc(action)}</h3></div><button class="ghost" onclick="document.getElementById('inventoryEditor').innerHTML=''">Close</button></div>
+  <div class="formgrid inventory-formgrid">
+    <label>Date<input id="inv_date" type="date" value="${isoToday()}"></label>
+    <label>Item<select id="inv_item">${INVENTORY_ITEMS.map(i=>`<option>${i}</option>`).join('')}</select></label>
+    <label>Action<select id="inv_action">${INVENTORY_ACTIONS.map(a=>`<option ${a===action?'selected':''}>${a}</option>`).join('')}</select></label>
+    <label>Quantity<input id="inv_qty" type="number" min="0" step="0.01" value="1"></label>
+    <label>Unit<select id="inv_unit"></select></label>
+    <label>Pack / Brand / Batch<input id="inv_batch" placeholder="Brand, batch, pack size"></label>
+    <label>MRP per strip/pack ₹<input id="inv_mrp" type="number" min="0" step="0.01"></label>
+    <label>Purchase price per strip/pack ₹<input id="inv_purchasePrice" type="number" min="0" step="0.01"></label>
+    <label>Total Purchase Cost ₹<input id="inv_totalCost" type="number" min="0" step="0.01"></label>
+    <label>Purchased From / Vendor<input id="inv_vendor" placeholder="Supplier / pharmacy / company"></label>
+    <label>Paid By<select id="inv_paidBy"><option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option><option>Credit / Udhari</option><option>Other</option></select></label>
+    <label>Handled By<select id="inv_handledBy">${staffOptions(currentSession()?.name||'Dr Rajesh Sao')}</select></label>
+    <label class="wide">Purpose / Recipient / Note<input id="inv_note" placeholder="e.g. clinic use, Dr Rajesh self use, family free, home-use sale"></label>
+  </div>
+  <div class="inventory-pack-hint" id="inv_hint"></div>
+  <div class="actionrow"><button id="saveInventoryBtn">Save Stock Transaction</button></div></div>`;
+  const syncUnits=()=>{const item=$('#inv_item').value;$('#inv_unit').innerHTML=inventoryUnitOptions(item).map(u=>`<option>${u}</option>`).join('');$('#inv_hint').textContent=item==='Swarnabrahma Yog Tablet'?'1 strip = 30 tablets • 1 box = 5 strips = 150 tablets':(['Cow Ghee','Honey'].includes(item)?'Record quantity as g/ml, kg/L or pack size; mention exact pack size in Brand/Batch field.':'Record actual purchase/use quantity.')};
+  $('#inv_item').onchange=syncUnits;syncUnits();
+  $('#saveInventoryBtn').onclick=saveInventoryEntry;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function saveInventoryEntry(){
+  const e={
+    id:uid(),date:$('#inv_date').value||isoToday(),item:$('#inv_item').value,action:$('#inv_action').value,
+    qty:Number($('#inv_qty').value)||0,unit:$('#inv_unit').value,batch:$('#inv_batch').value||'',
+    mrp:Number($('#inv_mrp').value)||0,purchasePrice:Number($('#inv_purchasePrice').value)||0,totalCost:Number($('#inv_totalCost').value)||0,
+    vendor:$('#inv_vendor').value||'',paidBy:$('#inv_paidBy').value,handledBy:$('#inv_handledBy').value,
+    note:$('#inv_note').value||'',createdAt:new Date().toISOString()
+  };
+  if(!e.qty){alert('Please enter quantity.');return}
+  db.inventory=db.inventory||[];db.inventory.push(e);save();
+  $('#inventoryEditor').innerHTML='';drawInventoryDashboard();
+  alert('Inventory transaction saved.');
+}
+function drawInventoryLedger(){
+  const el=$('#inventoryLedger');if(!el)return;
+  const f=$('#inventoryFilter')?.value||'';
+  const rows=inventoryEntries().filter(e=>!f||e.item===f).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  el.innerHTML=rows.length?`<div class="inventory-ledger-table"><div class="inventory-ledger-head"><span>Date</span><span>Item</span><span>Action</span><span>Qty</span><span>MRP / Purchase</span><span>Vendor / Paid</span><span>Handled By</span><span>Note</span></div>
+  ${rows.map(e=>`<div class="inventory-ledger-row"><span>${fmt(e.date)}</span><b>${esc(e.item)}</b><span class="inventory-action ${e.action==='Purchase'?'in':'out'}">${esc(e.action)}</span><span>${e.qty} ${esc(e.unit)}</span><span>${e.mrp?money(e.mrp):'-'} / ${e.purchasePrice?money(e.purchasePrice):'-'}${e.totalCost?`<small>Total ${money(e.totalCost)}</small>`:''}</span><span>${esc(e.vendor||'-')}<small>${esc(e.paidBy||'')}</small></span><span>${esc(e.handledBy||'-')}</span><span>${esc(e.note||'-')}</span></div>`).join('')}</div>`:'<p class="muted">No inventory entries yet.</p>';
+}
+
 // Backup / Settings
 function renderBackup(){$('#backupBtn').onclick=()=>download('swarnaprashan-v7-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json');$('#restoreInput').onchange=async e=>{try{db=JSON.parse(await e.target.files[0].text());db.settings={...defaults,...(db.settings||{})};save();alert('Restored');showView('dashboard')}catch{alert('Invalid backup')}};$('#csvBtn').onclick=exportCSV}
 function exportCSV(){const head=['Child','RegID','Date','Dose','Height','Weight','BMI','Pulse','RR','SpO2','BP','Issue',...scales],rows=db.followups.map(f=>{const c=child(f.childId)||{};return[c.name,c.regId,f.date,f.dose,f.height,f.weight,f.bmi,f.pulse,f.rr,f.spo2,f.bp,f.issue,...scales.map(k=>f.scores?.[k])]});download('swarnaprashan-followups.csv',[head,...rows].map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'),'text/csv')}
@@ -1199,6 +1367,7 @@ function renderSettings(){
  $('#settingsForm').innerHTML=`<div class="section"><h4>Prescription Letterhead</h4><div class="formgrid">
  <label>Clinic Name<input id="s_clinic" value="${esc(db.settings.clinicName)}"></label>
  <label>Swarnaprashan Rate / Dose ₹<input id="s_swarnaprashanRate" type="number" min="0" step="1" value="${currentSwarnaprashanRate()}"></label>
+ <label>Sales / Clinic Staff Names<input id="s_salesStaff" value="${esc(salesStaffList().join(', '))}" placeholder="Comma separated names"></label>
  <label>Prescription Title<input id="s_rxTitle" value="${esc(db.settings.prescriptionTitle||'Swarnaprashan Digital Prescription')}"></label>
  <label>Phone<input id="s_phone" value="${esc(db.settings.phone)}"></label>
  </div></div>
@@ -1231,6 +1400,7 @@ function renderSettings(){
    db.settings={...db.settings,
       clinicName:$('#s_clinic').value,
       swarnaprashanRate:Number($('#s_swarnaprashanRate').value)||250,
+      salesStaff:($('#s_salesStaff')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),
       prescriptionTitle:$('#s_rxTitle').value,
       doctor:$('#s_doctor').value,
       designation:$('#s_desig').value,
@@ -1312,6 +1482,7 @@ function normalizeCloudDb(incoming){
     vaccines:incoming.vaccines||[],
     plans:incoming.plans||[],
     payments:incoming.payments||[],
+    inventory:incoming.inventory||[],
     settings:{...defaults,...(incoming.settings||{})}
   };
 }
@@ -1332,7 +1503,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);

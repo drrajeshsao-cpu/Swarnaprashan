@@ -1,0 +1,30 @@
+MAHAMAYA SWARNAPRASHAN V11.8 — STAFF FINANCE + INVENTORY
+
+STAFF-WISE SALES / COLLECTION
+- Payment entry now includes Sale / Dose Handled By.
+- Default choices: Dr Rajesh Sao, Dr Ravi Chandrakar, Miss Mansi, Other.
+- Staff list can be edited from Settings as comma-separated names.
+- Dashboard shows staff-wise monthly Collected, Cash, UPI, Pending and Credit/Udhari.
+
+INVENTORY / PROCUREMENT
+- New Inventory & Stock module.
+- Swarnabrahma Yog Tablet:
+  * Tablet
+  * Strip = 30 tablets
+  * Box = 5 strips = 150 tablets
+  * MRP, purchase price, total purchase cost, vendor, payment method, batch/brand
+  * Purchase, clinic use, home-use/sale, self use, family/relative free, wastage/damage, adjustments
+- Cow Ghee and Honey:
+  * g, ml, kg, L, pack
+  * exact pack size can be entered in Brand/Batch field
+  * purchase cost/vendor/payment method/use history
+- Feeding Spoon:
+  * piece/pack purchase and usage
+- Other consumables supported.
+- Dashboard shows current tablet/ghee/honey/spoon stock.
+- Inventory ledger is cloud-synced for doctor/staff continuity.
+- Existing child Name + ID + Age display retained.
+- Firebase authentication/login code was not redesigned.
+
+Suggested GitHub commit:
+Add V11.8 staff-wise collections and Swarnaprashan inventory procurement stock tracking

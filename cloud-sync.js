@@ -30,12 +30,13 @@ const COLLECTIONS={
   followups:'followups',
   vaccines:'vaccines',
   plans:'plans',
-  payments:'payments'
+  payments:'payments',
+  inventory:'inventory'
 };
 
 let currentUser=null;
 let listeners=[];
-let cloudState={children:[],cases:[],followups:[],vaccines:[],plans:[],payments:[],settings:null};
+let cloudState={children:[],cases:[],followups:[],vaccines:[],plans:[],payments:[],inventory:[],settings:null};
 let readyCollections=new Set();
 let applyingRemote=false;
 let writeTimer=null;
@@ -62,7 +63,7 @@ function setStatus(state,text){
 }
 function meaningful(data){
   if(!data)return false;
-  return ['children','cases','followups','vaccines','plans','payments'].some(k=>(data[k]?.length||0)>0);
+  return ['children','cases','followups','vaccines','plans','payments','inventory'].some(k=>(data[k]?.length||0)>0);
 }
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function currentLocal(){
@@ -120,7 +121,7 @@ function scheduleSync(reason='local-save'){
 }
 
 function applyComposedCloud(){
-  if(readyCollections.size<7)return;
+  if(readyCollections.size<8)return;
   const composed={
     children:clone(cloudState.children||[]),
     cases:clone(cloudState.cases||[]),
@@ -128,6 +129,7 @@ function applyComposedCloud(){
     vaccines:clone(cloudState.vaccines||[]),
     plans:clone(cloudState.plans||[]),
     payments:clone(cloudState.payments||[]),
+    inventory:clone(cloudState.inventory||[]),
     settings:clone(cloudState.settings||{})
   };
   applyingRemote=true;
@@ -295,7 +297,7 @@ cloudBtn?.addEventListener('click',()=>{
     <h4>☁ Mahamaya Swarnaprashan Cloud</h4>
     <p><b>${currentUser.email||'Signed in'}</b></p>
     <div class="cloud-scope-note">
-      Synced now: children, clinical cases, follow-ups, vaccination/schedule, plans, payment ledger and clinic settings.<br><br>
+      Synced now: children, clinical cases, follow-ups, vaccination/schedule, plans, payment ledger, inventory ledger and clinic settings.<br><br>
       Device-local in Phase 1: baby photos, investigation images, PDFs and manual-card file blobs.
     </div>
     <div class="actionrow">
