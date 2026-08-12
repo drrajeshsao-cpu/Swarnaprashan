@@ -5,7 +5,7 @@ const defaults={swarnaprashanRate:250,clinicName:'MAHAMAYA CLINIC',prescriptionT
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{children:[],cases:[],followups:[],vaccines:[],plans:[],settings:defaults};
 let currentView='dashboard';
 let suppressCloudEvent=false;
-db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];db.payments=db.payments||[];db.inventory=db.inventory||[];
+db.settings={...defaults,...(db.settings||{})};db.children=db.children||[];db.cases=db.cases||[];db.followups=db.followups||[];db.vaccines=db.vaccines||[];db.payments=db.payments||[];db.inventory=db.inventory||[];db.dashboardDates=db.dashboardDates||{day1:'2026-08-11',day2:'2026-08-12'};
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8),
@@ -441,7 +441,7 @@ function childPayments(childId){
 function latestPayment(childId){return childPayments(childId).at(-1)||null}
 function paymentBalance(p){return Math.max(0,(Number(p?.amount)||0)-(Number(p?.paid)||0))}
 function paymentStatus(p){
-  if(!p)return 'No Entry';
+  if(!p)return 'Not Recorded';
   if(p.status)return p.status;
   const amt=Number(p.amount)||0, paid=Number(p.paid)||0;
   if(amt<=0)return 'Complimentary / Free';
@@ -455,6 +455,7 @@ function paymentStatusClass(s){
   if(['Pending','Pay Later'].includes(s))return 'pay-pending';
   if(['Credit / Udhari'].includes(s))return 'pay-credit';
   if(['Complimentary / Free','Waived / No Charge'].includes(s))return 'pay-free';
+  if(s==='Not Recorded')return 'pay-none';
   return 'pay-none';
 }
 function money(n){return '₹'+(Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
@@ -523,6 +524,75 @@ function renderPaymentKpis(){
       ].map(x=>`<div class="finance-kpi ${x[2]}"><span>${x[0]}</span><b>${x[1]}</b><small>${x[3]}</small></div>`).join('')}
     </div>`;
 }
+
+function dayActivitySummary(date){
+  const cases=(db.cases||[]).filter(x=>String(x.date||'')===date);
+  const payments=(db.payments||[]).filter(x=>String(x.date||'')===date);
+  const administered=cases.filter(x=>{
+    const type=String(x.type||'').toLowerCase();
+    const dose=String(x.dose||x.swarnaprashanDose||'').trim();
+    return type.includes('swarnaprashan') || !!dose;
+  });
+  const childIds=new Set(administered.map(x=>x.childId).filter(Boolean));
+  const paid=payments.filter(x=>['Paid','Home Use - Already Paid'].includes(paymentStatus(x))).length;
+  const due=payments.filter(x=>paymentBalance(x)>0).length;
+  const totalCollected=payments.reduce((s,p)=>s+(Number(p.paid)||0),0);
+  return {cases:cases.length,administered:administered.length,children:childIds.size,payments:payments.length,paid,due,totalCollected};
+}
+function renderTwoDayActivity(){
+  const box=$('#twoDayActivity');if(!box)return;
+  const d1=db.dashboardDates?.day1||'2026-08-11', d2=db.dashboardDates?.day2||'2026-08-12';
+  if($('#spDay1'))$('#spDay1').value=d1;
+  if($('#spDay2'))$('#spDay2').value=d2;
+  const card=(label,date)=>{
+    const s=dayActivitySummary(date);
+    return `<div class="day-activity-card">
+      <div class="day-activity-head"><span>${label}</span><b>${fmt(date)}</b></div>
+      <div class="day-activity-kpis">
+        <div><b>${s.children}</b><span>Children dosed</span></div>
+        <div><b>${s.cases}</b><span>Clinical entries</span></div>
+        <div><b>${s.payments}</b><span>Payment entries</span></div>
+        <div><b>${money(s.totalCollected)}</b><span>Collected</span></div>
+      </div>
+      <div class="day-activity-foot"><span>${s.paid} paid</span><span>${s.due} with due</span></div>
+      <button class="ghost" onclick="app.openDayChildren('${date}')">Open date-wise records</button>
+    </div>`;
+  };
+  box.innerHTML=card('DAY 1',d1)+card('DAY 2',d2);
+}
+function openDayChildren(date){
+  showView('children');
+  setTimeout(()=>{
+    if($('#childSearch'))$('#childSearch').value='';
+    childAlpha='';
+    const ids=new Set(
+      [...(db.cases||[]).filter(x=>String(x.date||'')===date),...(db.payments||[]).filter(x=>String(x.date||'')===date)]
+        .map(x=>x.childId).filter(Boolean)
+    );
+    drawChildrenByIds(ids,date);
+  },100);
+}
+async function drawChildrenByIds(ids,date=''){
+  const statusFilter=$('#childStatusFilter')?.value||'';
+  const taskFilter=$('#childTaskFilter')?.value||'';
+  const paymentFilter=$('#childPaymentFilter')?.value||'';
+  const staffFilter=$('#childStaffFilter')?.value||'';
+  const arr=normalizedChildren()
+    .filter(c=>ids.has(c.id))
+    .filter(c=>!statusFilter||c.currentStatus===statusFilter)
+    .filter(c=>!taskFilter||c.taskStatus===taskFilter)
+    .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
+    .filter(c=>{if(!staffFilter)return true;const a=childAudit(c);return [a.registeredBy,a.administeredBy,a.paymentBy].includes(staffFilter)})
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
+  const oldQ=$('#childSearch')?.value||'';
+  if($('#childrenList'))$('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> child record(s) on ${fmt(date)}. Click Open/Edit from the normal registry below.</div>`;
+  // Reuse normal registry while restricting by exact child names only if any.
+  if(!arr.length){ if($('#childrenList'))$('#childrenList').innerHTML+=`<p class="muted">No saved child-linked activity on this date.</p>`; return; }
+  const names=arr.map(x=>x.name).filter(Boolean);
+  // show compact date-specific list with direct actions, without changing saved data
+  $('#childrenList').innerHTML+=`<div class="date-child-list">${arr.map(c=>`<div class="date-child-row"><div><b>${esc(c.name)}</b><span>${esc(c.regId||'-')} • ${age(c.dob)}</span></div><div><button onclick="app.openChildDetails('${c.id}')">Open</button><button class="ghost" onclick="app.editChild('${c.id}')">Edit</button><button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button><button class="ghost" onclick="app.recordPayment('${c.id}')">₹ Payment</button></div></div>`).join('')}</div>`;
+}
+
 async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
   const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
@@ -530,6 +600,8 @@ async function renderDashboard(){
   renderPaymentKpis();
   renderStaffFinanceDashboard();
   renderInventoryDashboard();
+  renderTwoDayActivity();
+  if($('#saveSpDaysBtn'))$('#saveSpDaysBtn').onclick=()=>{db.dashboardDates={day1:$('#spDay1').value||'2026-08-11',day2:$('#spDay2').value||'2026-08-12'};save();renderTwoDayActivity();alert('2-day Swarnaprashan dates saved.');};
   const oc=childOperationalCounts();
   if($('#opsKpis')) $('#opsKpis').innerHTML=[
     ['Active',oc.active,'green'],['Ready',oc.ready,'gold'],['Appointments Today',oc.apptToday,'blue'],['Dose Taken Today',oc.doseToday,'green'],
@@ -752,7 +824,7 @@ function renderChildren(){
   db.children=db.children.map(normalizeChild);
   save();
   $('#registerChildBtn').onclick=()=>editChild();
-  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; if($('#childPaymentFilter'))$('#childPaymentFilter').value=''; if($('#childStaffFilter'))$('#childStaffFilter').value=''; $('#childSearch').value=''; drawChildren(''); };
+  $('#showAllChildrenBtn').onclick=()=>{ $('#childStatusFilter').value=''; $('#childTaskFilter').value=''; if($('#childPaymentFilter'))$('#childPaymentFilter').value=''; if($('#childStaffFilter'))$('#childStaffFilter').value=''; $('#childSearch').value=''; childAlpha=''; drawChildren(''); };
   $('#childSearch').oninput=()=>drawChildren($('#childSearch').value);
   $('#childStatusFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
@@ -967,7 +1039,7 @@ async function drawChildren(q=''){
 
   const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
   const arr=normalizedChildren()
-    .filter(c=>{const a=childAudit(c);return [c.name,c.parent,c.mobile,c.regId,c.address,a.registeredBy,a.administeredBy,a.paymentBy].join(' ').toLowerCase().includes(q)})
+    .filter(c=>[c.name,c.parent,c.mobile,c.regId,c.address].join(' ').toLowerCase().includes(q))
     .filter(c=>!statusFilter||c.currentStatus===statusFilter)
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
     .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
@@ -987,11 +1059,6 @@ async function drawChildren(q=''){
       <td>
         <div class="child-name">${esc(c.name)}</div>
         <div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div>
-        ${(()=>{const a=childAudit(c);return `<div class="audit-under-name">
-          <div><span>Registered</span><b>${esc(a.registeredBy)}</b></div>
-          <div><span>Swarnaprashan</span><b>${esc(a.administeredBy)}</b></div>
-          <div><span>Payment</span><b>${esc(a.paymentBy)}</b></div>
-        </div>`})()}
       </td>
       <td class="guardian-contact-cell">
         <div class="guardian-name"><span>Guardian</span><b>${esc(c.parent||'Not entered')}</b></div>
@@ -1649,7 +1716,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,openDayChildren,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);

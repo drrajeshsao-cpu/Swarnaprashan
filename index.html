@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=11.12.0">
+<link rel="stylesheet" href="styles.css?v=11.13">
 </head>
 <body>
 
@@ -111,7 +111,7 @@
 <div id="appShell" class="app auth-hidden">
   <aside class="sidebar">
     <div class="brand">
-      <div class="brandmark sparkle-mark">✨</div>
+      <div class="brandmark baby-app-mark"><img src="icon-192.png" alt="Swarnaprashan baby icon"></div>
       <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan • Child Growth & Clinical Intelligence</span></div>
     </div>
     <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Clinical Intelligence Suite</b><span>Longitudinal child-health workflow</span></div></div>
@@ -177,6 +177,22 @@
     </div>
   </div>
   <div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="staffFinancePanel"></div><div id="inventoryDash"></div><div id="opsKpis" class="registry-kpis"></div>
+  <div class="card two-day-card">
+    <div class="cardhead">
+      <div>
+        <span class="eyebrow">DATE-WISE SWARNAPRASHAN</span>
+        <h3>2-Day Swarnaprashan Activity</h3>
+        <p class="muted">Each calendar date remains separate. Counts are read from saved clinical and payment records; no old record is rewritten.</p>
+      </div>
+      <button class="linkbtn" onclick="app.showView('children')">Open Children</button>
+    </div>
+    <div class="two-day-toolbar">
+      <label>Day 1<input id="spDay1" type="date"></label>
+      <label>Day 2<input id="spDay2" type="date"></label>
+      <button class="ghost" id="saveSpDaysBtn">Save Dates</button>
+    </div>
+    <div id="twoDayActivity" class="two-day-grid"></div>
+  </div>
   <div class="grid2 dashboard-utility-grid">
     <div class="card pushya-card">
       <div class="cardhead"><div><span class="eyebrow">PUSHYA NAKSHATRA CALENDAR</span><h3>Upcoming Swarnaprashan Dates</h3></div><button class="linkbtn" onclick="app.showView('knowledge')">Full guide</button></div>
@@ -242,7 +258,7 @@
     <div id="childAlphaBar" class="alpha-strip registry-alpha"></div>
     <div class="staff-audit-legend"><b>Staff Audit:</b> Registered By → Swarnaprashan Administered By → Payment Received / Status Known By</div>
     <div class="registry-toolbar">
-      <input id="childSearch" placeholder="Search child / guardian / mobile / registration ID">
+      <input id="childSearch" placeholder="Search CHILD NAME / guardian / mobile / registration ID">
       <select id="childStatusFilter">
         <option value="">All Status</option>
         <option>Active</option>
@@ -270,7 +286,7 @@
         <option>Not recorded (legacy)</option>
       </select>
       <select id="childPaymentFilter">
-        <option value="">All Payment Status</option>
+        <option value="">All Payment Status</option><option>Not Recorded</option>
         <option>Paid</option>
         <option>Part Paid</option>
         <option>Pending</option>
@@ -515,7 +531,7 @@
 
 
 
-<script src="app.js?v=11.12.0"></script>
-<script type="module" src="cloud-sync.js?v=11.12.0"></script>
+<script src="app.js?v=11.13"></script>
+<script type="module" src="cloud-sync.js?v=11.13"></script>
 </body>
 </html>

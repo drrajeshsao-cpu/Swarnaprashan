@@ -1430,3 +1430,34 @@ img,svg,video,canvas{max-width:100%;height:auto}
     grid-template-columns:1fr!important;
   }
 }
+
+/* V11.13 SAFE REGISTRY + TWO-DAY + BABY ICON */
+.baby-app-mark{overflow:hidden;background:#fff;border:1px solid #eadfcf}
+.baby-app-mark img{width:100%;height:100%;object-fit:cover;display:block}
+.two-day-card{margin:14px 0}
+.two-day-toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0}
+.two-day-toolbar label{min-width:170px;display:grid;gap:6px;font-weight:800}
+.two-day-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.day-activity-card{border:1px solid #e2d7c5;background:linear-gradient(145deg,#fff,#fff8eb);border-radius:18px;padding:15px}
+.day-activity-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.day-activity-head span{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8a622d}
+.day-activity-head b{font-size:17px}
+.day-activity-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.day-activity-kpis div{border:1px solid #eee4d5;border-radius:12px;padding:10px;background:#fff}
+.day-activity-kpis b{display:block;font-size:18px;color:#5f4327}
+.day-activity-kpis span{font-size:10px;color:#7c7b75}
+.day-activity-foot{display:flex;gap:14px;font-size:11px;font-weight:800;color:#597168;margin:10px 0}
+.date-child-list{display:grid;gap:8px;margin-top:10px}
+.date-child-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #e4e8e7;border-radius:13px;padding:11px;background:#fff}
+.date-child-row>div:first-child{display:grid;gap:2px}.date-child-row span{font-size:11px;color:#75817e}.date-child-row>div:last-child{display:flex;gap:6px;flex-wrap:wrap}
+.children-table .child-name{font-size:15px;font-weight:900}
+.children-table .child-sub{margin-top:3px}
+@media(max-width:900px){
+  .two-day-grid{grid-template-columns:1fr}
+  .day-activity-kpis{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:620px){
+  .two-day-toolbar{display:grid;grid-template-columns:1fr 1fr}
+  .two-day-toolbar button{grid-column:1/-1}
+  .date-child-row{align-items:flex-start;flex-direction:column}
+}

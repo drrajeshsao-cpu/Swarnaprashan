@@ -1,17 +1,23 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan V11.12",
+  "name": "Mahamaya Clinic Swarnaprashan V11.13",
   "short_name": "Swarnaprashan",
-  "start_url": "./",
+  "start_url": "./?v=11.13",
   "display": "standalone",
   "background_color": "#f7f4ed",
   "theme_color": "#5f4327",
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "description": "Mahamaya Clinic Swarnaprashan Digital Health Suite with Firebase structured clinical data synchronization."
+  "description": "Mahamaya Clinic Swarnaprashan Digital Health Suite with safe child registry search, two-day date-wise dashboard, payment visibility and baby app icon."
 }

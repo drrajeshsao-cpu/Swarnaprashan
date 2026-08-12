@@ -1,0 +1,29 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V11.13
+SAFE CHILD REGISTRY + 2-DAY DASHBOARD + PAYMENT VISIBILITY + BABY APP ICON
+Build date: 13 Aug 2026
+
+DATA SAFETY
+- Existing localStorage key remains exactly: mahamaya_swarnaprashan_v7
+- Existing Firebase/cloud-sync.js preserved.
+- No children, cases, followups, payments, vaccines or settings are deleted or rewritten.
+- New dashboardDates field is additive only.
+- Existing payment records remain unchanged.
+
+UPDATES
+1. Existing swarna-baby.png is now used to generate 192px and 512px PWA app icons.
+2. Dashboard has separate Day 1 / Day 2 Swarnaprashan date-wise activity.
+3. Child search now searches child identity/contact only: child name, guardian, mobile, registration ID and address.
+   Staff names are no longer mixed into the child search query.
+4. Staff audit remains available in its own Staff Audit column.
+5. Old children without a payment entry display 'Not Recorded' instead of an ambiguous 'No Entry'.
+6. Payment filter includes 'Not Recorded'.
+7. Date-wise records can be opened directly from the dashboard without changing saved records.
+
+IMPORTANT
+Before deployment retain:
+- JSON backup
+- Current V11.12 working ZIP
+- Firebase cloud copy
+
+GITHUB COMMIT MESSAGE:
+Upgrade Swarnaprashan to V11.13 with baby app icon two-day date-wise dashboard clean child search and safe payment visibility
