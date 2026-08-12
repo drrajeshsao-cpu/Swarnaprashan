@@ -593,6 +593,64 @@ async function drawChildrenByIds(ids,date=''){
   $('#childrenList').innerHTML+=`<div class="date-child-list">${arr.map(c=>`<div class="date-child-row"><div><b>${esc(c.name)}</b><span>${esc(c.regId||'-')} • ${age(c.dob)}</span></div><div><button onclick="app.openChildDetails('${c.id}')">Open</button><button class="ghost" onclick="app.editChild('${c.id}')">Edit</button><button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button><button class="ghost" onclick="app.recordPayment('${c.id}')">₹ Payment</button></div></div>`).join('')}</div>`;
 }
 
+
+const SWARNAPRASHAN_YEAR_CALENDAR = [
+  {clinicDate:'2026-09-08', weekday:'Tuesday', pushya:'07 Sep 18:14 → 08 Sep 16:39', tithi:'Krishna Dwadashi → Trayodashi'},
+  {clinicDate:'2026-10-05', weekday:'Monday', pushya:'05 Oct 00:13 → 05 Oct 23:09', tithi:'Krishna Dashami'},
+  {clinicDate:'2026-11-01', weekday:'Sunday', pushya:'01 Nov 05:39 → 02 Nov 04:30', tithi:'Krishna Saptami → Ashtami'},
+  {clinicDate:'2026-11-28', weekday:'Saturday', pushya:'28 Nov 12:50 → 29 Nov 10:59', tithi:'Krishna Panchami'},
+  {clinicDate:'2026-12-26', weekday:'Saturday', pushya:'25 Dec 22:50 → 26 Dec 20:12', tithi:'Krishna Tritiya'},
+  {clinicDate:'2027-01-22', weekday:'Friday', pushya:'22 Jan 10:24 → 23 Jan 07:31', tithi:'Purnima → Krishna Pratipada'},
+  {clinicDate:'2027-02-19', weekday:'Friday', pushya:'18 Feb 21:05 → 19 Feb 18:35', tithi:'Shukla Trayodashi → Chaturdashi'},
+  {clinicDate:'2027-03-18', weekday:'Thursday', pushya:'18 Mar 05:07 → 19 Mar 03:21', tithi:'Shukla Ekadashi'},
+  {clinicDate:'2027-04-14', weekday:'Wednesday', pushya:'14 Apr 10:52 → 15 Apr 09:33', tithi:'Shukla Ashtami → Navami'},
+  {clinicDate:'2027-05-12', weekday:'Wednesday', pushya:'11 May 16:25 → 12 May 14:55', tithi:'Shukla Saptami'},
+  {clinicDate:'2027-06-08', weekday:'Tuesday', pushya:'07 Jun 23:45 → 08 Jun 21:36', tithi:'Shukla Chaturthi → Panchami'},
+  {clinicDate:'2027-07-05', weekday:'Monday', pushya:'05 Jul 09:19 → 06 Jul 06:33', tithi:'Shukla Dvitiya'},
+  {clinicDate:'2027-08-02', weekday:'Monday', pushya:'01 Aug 20:04 → 02 Aug 17:09', tithi:'Amavasya → Shukla Pratipada'}
+];
+
+function renderAnnualSpCalendar(){
+  const box=$('#annualSpCalendar'); if(!box) return;
+  const todayIso=new Date().toISOString().slice(0,10);
+  const next=(SWARNAPRASHAN_YEAR_CALENDAR.find(x=>x.clinicDate>=todayIso)||{}).clinicDate||'';
+  box.innerHTML=SWARNAPRASHAN_YEAR_CALENDAR.map(x=>`
+    <article class="annual-sp-item ${x.clinicDate===next?'is-next':''}">
+      <div class="annual-sp-date">
+        <span>${x.clinicDate===next?'NEXT':'PUSHYA'}</span>
+        <b>${fmt(x.clinicDate)}</b>
+        <small>${esc(x.weekday)}</small>
+      </div>
+      <div class="annual-sp-body">
+        <div><span>Pushya window</span><b>${esc(x.pushya)}</b></div>
+        <div><span>Tithi</span><b>${esc(x.tithi)}</b></div>
+      </div>
+      <div class="annual-sp-actions">
+        <button class="ghost" onclick="app.openCalendarDate('${x.clinicDate}')">Use This Date</button>
+      </div>
+    </article>`).join('');
+}
+function openCalendarDate(date){
+  if(db.dashboardDates){
+    db.dashboardDates.day1=date;
+    const d=new Date(date+'T00:00:00');
+    d.setDate(d.getDate()+1);
+    db.dashboardDates.day2=d.toISOString().slice(0,10);
+    save();
+  }
+  showView('dashboard');
+  setTimeout(()=>{
+    renderTwoDayActivity();
+  renderAnnualSpCalendar();
+  if($('#toggleSpCalendarBtn')) $('#toggleSpCalendarBtn').onclick=()=>{
+    const box=$('#annualSpCalendar'); if(!box)return;
+    box.classList.toggle('compact');
+    $('#toggleSpCalendarBtn').textContent=box.classList.contains('compact')?'Full View':'Compact View';
+  };
+    document.getElementById('twoDayActivity')?.scrollIntoView({behavior:'smooth',block:'center'});
+  },100);
+}
+
 async function renderDashboard(){
   let docs=[];try{docs=await getDocs()}catch{}
   const now=new Date(),thisMonth=db.followups.filter(v=>new Date(v.date).getMonth()===now.getMonth()&&new Date(v.date).getFullYear()===now.getFullYear()).length;
@@ -817,7 +875,7 @@ async function shareCurrent(){const t=currentText();if(!t){alert('Generate repor
 function whatsappCurrent(){const t=currentText();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 
 // children & baby photo
-let childAlpha=''; // legacy variable retained; alphabet UI removed in V11.14
+let childAlpha=''; // legacy variable retained; alphabet UI removed in V11.14; V11.15 calendar/badge update
 
 function renderChildren(){
   db.children=db.children.map(normalizeChild);
@@ -1742,7 +1800,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,openDayChildren,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,openDayChildren,openCalendarDate,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);

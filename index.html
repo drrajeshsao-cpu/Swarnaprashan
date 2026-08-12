@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=11.14">
+<link rel="stylesheet" href="styles.css?v=11.15">
 </head>
 <body>
 
@@ -110,9 +110,16 @@
 
 <div id="appShell" class="app auth-hidden">
   <aside class="sidebar">
-    <div class="brand">
+    <div class="brand brand-with-release">
       <div class="brandmark baby-app-mark"><img src="icon-192.png" alt="Swarnaprashan baby icon"></div>
-      <div><strong>Mahamaya Clinic</strong><span>Swarnaprashan • Child Growth & Clinical Intelligence</span></div>
+      <div class="brand-copy">
+        <strong>Mahamaya Clinic</strong>
+        <div class="brand-release-badges">
+          <span class="release-version">V11.15</span>
+          <span class="release-updated">Updated 13 Aug 2026</span>
+        </div>
+        <span>Swarnaprashan • Child Growth & Clinical Intelligence</span>
+      </div>
     </div>
     <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Clinical Intelligence Suite</b><span>Longitudinal child-health workflow</span></div></div>
     <nav id="nav">
@@ -176,7 +183,23 @@
       </div>
     </div>
   </div>
-  <div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="staffFinancePanel"></div><div id="inventoryDash"></div><div id="opsKpis" class="registry-kpis"></div>
+  
+  <div class="card annual-sp-calendar-card">
+    <div class="cardhead annual-sp-head">
+      <div>
+        <span class="eyebrow">PUSHYA NAKSHATRA • SWARNAPRASHAN PLANNER</span>
+        <h3>Upcoming Swarnaprashan Calendar — Next 1 Year</h3>
+        <p class="muted">Date-wise Pushya windows with practical clinic dates and Tithi reference. Please verify the local Raipur Panchang before making a public poster or final announcement.</p>
+      </div>
+      <div class="annual-sp-head-actions">
+        <span class="annual-sp-count">13 Pushya windows</span>
+        <button class="ghost" id="toggleSpCalendarBtn">Compact View</button>
+      </div>
+    </div>
+    <div id="annualSpCalendar" class="annual-sp-calendar"></div>
+  </div>
+
+<div id="kpis" class="kpis"></div><div id="paymentKpis" class="finance-kpis"></div><div id="staffFinancePanel"></div><div id="inventoryDash"></div><div id="opsKpis" class="registry-kpis"></div>
   <div class="card two-day-card">
     <div class="cardhead">
       <div>
@@ -534,7 +557,7 @@
 
 
 
-<script src="app.js?v=11.14"></script>
-<script type="module" src="cloud-sync.js?v=11.14"></script>
+<script src="app.js?v=11.15"></script>
+<script type="module" src="cloud-sync.js?v=11.15"></script>
 </body>
 </html>

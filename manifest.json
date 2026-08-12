@@ -1,7 +1,7 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan V11.14",
+  "name": "Mahamaya Clinic Swarnaprashan V11.15",
   "short_name": "Swarnaprashan",
-  "start_url": "./?v=11.14",
+  "start_url": "./?v=11.15",
   "display": "standalone",
   "background_color": "#f7f4ed",
   "theme_color": "#5f4327",
@@ -19,5 +19,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Fast no-horizontal-scroll Swarnaprashan child registry with prominent search and direct child actions."
+  "description": "Swarnaprashan Digital Health Suite with visible version/update badge and one-year Pushya/Swarnaprashan calendar."
 }

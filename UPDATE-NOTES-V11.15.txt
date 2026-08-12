@@ -1,0 +1,28 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V11.15
+VISIBLE VERSION BADGE + UPDATED DATE + NEXT ONE-YEAR SWARNAPRASHAN CALENDAR
+Updated: 13 Aug 2026
+
+ADDED
+1. V11.15 badge beside the baby/clinic logo.
+2. Updated 13 Aug 2026 badge beside the logo.
+3. Home/Dashboard: next one-year Pushya/Swarnaprashan planning calendar.
+4. 13 Pushya windows from Sep 2026 through Aug 2027.
+5. Practical clinic date + weekday + Pushya window + Tithi reference.
+6. NEXT upcoming date is highlighted.
+7. Use This Date sends the selected date into the existing 2-day tracker.
+8. Compact/Full view toggle.
+
+SAFETY PRESERVED
+- localStorage key unchanged: mahamaya_swarnaprashan_v7
+- cloud-sync.js unchanged
+- Firebase/login configuration unchanged
+- no child/case/payment/follow-up/vaccine records migrated, renamed or deleted
+- V11.14 fast child registry retained
+- baby PWA icon retained
+- 2-day tracking retained
+
+PANCHANG SAFETY
+The calendar is for planning. Verify local Raipur Panchang before public poster/announcement.
+
+GITHUB COMMIT
+Upgrade Swarnaprashan to V11.15 with visible version badge updated date and one-year Pushya Swarnaprashan calendar
