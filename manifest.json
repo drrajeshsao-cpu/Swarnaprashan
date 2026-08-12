@@ -1,7 +1,7 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan V11.13",
+  "name": "Mahamaya Clinic Swarnaprashan V11.14",
   "short_name": "Swarnaprashan",
-  "start_url": "./?v=11.13",
+  "start_url": "./?v=11.14",
   "display": "standalone",
   "background_color": "#f7f4ed",
   "theme_color": "#5f4327",
@@ -19,5 +19,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Mahamaya Clinic Swarnaprashan Digital Health Suite with safe child registry search, two-day date-wise dashboard, payment visibility and baby app icon."
+  "description": "Fast no-horizontal-scroll Swarnaprashan child registry with prominent search and direct child actions."
 }

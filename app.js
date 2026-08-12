@@ -617,7 +617,6 @@ async function renderDashboard(){
   const next=upcoming[0]||PUSHYA_DATES[0];
   if($('#pushyaNext')) $('#pushyaNext').innerHTML=next?`<div class="next-pushya"><span>Next Pushya</span><b>${esc(next.label)}</b><small>Reference date • verify local Raipur Panchang timing</small></div>`:'<p class="muted">Update Pushya calendar.</p>';
   if($('#pushyaYear')) $('#pushyaYear').innerHTML=upcoming.slice(0,13).map((x,i)=>`<span class="pushya-chip ${i===0?'next':''}">${esc(x.label.split(' • ')[0])}</span>`).join('');
-  if($('#dashboardAlpha')) $('#dashboardAlpha').innerHTML='<button class="alpha-btn active" onclick="app.openAlpha(\'ALL\')">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" onclick="app.openAlpha('${l}')">${l}</button>`).join('');
 
   options($('#dashChild'));$('#dashChild').onchange=()=>drawSnapshot($('#dashChild').value);$('#dashSnapshot').innerHTML='<p class="muted">Select a child for baseline-to-latest analysis.</p>';
   $('#dashDocs').innerHTML=docs.slice(-5).reverse().map(d=>`<div class="docitem"><b>${esc(d.name)}</b><div class="docmeta">${esc(d.type)} • ${fmt(d.date)}</div></div>`).join('')||'<p class="muted">No documents uploaded.</p>';
@@ -818,7 +817,7 @@ async function shareCurrent(){const t=currentText();if(!t){alert('Generate repor
 function whatsappCurrent(){const t=currentText();if(!t){alert('Generate report first');return}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 
 // children & baby photo
-let childAlpha='';
+let childAlpha=''; // legacy variable retained; alphabet UI removed in V11.14
 
 function renderChildren(){
   db.children=db.children.map(normalizeChild);
@@ -830,8 +829,6 @@ function renderChildren(){
   $('#childTaskFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childPaymentFilter').onchange=()=>drawChildren($('#childSearch').value);
   $('#childStaffFilter').onchange=()=>drawChildren($('#childSearch').value);
-  if($('#childAlphaBar')) $('#childAlphaBar').innerHTML='<button class="alpha-btn active" data-alpha="">ALL</button>'+Array.from({length:26},(_,i)=>String.fromCharCode(65+i)).map(l=>`<button class="alpha-btn" data-alpha="${l}">${l}</button>`).join('');
-  $$('#childAlphaBar .alpha-btn').forEach(b=>b.onclick=()=>{childAlpha=b.dataset.alpha||'';$$('#childAlphaBar .alpha-btn').forEach(x=>x.classList.toggle('active',x===b));drawChildren($('#childSearch').value)});
   renderRegistryKpis();
   renderTodayPanel();
   drawChildren('');
@@ -1035,7 +1032,7 @@ async function drawChildren(q=''){
   const taskFilter=$('#childTaskFilter')?.value||'';
   const paymentFilter=$('#childPaymentFilter')?.value||'';
   const staffFilter=$('#childStaffFilter')?.value||'';
-  q=(q||'').toLowerCase();
+  q=(q||'').toLowerCase().trim();
 
   const num=s=>Number((String(s||'').match(/\d+/)||['999999'])[0]);
   const arr=normalizedChildren()
@@ -1044,54 +1041,83 @@ async function drawChildren(q=''){
     .filter(c=>!taskFilter||c.taskStatus===taskFilter)
     .filter(c=>!paymentFilter||paymentStatus(latestPayment(c.id))===paymentFilter)
     .filter(c=>{if(!staffFilter)return true;const a=childAudit(c);return [a.registeredBy,a.administeredBy,a.paymentBy].includes(staffFilter)})
-    .filter(c=>!childAlpha||String(c.name||'').trim().toUpperCase().startsWith(childAlpha))
     .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})||num(a.regId)-num(b.regId));
 
-  const rows=[];
+  if($('#registryFastCount')) $('#registryFastCount').textContent=db.children.length;
+
+  const cards=[];
   for(let idx=0;idx<arr.length;idx++){
     const c=arr[idx]; let p='';
-    if(c.photoDocId){ try{const d=await docById(c.photoDocId);if(d?.blob)p=URL.createObjectURL(d.blob)}catch(e){} }
+    if(c.photoDocId){
+      try{const d=await docById(c.photoDocId);if(d?.blob)p=URL.createObjectURL(d.blob)}catch(e){}
+    }
+    const audit=childAudit(c);
+    const pay=latestPayment(c.id);
+    const payStatus=paymentStatus(pay);
+    const balance=paymentBalance(pay);
 
-    rows.push(`<tr>
-      <td><span class="seqno">${idx+1}</span></td>
-      <td>${p?`<img src="${p}" class="avatar">`:`<div class="avatar avatar-placeholder mini">👶</div>`}</td>
-      <td><span class="id-badge">${esc(c.regId||'-')}</span></td>
-      <td>
-        <div class="child-name">${esc(c.name)}</div>
-        <div class="muted child-sub">${age(c.dob)} • ${esc(c.sex||'-')}</div>
-      </td>
-      <td class="guardian-contact-cell">
-        <div class="guardian-name"><span>Guardian</span><b>${esc(c.parent||'Not entered')}</b></div>
-        <div class="mobile-display"><span>Mobile</span><b>${esc(c.mobile||'Not entered')}</b></div>
-        ${c.address?`<div class="short-address">${esc(c.address)}</div>`:''}
-        <div class="contact-inline-actions">
-          ${c.mobile?`<a class="contact-call-btn" href="${callLink(c.mobile)}">📞 Call</a><a class="contact-wa-btn" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a>`:'<button class="contact-missing-btn" onclick="app.editChild(\'${c.id}\')">+ Add Mobile</button>'}
+    cards.push(`<article class="child-fast-card">
+      <div class="child-fast-main">
+        <div class="child-fast-identity">
+          ${p?`<img src="${p}" class="child-fast-avatar" alt="${esc(c.name)}">`:`<div class="child-fast-avatar child-fast-avatar-placeholder">👶</div>`}
+          <div class="child-fast-title">
+            <div class="child-fast-name">${esc(c.name)}</div>
+            <div class="child-fast-meta"><span>${esc(c.regId||'-')}</span><span>${age(c.dob)}</span><span>${esc(c.sex||'-')}</span></div>
+          </div>
         </div>
-      </td>
-      <td><span class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</span><br><span class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</span></td>
-      <td>${(()=>{const a=childAudit(c);return `<div class="audit-card-mini">
-        <div><span>Registered By</span><b>${esc(a.registeredBy)}</b></div>
-        <div><span>Administered By</span><b>${esc(a.administeredBy)}</b></div>
-        <div><span>Payment By</span><b>${esc(a.paymentBy)}</b></div>
-      </div>`})()}</td>
-      <td>${(()=>{const p=latestPayment(c.id),s=paymentStatus(p),bal=paymentBalance(p);return `<span class="payment-badge ${paymentStatusClass(s)}">${esc(s)}</span>${p?`<div class="payment-mini">${money(p.amount)} billed • ${esc(p.method||'-')}<br>${money(p.paid)} paid${bal?` • <b>${money(bal)} due</b>`:''}<br><span>Dose: ${esc(paymentAdministeredBy(p))}</span><br><span>Payment: ${esc(paymentReceivedBy(p))}</span></div>`:'<div class="payment-mini muted">No payment entry</div>'}`})()}</td>
-      <td>${c.appointmentDate?`<b>${fmt(c.appointmentDate)}</b>`:'-'}<div class="muted">${c.reminderDate?'Reminder '+fmt(c.reminderDate):''}</div></td>
-      <td><div class="row-actions">
-        <button onclick="app.openChildDetails('${c.id}')">Open</button>
-        <button class="ghost" onclick="app.editChild('${c.id}')">Edit</button>
-        <button class="ghost" onclick="app.startClinical('${c.id}')">Clinical</button>
-        <button class="ghost pay-quick-btn" onclick="app.openChildDetails('${c.id}');setTimeout(()=>app.recordPayment('${c.id}'),120)">₹ Payment</button>
-        ${c.mobile?`<a class="button-anchor" href="${callLink(c.mobile)}">Call</a>`:''}
-        ${c.mobile?`<a class="button-anchor" target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a>`:''}
-      </div></td>
-    </tr>`);
+
+        <div class="child-fast-actions" aria-label="Quick actions for ${esc(c.name)}">
+          <button class="fast-primary" onclick="app.openChildDetails('${c.id}')">Open Profile</button>
+          <button class="fast-edit" onclick="app.editChild('${c.id}')">Edit</button>
+          <button class="fast-clinical" onclick="app.startClinical('${c.id}')">+ Clinical Entry</button>
+          <button class="fast-payment" onclick="app.openChildDetails('${c.id}');setTimeout(()=>app.recordPayment('${c.id}'),120)">₹ Payment</button>
+        </div>
+      </div>
+
+      <div class="child-fast-info-grid">
+        <div class="child-fast-info">
+          <span>Guardian</span>
+          <b>${esc(c.parent||'Not entered')}</b>
+          <small>${esc(c.mobile||'Mobile not entered')}</small>
+          ${c.mobile?`<div class="child-fast-contact"><a href="${callLink(c.mobile)}">📞 Call</a><a target="_blank" href="${waLink(c.mobile,c.name)}">WhatsApp</a></div>`:`<button class="mini-add-mobile" onclick="app.editChild('${c.id}')">+ Add mobile</button>`}
+        </div>
+
+        <div class="child-fast-info">
+          <span>Current Status</span>
+          <div class="child-fast-badges">
+            <b class="status-badge2 ${statusClass(c.currentStatus)}">${esc(c.currentStatus)}</b>
+            <b class="task-badge ${taskClass(c.taskStatus)}">${esc(c.taskStatus)}</b>
+          </div>
+          <small>${c.appointmentDate?`Appointment: ${fmt(c.appointmentDate)}`:'No appointment date'}${c.reminderDate?` • Reminder: ${fmt(c.reminderDate)}`:''}</small>
+        </div>
+
+        <div class="child-fast-info">
+          <span>Payment</span>
+          <b class="payment-badge ${paymentStatusClass(payStatus)}">${esc(payStatus)}</b>
+          <small>${pay?`${money(pay.paid)} paid${balance?` • ${money(balance)} due`:''}`:'No payment entry'}</small>
+        </div>
+
+        <details class="child-fast-more">
+          <summary>More details</summary>
+          <div class="child-fast-more-grid">
+            <div><span>Registered by</span><b>${esc(audit.registeredBy)}</b></div>
+            <div><span>Swarnaprashan by</span><b>${esc(audit.administeredBy)}</b></div>
+            <div><span>Payment by</span><b>${esc(audit.paymentBy)}</b></div>
+            <div><span>Address</span><b>${esc(c.address||'Not entered')}</b></div>
+          </div>
+        </details>
+      </div>
+    </article>`);
   }
 
-  $('#childrenList').innerHTML=`<div class="registry-summary"><b>${arr.length}</b> shown • <b>${db.children.length}</b> total saved</div>
-  <table class="children-table operations-table">
-    <thead><tr><th>No.</th><th>Photo</th><th>ID</th><th>Child</th><th>Guardian / Contact</th><th>Status</th><th>Staff Audit</th><th>Payment</th><th>Appointment</th><th>Actions</th></tr></thead>
-    <tbody>${rows.join('')||'<tr><td colspan="10" class="muted">No saved child matches this filter.</td></tr>'}</tbody>
-  </table>`;
+  $('#childrenList').innerHTML=`
+    <div class="registry-result-line">
+      <div><b>${arr.length}</b> result${arr.length===1?'':'s'} <span>• ${db.children.length} total saved</span></div>
+      ${q?`<div class="registry-query-chip">Search: <b>${esc(q)}</b></div>`:''}
+    </div>
+    <div class="child-fast-grid">
+      ${cards.join('')||`<div class="registry-empty"><b>No matching child found.</b><span>Try name, guardian, mobile, registration ID, or Reset filters.</span><button class="ghost" onclick="document.getElementById('showAllChildrenBtn').click()">Reset filters</button></div>`}
+    </div>`;
 }
 async function openChildDetails(id){
   const c=normalizeChild(child(id));

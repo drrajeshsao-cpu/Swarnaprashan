@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=11.13">
+<link rel="stylesheet" href="styles.css?v=11.14">
 </head>
 <body>
 
@@ -202,7 +202,7 @@
     </div>
     <div class="card quick-utility-card">
       <div class="cardhead"><div><span class="eyebrow">QUICK CLINIC UTILITY</span><h3>Find • Open • Record • Print</h3></div></div>
-      <div id="dashboardAlpha" class="alpha-strip"></div>
+      
       <div class="dashboard-quick-actions">
         <button onclick="app.showView('children')">A–Z Children</button>
         <button class="ghost" onclick="app.startClinical()">+ Clinical Entry</button>
@@ -240,25 +240,26 @@
 </template>
 
 <template id="childrenTpl">
-  <div class="card registry-command-card">
-    <div class="cardhead">
+  <div class="card registry-command-card registry-fast-shell">
+    <div class="registry-fast-head">
       <div>
-        <span class="eyebrow">SWARNAPRASHAN REGISTRY & OPERATIONS</span>
-        <h3>Saved Children & Current Status</h3>
-        <p class="muted">See every registered child, today’s plan, reminders, contact details and current Swarnaprashan status.</p>
+        <span class="eyebrow">CHILD REGISTRY • FAST CLINICAL ACCESS</span>
+        <h3>Find a child and act immediately</h3>
+        <p class="muted">Search first. Open, Edit, Clinical Entry and Payment stay visible beside every child — no horizontal scrolling.</p>
       </div>
-      <div class="actionrow">
-        <button id="registerChildBtn">+ Register Child</button>
-        <button id="showAllChildrenBtn" class="ghost">All Saved Children</button>
-      </div>
+      <div class="registry-head-count"><b id="registryFastCount">0</b><span>saved children</span></div>
     </div>
 
-    <div id="registryKpis" class="registry-kpis"></div>
+    <div class="registry-primary-bar">
+      <div class="registry-search-box">
+        <span class="registry-search-icon">⌕</span>
+        <input id="childSearch" placeholder="Search child name, guardian, mobile or registration ID">
+      </div>
+      <button id="registerChildBtn" class="registry-new-child">+ New Child</button>
+      <button id="showAllChildrenBtn" class="ghost registry-reset">Reset</button>
+    </div>
 
-    <div id="childAlphaBar" class="alpha-strip registry-alpha"></div>
-    <div class="staff-audit-legend"><b>Staff Audit:</b> Registered By → Swarnaprashan Administered By → Payment Received / Status Known By</div>
-    <div class="registry-toolbar">
-      <input id="childSearch" placeholder="Search CHILD NAME / guardian / mobile / registration ID">
+    <div class="registry-filter-bar">
       <select id="childStatusFilter">
         <option value="">All Status</option>
         <option>Active</option>
@@ -277,16 +278,9 @@
         <option>Waiting</option>
         <option>Not Done</option>
       </select>
-      <select id="childStaffFilter">
-        <option value="">All Staff</option>
-        <option>Dr Rajesh Sao</option>
-        <option>Dr Ravi Chandrakar</option>
-        <option>Miss Mansi</option>
-        <option>Other</option>
-        <option>Not recorded (legacy)</option>
-      </select>
       <select id="childPaymentFilter">
-        <option value="">All Payment Status</option><option>Not Recorded</option>
+        <option value="">All Payment Status</option>
+        <option>Not Recorded</option>
         <option>Paid</option>
         <option>Part Paid</option>
         <option>Pending</option>
@@ -297,10 +291,19 @@
         <option>Waived / No Charge</option>
         <option>No Entry</option>
       </select>
+      <select id="childStaffFilter">
+        <option value="">All Staff</option>
+        <option>Dr Rajesh Sao</option>
+        <option>Dr Ravi Chandrakar</option>
+        <option>Miss Mansi</option>
+        <option>Other</option>
+        <option>Not recorded (legacy)</option>
+      </select>
     </div>
 
+    <div id="registryKpis" class="registry-kpis registry-kpis-compact"></div>
     <div id="todayRegistryPanel" class="today-panel"></div>
-    <div id="childrenList" class="tablewrap"></div>
+    <div id="childrenList" class="children-card-host"></div>
   </div>
 
   <div id="childDetailsPanel"></div>
@@ -531,7 +534,7 @@
 
 
 
-<script src="app.js?v=11.13"></script>
-<script type="module" src="cloud-sync.js?v=11.13"></script>
+<script src="app.js?v=11.14"></script>
+<script type="module" src="cloud-sync.js?v=11.14"></script>
 </body>
 </html>

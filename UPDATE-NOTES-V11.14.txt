@@ -1,0 +1,28 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V11.14
+FAST CHILD REGISTRY • NO HORIZONTAL SCROLL • PROFESSIONAL QUICK ACTIONS
+Build date: 13 Aug 2026
+
+WHAT CHANGED
+- Removed A–Z alphabet index from Child Registry and Dashboard.
+- Search is now the primary way to find children.
+- + New Child is placed directly beside search.
+- Reset filters is beside search.
+- Child registry changed from a very wide 10-column table to responsive cards.
+- Open Profile, Edit, Clinical Entry and Payment are permanently visible directly below each child's name/photo.
+- Guardian/mobile, status, payment and appointment information remain visible.
+- Staff audit and address remain available under expandable More details.
+- 2 columns on large desktop; 1 column on tablet/smaller screens; compact mobile layout.
+- No horizontal scrolling is needed for routine child access.
+
+DATA / LOGIN SAFETY
+- Existing localStorage key preserved: mahamaya_swarnaprashan_v7
+- cloud-sync.js not modified.
+- Firebase/auth configuration not modified.
+- Existing children/cases/payments/followups/vaccines are not migrated, renamed, deleted or rewritten.
+- Existing baby PWA icon and V11.13 two-day dashboard features preserved.
+
+ROLLBACK
+Keep V11.13 ZIP and the JSON backup before deploying V11.14.
+
+GITHUB COMMIT MESSAGE
+Upgrade Swarnaprashan to V11.14 with fast no-scroll child registry direct actions and professional responsive search
