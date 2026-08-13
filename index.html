@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5f4327">
 <title>Mahamaya Clinic • Swarnaprashan Digital Health Suite</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=11.15">
+<link rel="stylesheet" href="styles.css?v=11.17">
 </head>
 <body>
 
@@ -115,7 +115,7 @@
       <div class="brand-copy">
         <strong>Mahamaya Clinic</strong>
         <div class="brand-release-badges">
-          <span class="release-version">V11.15</span>
+          <span class="release-version">V11.17</span>
           <span class="release-updated">Updated 13 Aug 2026</span>
         </div>
         <span>Swarnaprashan • Child Growth & Clinical Intelligence</span>
@@ -124,6 +124,7 @@
     <div class="brand-mini-banner"><img src="swarna-baby.png" alt="Swarnaprashan" class="brand-mini-image"><div><b>Clinical Intelligence Suite</b><span>Longitudinal child-health workflow</span></div></div>
     <nav id="nav">
       <button data-view="dashboard" class="active"><span class="nav-ico">⌂</span><span>Dashboard</span></button>
+      <button data-view="panchang"><span class="nav-ico">🪔</span><span>Hindu Panchang</span></button>
       <button data-view="clinical"><span class="nav-ico">✚</span><span>Clinical Workspace</span></button>
       <button data-view="children"><span class="nav-ico">◉</span><span>Child Registry</span></button>
       <button data-view="followup"><span class="nav-ico">↻</span><span>Follow-up & Outcomes</span></button>
@@ -173,6 +174,17 @@
         <button onclick="app.startClinical()">Start Clinical Entry</button>
         <button class="ghost" onclick="app.openQuickUpload()">Quick Upload / Camera</button>
       </div>
+      <section class="mini-panchang-shell panchang-home-launcher">
+        <div class="mini-panchang-head">
+          <div>
+            <span class="eyebrow">HINDU PANCHANG • SWARNAPRASHAN PLANNER</span>
+            <h3>Monthly Panchang Calendar</h3>
+            <p class="muted">Current month preview • Pushya / Swarnaprashan • Purnima • Amavasya • Festivals</p>
+          </div>
+          <button onclick="app.showView('panchang')">Open Full Panchang</button>
+        </div>
+        <div id="homePanchangPreview" class="home-panchang-preview"><div class="panchang-loading">Loading current month…</div></div>
+      </section>
     </div>
     <div class="hero-side">
       <img src="swarna-baby.png" alt="Swarnaprashan child" class="hero-art">
@@ -259,6 +271,111 @@
     <div class="spacer"></div>
     <button class="ghost" id="prevStepBtn">← Previous</button>
     <button id="saveNextBtn">Save & Next →</button>
+  </div>
+</template>
+
+
+<template id="panchangTpl">
+  <div class="card panchang-page">
+    <div class="panchang-page-header">
+      <div>
+        <span class="eyebrow">MAHAMAYA CLINIC • RAIPUR PANCHANG</span>
+        <h2>Hindu Panchang Calendar</h2>
+        <p class="muted">Raipur, Chhattisgarh • Tithi • Nakshatra • Yoga • Karana • Paksha • Masa • Ritu • Muhurta • Festivals • Pushya</p>
+      </div>
+      <div class="panchang-header-actions">
+        <button id="pcTodayBtn" class="ghost">Today</button>
+        <button id="pcPrintBtn" class="ghost">Print / Save PDF</button>
+      </div>
+    </div>
+
+    <div id="pcEngineStatus" class="panchang-engine-status loading">Loading Panchang engine…</div>
+
+    <div class="panchang-navbar">
+      <button id="pcPrevYear" class="ghost">« Year</button>
+      <button id="pcPrevMonth" class="ghost">‹ Month</button>
+      <div class="panchang-month-center">
+        <strong id="pcMonthTitle">—</strong>
+        <span>Raipur • IST (UTC+5:30)</span>
+      </div>
+      <button id="pcNextMonth" class="ghost">Month ›</button>
+      <button id="pcNextYear" class="ghost">Year »</button>
+    </div>
+
+    <div class="panchang-main-layout">
+      <section class="panchang-calendar-card">
+        <div class="panchang-week-head">
+          <span>रवि<small>Sun</small></span><span>सोम<small>Mon</small></span><span>मंगल<small>Tue</small></span>
+          <span>बुध<small>Wed</small></span><span>गुरु<small>Thu</small></span><span>शुक्र<small>Fri</small></span><span>शनि<small>Sat</small></span>
+        </div>
+        <div id="pcMonthGrid" class="panchang-month-grid"></div>
+        <div class="panchang-legend">
+          <span><i class="pcl pushya"></i>Pushya / Swarnaprashan</span>
+          <span><i class="pcl purnima"></i>Purnima</span>
+          <span><i class="pcl amavasya"></i>Amavasya</span>
+          <span><i class="pcl festival"></i>Festival</span>
+          <span><i class="pcl sunday"></i>Sunday</span>
+          <span><i class="pcl today"></i>Today</span>
+        </div>
+      </section>
+
+      <aside class="panchang-detail-card">
+        <div class="panchang-selected-date">
+          <span id="pcSelectedWeek">—</span>
+          <strong id="pcSelectedDate">Select date</strong>
+          <small id="pcSelectedHinduMonth">—</small>
+        </div>
+
+        <div class="panchang-five">
+          <div><span>Tithi</span><b id="pcTithi">—</b><small id="pcTithiTime"></small></div>
+          <div><span>Nakshatra</span><b id="pcNakshatra">—</b><small id="pcNakshatraTime"></small></div>
+          <div><span>Yoga</span><b id="pcYoga">—</b><small id="pcYogaTime"></small></div>
+          <div><span>Karana</span><b id="pcKarana">—</b><small id="pcKaranaTime"></small></div>
+          <div><span>Vara</span><b id="pcVara">—</b><small>Sunrise-based weekday</small></div>
+        </div>
+
+        <div class="panchang-meta-grid">
+          <div><span>Paksha</span><b id="pcPaksha">—</b></div>
+          <div><span>Masa</span><b id="pcMasa">—</b></div>
+          <div><span>Ritu</span><b id="pcRitu">—</b></div>
+          <div><span>Ayana</span><b id="pcAyana">—</b></div>
+          <div><span>Vikram Samvat</span><b id="pcSamvat">—</b></div>
+          <div><span>Moon Rashi</span><b id="pcMoonRashi">—</b></div>
+        </div>
+
+        <div class="panchang-time-grid">
+          <div><span>Sunrise</span><b id="pcSunrise">—</b></div>
+          <div><span>Sunset</span><b id="pcSunset">—</b></div>
+          <div><span>Moonrise</span><b id="pcMoonrise">—</b></div>
+          <div><span>Moonset</span><b id="pcMoonset">—</b></div>
+          <div><span>Rahu Kalam</span><b id="pcRahu">—</b></div>
+          <div><span>Yamaganda</span><b id="pcYama">—</b></div>
+          <div><span>Gulika</span><b id="pcGulika">—</b></div>
+          <div><span>Abhijit Muhurta</span><b id="pcAbhijit">—</b></div>
+          <div><span>Brahma Muhurta</span><b id="pcBrahma">—</b></div>
+        </div>
+
+        <div class="panchang-festival-box">
+          <span>Festivals / Vrat / Special Yoga</span>
+          <div id="pcFestivals">—</div>
+        </div>
+
+        <div class="panchang-clinic-box">
+          <span>Swarnaprashan Clinic Planning</span>
+          <div id="pcClinicPlanning">Select a date.</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="card pushya-year-card">
+      <div class="cardhead">
+        <div>
+          <span class="eyebrow">NEXT 12 MONTHS</span>
+          <h3>Upcoming Pushya / Swarnaprashan Dates</h3>
+        </div>
+      </div>
+      <div id="pcUpcomingPushya" class="pc-upcoming-pushya"></div>
+    </div>
   </div>
 </template>
 
@@ -557,7 +674,8 @@
 
 
 
-<script src="app.js?v=11.15"></script>
-<script type="module" src="cloud-sync.js?v=11.15"></script>
+<script type="module" src="panchang-engine.js?v=11.17"></script>
+<script src="app.js?v=11.17"></script>
+<script type="module" src="cloud-sync.js?v=11.17"></script>
 </body>
 </html>

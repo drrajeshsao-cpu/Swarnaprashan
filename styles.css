@@ -1676,3 +1676,61 @@ img,svg,video,canvas{max-width:100%;height:auto}
   .release-version{font-size:9px}
   .release-updated{font-size:8px}
 }
+
+/* V11.16 monthly clinic Panchang */
+.mini-panchang-shell{margin-top:18px;max-width:780px;border:1px solid #eadcc8;border-radius:18px;background:rgba(255,255,255,.78);padding:13px;box-shadow:0 10px 24px rgba(90,62,30,.05)}
+.mini-panchang-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.mini-panchang-head h3{margin:2px 0 0;font-size:17px;color:#20304a}
+.mini-panchang-nav{display:flex;gap:5px;align-items:center}
+.mini-nav-btn,.mini-today-btn{min-height:34px;padding:6px 10px;font-size:11px}
+.mini-panchang-weekdays,.mini-panchang-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mini-panchang-weekdays{margin-bottom:4px}
+.mini-panchang-weekdays span{text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.07em;font-weight:900;color:#877766;padding:4px}
+.mini-panchang-weekdays span:first-child{color:#b64e4e}
+.mini-day{position:relative;min-height:64px;border:1px solid #eee5da;border-radius:10px;background:#fff;padding:6px;text-align:left;overflow:hidden;color:#243249;transition:.15s ease}
+.mini-day:hover{border-color:#cdb78f;transform:translateY(-1px);box-shadow:0 5px 12px rgba(80,55,25,.07)}
+.mini-day.empty{border-color:transparent;background:transparent;box-shadow:none}
+.mini-date-num{display:block;font-size:13px;font-weight:900;margin-bottom:3px}
+.mini-day.is-sunday:not(.has-swarna){background:#fff4f4;border-color:#f1d0d0}.mini-day.is-sunday .mini-date-num{color:#b34545}
+.mini-day.is-today{outline:2px solid #3d78b2;outline-offset:-2px}
+.mini-day.has-swarna{background:linear-gradient(145deg,#fff7c7,#ffe69d);border-color:#ddb342;box-shadow:0 4px 12px rgba(192,137,22,.13)}
+.mini-day.has-purnima:not(.has-swarna){background:#f2efff;border-color:#c9bff0}
+.mini-day.has-amavasya:not(.has-swarna){background:#eef1f5;border-color:#b8c0ca}
+.mini-day.has-festival:not(.has-swarna):not(.has-purnima):not(.has-amavasya){background:#fff0e6;border-color:#ebc6a5}
+.mini-event-label{display:block;font-size:7.5px;line-height:1.15;font-weight:900;margin-top:2px;padding:2px 4px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-event-label.swarna{background:#f1c548;color:#4e3505}.mini-event-label.purnima{background:#dcd3ff;color:#493c84}.mini-event-label.amavasya{background:#d4dae1;color:#37414c}.mini-event-label.festival{background:#ffd8bb;color:#7a4420}
+.mini-more{font-size:7px;color:#777}
+.mini-panchang-legend{display:flex;gap:10px;flex-wrap:wrap;margin:9px 0 6px;font-size:8.5px;color:#6e665d;font-weight:800}.mini-panchang-legend span{display:inline-flex;align-items:center;gap:4px}
+.legend-dot{width:8px;height:8px;border-radius:3px;display:inline-block}.legend-dot.swarna{background:#e5b82f}.legend-dot.purnima{background:#b6a6ec}.legend-dot.amavasya{background:#8b96a3}.legend-dot.festival{background:#e6a36a}.legend-dot.sunday{background:#d46f6f}
+.mini-panchang-detail{min-height:42px;border-top:1px solid #eee2d4;padding-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:10px;color:#665f56}.mini-panchang-detail>b{color:#25334a}
+.detail-chip{border-radius:999px;padding:5px 8px;background:#f6f4f0}.detail-chip.swarna{background:#fff0a8}.detail-chip.purnima{background:#e9e3ff}.detail-chip.amavasya{background:#e1e5ea}.detail-chip.festival{background:#ffe1cc}
+@media(max-width:900px){.mini-panchang-shell{max-width:none}}
+@media(max-width:620px){.mini-panchang-head{align-items:flex-start;flex-direction:column}.mini-panchang-nav{width:100%;justify-content:space-between}.mini-day{min-height:54px;padding:4px}.mini-date-num{font-size:12px}.mini-event-label{font-size:6.7px}.mini-panchang-legend{gap:7px}}
+
+/* =========================================================
+   V11.17 FULL HINDU PANCHANG
+   ========================================================= */
+.panchang-home-launcher{max-width:780px}
+.home-panchang-preview{margin-top:10px;border:1px solid #eadfce;border-radius:14px;background:#fff;padding:9px}
+.hp-title{text-align:center;font-weight:900;color:#24344e;margin-bottom:6px}
+.hp-week,.hp-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.hp-week span{text-align:center;font-size:9px;font-weight:900;color:#807365}
+.hp-day{min-height:52px;border:1px solid #ede4d8;background:#fff;border-radius:8px;padding:4px;display:flex;flex-direction:column;align-items:flex-start}.hp-day b{font-size:12px}.hp-day small{font-size:7px;line-height:1.1;color:#6f6f6f;text-align:left}.hp-day.empty{border-color:transparent;background:transparent}.hp-day.sunday{background:#fff2f2}.hp-day.pushya{background:#ffe99a;border-color:#d7ad31}.hp-day.purnima:not(.pushya){background:#eee9ff}.hp-day.amavasya:not(.pushya){background:#e9edf1}
+.panchang-loading,.panchang-error{display:grid;gap:4px;text-align:center;padding:18px;color:#6b665f}.panchang-error{background:#fff4ee;border:1px solid #efc7ad;border-radius:12px}.panchang-loading.wide,.panchang-error.wide{grid-column:1/-1}
+
+.panchang-page{padding:18px}.panchang-page-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:1px solid #e9ded0;padding-bottom:14px}.panchang-page-header h2{font-size:30px;margin:4px 0 6px}.panchang-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.panchang-engine-status{margin:12px 0;border-radius:11px;padding:10px 12px;font-size:11px;font-weight:800}.panchang-engine-status.loading{background:#fff7e6;color:#77521f}.panchang-engine-status.ready{background:#edf8f1;color:#246541}.panchang-engine-status.error{background:#fff0ea;color:#8a3f2b}
+.panchang-nav-bar,.panchang-navbar{display:grid;grid-template-columns:auto auto 1fr auto auto;gap:8px;align-items:center;margin:12px 0}.panchang-month-center{text-align:center}.panchang-month-center strong{display:block;font-size:24px;color:#1d2d46}.panchang-month-center span{font-size:10px;color:#757575}
+.panchang-main-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,.75fr);gap:14px}.panchang-calendar-card,.panchang-detail-card{border:1px solid #e6dacb;border-radius:18px;background:#fff;padding:12px}
+.panchang-week-head,.panchang-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.panchang-week-head span{text-align:center;font-size:12px;font-weight:900;color:#665c51;padding:7px}.panchang-week-head span:first-child{color:#b23b3b}.panchang-week-head small{display:block;font-size:8px;color:#93877b}
+.pc-day{min-height:108px;border:1px solid #ece3d7;border-radius:10px;background:#fff;padding:7px;text-align:left;overflow:hidden;position:relative}.pc-day:hover{border-color:#bd9b6d;box-shadow:0 5px 14px rgba(74,50,27,.08)}.pc-day.empty{border-color:transparent;background:transparent}.pc-day.sunday:not(.pushya){background:#fff3f3}.pc-day.today{outline:2px solid #3e79b4;outline-offset:-2px}.pc-day.pushya{background:linear-gradient(145deg,#fff8c4,#ffe17c);border-color:#d2a326}.pc-day.purnima:not(.pushya){background:#f1edff;border-color:#c8baf0}.pc-day.amavasya:not(.pushya){background:#edf0f3;border-color:#b3bac3}.pc-day.festival:not(.pushya):not(.purnima):not(.amavasya){background:#fff2e8}.pc-day.selected{box-shadow:0 0 0 3px rgba(117,73,31,.18);border-color:#75491f}
+.pc-num{display:block;font-size:18px;font-weight:900;color:#1d2f49}.pc-tithi,.pc-nak,.pc-fest{display:block;margin-top:4px;font-size:8px;line-height:1.15}.pc-tithi{font-weight:900;color:#56442f}.pc-nak{color:#65707d}.pc-fest{color:#a15628;font-weight:800}.pc-pushya-badge{display:inline-block;margin-top:5px;background:#c49310;color:#fff;border-radius:999px;padding:3px 6px;font-size:7px;font-weight:900}
+.panchang-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px;font-size:9px;font-weight:800;color:#6d655c}.panchang-legend span{display:flex;align-items:center;gap:4px}.pcl{width:9px;height:9px;border-radius:3px}.pcl.pushya{background:#e2b628}.pcl.purnima{background:#b7a7ed}.pcl.amavasya{background:#8c96a2}.pcl.festival{background:#e5a06b}.pcl.sunday{background:#db7777}.pcl.today{background:#3e79b4}
+.panchang-selected-date{text-align:center;border-bottom:1px solid #eee2d5;padding:8px 0 12px}.panchang-selected-date span{display:block;font-size:12px;color:#8a6946}.panchang-selected-date strong{display:block;font-size:23px;color:#182b45}.panchang-selected-date small{font-size:11px;color:#777}
+.panchang-five{display:grid;gap:7px;margin:12px 0}.panchang-five>div,.panchang-meta-grid>div,.panchang-time-grid>div{border:1px solid #eee5da;background:#fbf9f6;border-radius:10px;padding:8px}.panchang-five span,.panchang-meta-grid span,.panchang-time-grid span,.panchang-festival-box>span,.panchang-clinic-box>span{display:block;font-size:8px;letter-spacing:.08em;text-transform:uppercase;font-weight:900;color:#897b6c}.panchang-five b,.panchang-meta-grid b,.panchang-time-grid b{display:block;margin-top:3px;color:#2c3d54;font-size:11px}.panchang-five small{font-size:8px;color:#777}
+.panchang-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.panchang-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.panchang-festival-box,.panchang-clinic-box{margin-top:10px;border:1px solid #e6ddd1;border-radius:12px;padding:10px}.festival-pill{display:inline-block;margin:5px 4px 0 0;border-radius:999px;background:#fff0df;color:#7a4a24;padding:5px 8px;font-size:9px;font-weight:800}.clinic-pushya,.clinic-normal{display:grid;gap:4px;margin-top:6px;border-radius:10px;padding:9px}.clinic-pushya{background:#fff0a6}.clinic-normal{background:#f4f7f5}.clinic-pushya span,.clinic-normal span{font-size:9px;color:#6a645a}
+.pushya-year-card{margin-top:14px}.pc-upcoming-pushya{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pc-pushya-chip{display:grid;gap:3px;text-align:left;border:1px solid #ead49a;background:#fff9e7;border-radius:12px;padding:9px}.pc-pushya-chip b{font-size:12px}.pc-pushya-chip span,.pc-pushya-chip small{font-size:9px;color:#776a54}
+
+@media(max-width:1000px){.panchang-main-layout{grid-template-columns:1fr}.pc-upcoming-pushya{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.panchang-page-header{flex-direction:column}.panchang-navbar{grid-template-columns:1fr 1fr}.panchang-month-center{grid-column:1/-1;grid-row:1}.pc-day{min-height:80px;padding:4px}.pc-num{font-size:14px}.pc-tithi,.pc-nak,.pc-fest{font-size:6.8px}.panchang-time-grid,.panchang-meta-grid{grid-template-columns:1fr 1fr}.pc-upcoming-pushya{grid-template-columns:1fr}}
+@media(max-width:480px){.panchang-week-head span{font-size:9px}.panchang-week-head small{display:none}.pc-day{min-height:58px}.pc-tithi{font-size:6.5px}.pc-nak,.pc-fest{display:none}.panchang-time-grid,.panchang-meta-grid{grid-template-columns:1fr}}

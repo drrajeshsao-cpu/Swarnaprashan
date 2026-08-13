@@ -1,0 +1,20 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V11.16
+INTERACTIVE MONTHLY GREGORIAN + HINDU PANCHANG CLINIC PLANNER
+Updated 13 Aug 2026
+
+- Added month calendar inside the blank home hero space below Start Clinical Entry.
+- Previous / Current / Next month controls.
+- Sunday highlighting.
+- Swarnaprashan / Pushya in yellow.
+- Purnima in violet.
+- Amavasya in grey.
+- Major festival/holiday markers in peach.
+- Click/tap any highlighted date for date + Tithi + clinic-planning note.
+- Existing 1-year Pushya planner remains below.
+- Existing 48 children/data/login/Firebase/cloud sync untouched.
+
+Scope: this is a clinic-planning Panchang overlay, not a full astronomical daily Panchang engine.
+Verify exact Raipur Tithi/Pushya timings before public posters or final announcements.
+
+GITHUB COMMIT:
+Upgrade Swarnaprashan to V11.16 with interactive monthly Panchang calendar Pushya highlights Purnima Amavasya Sundays and clinic holiday planning

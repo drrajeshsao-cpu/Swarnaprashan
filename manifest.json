@@ -1,7 +1,7 @@
 {
-  "name": "Mahamaya Clinic Swarnaprashan V11.15",
+  "name": "Mahamaya Clinic Swarnaprashan V11.17",
   "short_name": "Swarnaprashan",
-  "start_url": "./?v=11.15",
+  "start_url": "./?v=11.17",
   "display": "standalone",
   "background_color": "#f7f4ed",
   "theme_color": "#5f4327",
@@ -19,5 +19,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Swarnaprashan Digital Health Suite with visible version/update badge and one-year Pushya/Swarnaprashan calendar."
+  "description": "Swarnaprashan Digital Health Suite with dedicated full Hindu Panchang calendar and Raipur-specific Panchang calculations."
 }

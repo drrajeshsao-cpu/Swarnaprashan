@@ -1,0 +1,37 @@
+MAHAMAYA CLINIC SWARNAPRASHAN V11.17
+FULL WORKING HINDU PANCHANG TAB
+Updated 13 Aug 2026
+
+FIXED
+- Removed dependence on the failed small calendar implementation.
+- Home page now has a reliable current-month preview.
+- Dedicated Hindu Panchang tab added so calendar space is no longer limited.
+
+FULL PANCHANG
+- Previous/next month and previous/next year.
+- Modern date grid with Hindi + English weekdays.
+- Raipur-specific calculations.
+- Tithi, Nakshatra, Yoga, Karana, Vara.
+- Paksha, Masa, Ritu, Ayana, Vikram Samvat, Moon Rashi.
+- Sunrise, Sunset, Moonrise, Moonset.
+- Rahu Kalam, Yamaganda, Gulika, Abhijit and Brahma Muhurta where provided by engine.
+- Festival / Vrat detection.
+- Pushya / Swarnaprashan highlighted in yellow.
+- Purnima, Amavasya, Sunday, Today and festivals separately color coded.
+- Click any date for complete day details.
+- Print / Save PDF.
+- Upcoming Pushya dates shown below.
+
+ENGINE
+Uses MIT-licensed @ishubhamx/panchangam-js v3.0.0 via jsDelivr ESM.
+Raipur observer: 21.211605 N, 81.659075 E, 249 m, IST +330.
+
+DATA SAFETY
+- Existing localStorage key preserved: mahamaya_swarnaprashan_v7
+- Firebase login/auth untouched
+- cloud-sync.js untouched
+- saved child/case/payment/follow-up/vaccination data untouched
+- V11.14 registry and V11.15 annual Pushya calendar preserved
+
+GITHUB COMMIT MESSAGE
+Upgrade Swarnaprashan to V11.17 with full working Hindu Panchang tab Raipur calculations and Pushya calendar

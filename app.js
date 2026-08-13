@@ -90,7 +90,7 @@ const age=dob=>{if(!dob)return'-';const b=new Date(dob),n=new Date();let y=n.get
 const scoreLabel=n=>['Poor','Reduced','Stable/Normal','Improved','Best'][Number(n)]||'-';
 const avg=o=>{const a=Object.values(o||{}).map(Number).filter(x=>!isNaN(x));return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const trend=(a,b)=>a==null||b==null?'<span class="stable">No baseline</span>':(+b>+a?'<span class="good">Improved ↑</span>':+b<+a?'<span class="bad">Reduced ↓</span>':'<span class="stable">Stable →</span>');
-const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Complete clinical printout, PDF, Share and WhatsApp'],knowledge:['Swarnaprashan Guide','Bilingual parent education, Pushya calendar, safety and evidence'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],inventory:['Inventory & Stock','Procurement, stock, usage and consumable tracking'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
+const titles={dashboard:['Dashboard','Premium longitudinal Swarnaprashan clinical tracking'],panchang:['Hindu Panchang','Raipur Panchang • Tithi • Nakshatra • Muhurta • Pushya planning'],clinical:['Clinical Workspace','Guided Save & Next workflow from profile to prescription'],children:['Children','Registry, baby photo, profile and clinical access'],followup:['Monthly Follow-up','Dose, growth, vitals, health, development and Ayurveda tracking'],analytics:['Growth & Analytics','Automatic visual longitudinal analysis'],vaccination:['Vaccination & Schedule','Vaccination record and upcoming session tracking'],documents:['Documents & Camera','Camera, gallery, file, PDF and manual card storage'],reports:['Reports & Prescription','Complete clinical printout, PDF, Share and WhatsApp'],knowledge:['Swarnaprashan Guide','Bilingual parent education, Pushya calendar, safety and evidence'],education:['Diet • Pathya • Lifestyle','Individualized parent guidance'],inventory:['Inventory & Stock','Procurement, stock, usage and consumable tracking'],backup:['Backup / Restore','Data portability and export'],settings:['Settings','Clinic identity and prescription details']};
 const tpl=id=>document.getElementById(id).content.cloneNode(true);
 
 const AUTH_KEY='mahamaya_swarnaprashan_users_v1';
@@ -314,7 +314,7 @@ function showView(name){ if(!currentSession()) return; currentView=name;
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   $('#pageTitle').textContent=titles[name][0];$('#pageSubtitle').textContent=titles[name][1];
   const v=$('#view');v.innerHTML='';v.appendChild(tpl(name+'Tpl'));
-  ({dashboard:renderDashboard,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,inventory:renderInventory,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
+  ({dashboard:renderDashboard,panchang:renderPanchang,clinical:renderClinical,children:renderChildren,followup:renderFollowup,analytics:renderAnalytics,vaccination:renderVaccination,documents:renderDocuments,reports:renderReports,knowledge:renderKnowledge,education:renderEducation,inventory:renderInventory,backup:renderBackup,settings:renderSettings}[name]||(()=>{}))();
 }
 
 
@@ -594,6 +594,92 @@ async function drawChildrenByIds(ids,date=''){
 }
 
 
+
+const CLINIC_PANCHANG_EVENTS = [
+  {date:'2026-08-12',type:'amavasya',title:'Shravana Amavasya',tithi:'Shravana Krishna Amavasya',note:'Panchang marker'},
+  {date:'2026-08-15',type:'festival',title:'Independence Day',tithi:'National holiday',note:'Clinic timing may differ'},
+  {date:'2026-08-28',type:'purnima',title:'Shravana Purnima • Raksha Bandhan',tithi:'Shravana Shukla Purnima',note:'Major festival'},
+  {date:'2026-09-04',type:'festival',title:'Krishna Janmashtami',tithi:'Bhadrapada Krishna Ashtami',note:'Major festival'},
+  {date:'2026-09-08',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Krishna Dwadashi → Trayodashi',note:'Planned Swarnaprashan date'},
+  {date:'2026-09-10',type:'amavasya',title:'Bhadrapada Amavasya',tithi:'Bhadrapada Krishna Amavasya',note:'Panchang marker'},
+  {date:'2026-09-14',type:'festival',title:'Ganesh Chaturthi',tithi:'Bhadrapada Shukla Chaturthi',note:'Major festival'},
+  {date:'2026-09-26',type:'purnima',title:'Bhadrapada Purnima',tithi:'Bhadrapada Shukla Purnima',note:'Panchang marker'},
+  {date:'2026-10-02',type:'festival',title:'Gandhi Jayanti',tithi:'National holiday',note:'Clinic timing may differ'},
+  {date:'2026-10-05',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Krishna Dashami',note:'Planned Swarnaprashan date'},
+  {date:'2026-10-10',type:'amavasya',title:'Ashwina Amavasya',tithi:'Ashwina Krishna Amavasya',note:'Panchang marker'},
+  {date:'2026-10-20',type:'festival',title:'Dussehra',tithi:'Ashwina Shukla Dashami',note:'Major festival'},
+  {date:'2026-10-26',type:'purnima',title:'Ashwina Purnima',tithi:'Ashwina Shukla Purnima',note:'Panchang marker'},
+  {date:'2026-11-01',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Krishna Saptami → Ashtami',note:'Planned Swarnaprashan date'},
+  {date:'2026-11-08',type:'amavasya',title:'Diwali • Kartika Amavasya',tithi:'Kartika Krishna Amavasya',note:'Major festival / holiday'},
+  {date:'2026-11-24',type:'purnima',title:'Kartika Purnima • Guru Nanak Jayanti',tithi:'Kartika Shukla Purnima',note:'Major festival'},
+  {date:'2026-11-28',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Krishna Panchami',note:'Planned Swarnaprashan date'},
+  {date:'2026-12-08',type:'amavasya',title:'Margashirsha Amavasya',tithi:'Margashirsha Krishna Amavasya',note:'Panchang marker'},
+  {date:'2026-12-23',type:'purnima',title:'Margashirsha Purnima',tithi:'Margashirsha Shukla Purnima',note:'Panchang marker'},
+  {date:'2026-12-25',type:'festival',title:'Christmas',tithi:'Public holiday marker',note:'Clinic timing may differ'},
+  {date:'2026-12-26',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Krishna Tritiya',note:'Planned Swarnaprashan date'},
+  {date:'2027-01-07',type:'amavasya',title:'Pausha Amavasya',tithi:'Pausha Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-01-15',type:'festival',title:'Makara Sankranti',tithi:'Solar festival',note:'Major festival'},
+  {date:'2027-01-22',type:'swarna',title:'Swarnaprashan / Pushya • Pausha Purnima',tithi:'Pausha Shukla Purnima',note:'Pushya + Purnima clinic-planning marker'},
+  {date:'2027-01-26',type:'festival',title:'Republic Day',tithi:'National holiday',note:'Clinic timing may differ'},
+  {date:'2027-02-06',type:'amavasya',title:'Magha Amavasya • Mauni Amavasya',tithi:'Magha Krishna Amavasya',note:'Major Panchang day'},
+  {date:'2027-02-11',type:'festival',title:'Vasant Panchami',tithi:'Magha Shukla Panchami',note:'Festival'},
+  {date:'2027-02-19',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Shukla Trayodashi → Chaturdashi',note:'Planned Swarnaprashan date'},
+  {date:'2027-02-20',type:'purnima',title:'Magha Purnima',tithi:'Magha Shukla Purnima',note:'Panchang marker'},
+  {date:'2027-03-08',type:'amavasya',title:'Phalguna Amavasya',tithi:'Phalguna Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-03-18',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Shukla Ekadashi',note:'Planned Swarnaprashan date'},
+  {date:'2027-03-22',type:'purnima',title:'Phalguna Purnima',tithi:'Phalguna Shukla Purnima',note:'Panchang marker'},
+  {date:'2027-04-06',type:'amavasya',title:'Chaitra Amavasya',tithi:'Chaitra Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-04-14',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Shukla Ashtami → Navami',note:'Planned Swarnaprashan date'},
+  {date:'2027-04-20',type:'purnima',title:'Chaitra Purnima',tithi:'Chaitra Shukla Purnima',note:'Panchang marker'},
+  {date:'2027-05-06',type:'amavasya',title:'Vaishakha Amavasya',tithi:'Vaishakha Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-05-12',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Shukla Saptami',note:'Planned Swarnaprashan date'},
+  {date:'2027-05-20',type:'purnima',title:'Vaishakha Purnima • Buddha Purnima',tithi:'Vaishakha Shukla Purnima',note:'Major festival'},
+  {date:'2027-06-04',type:'amavasya',title:'Jyeshtha Amavasya',tithi:'Jyeshtha Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-06-08',type:'swarna',title:'Swarnaprashan / Pushya',tithi:'Shukla Chaturthi → Panchami',note:'Planned Swarnaprashan date'},
+  {date:'2027-06-18',type:'purnima',title:'Jyeshtha Purnima • Kabirdas Jayanti',tithi:'Jyeshtha Shukla Purnima',note:'Panchang marker'},
+  {date:'2027-07-03',type:'amavasya',title:'Ashadha Amavasya',tithi:'Ashadha Krishna Amavasya',note:'Panchang marker'},
+  {date:'2027-07-05',type:'swarna',title:'Swarnaprashan / Pushya • Jagannath Rathyatra',tithi:'Ashadha Shukla Dwitiya',note:'Pushya planning + festival'},
+  {date:'2027-07-18',type:'purnima',title:'Guru Purnima',tithi:'Ashadha Shukla Purnima',note:'Major festival'},
+  {date:'2027-08-02',type:'swarna',title:'Swarnaprashan / Pushya • Shravana Amavasya',tithi:'Amavasya → Shukla Pratipada',note:'Verify exact clinic Pushya window'},
+  {date:'2027-08-15',type:'festival',title:'Independence Day',tithi:'National holiday',note:'Clinic timing may differ'},
+  {date:'2027-08-16',type:'purnima',title:'Shravana Purnima Vrat',tithi:'Shravana Shukla Purnima',note:'Panchang marker'}
+];
+
+let miniPanchangCursor = new Date(2026,7,1);
+function clinicEventsForDate(iso){return CLINIC_PANCHANG_EVENTS.filter(x=>x.date===iso);}
+function renderMiniPanchang(){
+  const grid=$('#miniPanchangGrid'), title=$('#miniPanchangTitle'); if(!grid||!title)return;
+  const y=miniPanchangCursor.getFullYear(),m=miniPanchangCursor.getMonth();
+  const monthName=new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(new Date(y,m,1));
+  title.textContent=monthName+' • Swarnaprashan Panchang';
+  const firstDay=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(), todayIso=new Date().toISOString().slice(0,10);
+  const cells=[];
+  for(let i=0;i<firstDay;i++)cells.push('<div class="mini-day empty" aria-hidden="true"></div>');
+  for(let d=1;d<=days;d++){
+    const date=new Date(y,m,d), iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs=clinicEventsForDate(iso),isSun=date.getDay()===0,isToday=iso===todayIso,types=[...new Set(evs.map(e=>e.type))],cls=['mini-day'];
+    if(isSun)cls.push('is-sunday'); if(isToday)cls.push('is-today'); types.forEach(t=>cls.push('has-'+t));
+    const labels=evs.slice(0,2).map(e=>`<small class="mini-event-label ${e.type}">${esc(e.title)}</small>`).join('');
+    cells.push(`<button class="${cls.join(' ')}" data-date="${iso}" aria-label="${esc(monthName+' '+d+' '+evs.map(e=>e.title).join(' '))}">
+      <span class="mini-date-num">${d}</span>${labels}${evs.length>2?`<small class="mini-more">+${evs.length-2} more</small>`:''}
+    </button>`);
+  }
+  grid.innerHTML=cells.join('');
+  $$('.mini-day[data-date]').forEach(btn=>btn.onclick=()=>showMiniPanchangDetail(btn.dataset.date));
+}
+function showMiniPanchangDetail(iso){
+  const box=$('#miniPanchangDetail');if(!box)return;const evs=clinicEventsForDate(iso),d=new Date(iso+'T00:00:00');
+  const heading=new Intl.DateTimeFormat('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(d);
+  if(!evs.length){box.innerHTML=`<b>${esc(heading)}</b><span>No special Swarnaprashan/Purnima/Amavasya/festival marker saved for this date.</span>`;return;}
+  box.innerHTML=`<b>${esc(heading)}</b>${evs.map(e=>`<span class="detail-chip ${e.type}"><strong>${esc(e.title)}</strong> • ${esc(e.tithi)}${e.note?` • ${esc(e.note)}`:''}</span>`).join('')}`;
+}
+function bindMiniPanchang(){
+  if($('#miniPanchangPrev'))$('#miniPanchangPrev').onclick=()=>{miniPanchangCursor=new Date(miniPanchangCursor.getFullYear(),miniPanchangCursor.getMonth()-1,1);renderMiniPanchang();};
+  if($('#miniPanchangNext'))$('#miniPanchangNext').onclick=()=>{miniPanchangCursor=new Date(miniPanchangCursor.getFullYear(),miniPanchangCursor.getMonth()+1,1);renderMiniPanchang();};
+  if($('#miniPanchangToday'))$('#miniPanchangToday').onclick=()=>{const n=new Date();miniPanchangCursor=new Date(n.getFullYear(),n.getMonth(),1);renderMiniPanchang();};
+  renderMiniPanchang();
+}
+
 const SWARNAPRASHAN_YEAR_CALENDAR = [
   {clinicDate:'2026-09-08', weekday:'Tuesday', pushya:'07 Sep 18:14 → 08 Sep 16:39', tithi:'Krishna Dwadashi → Trayodashi'},
   {clinicDate:'2026-10-05', weekday:'Monday', pushya:'05 Oct 00:13 → 05 Oct 23:09', tithi:'Krishna Dashami'},
@@ -642,6 +728,7 @@ function openCalendarDate(date){
   setTimeout(()=>{
     renderTwoDayActivity();
   renderAnnualSpCalendar();
+  renderHomePanchangPreview();
   if($('#toggleSpCalendarBtn')) $('#toggleSpCalendarBtn').onclick=()=>{
     const box=$('#annualSpCalendar'); if(!box)return;
     box.classList.toggle('compact');
@@ -682,6 +769,152 @@ async function renderDashboard(){
 function openChildFromDashboard(id){showView('children');setTimeout(()=>openChildDetails(id),80)}
 function openAlpha(letter){showView('children');setTimeout(()=>{childAlpha=letter==='ALL'?'':letter;drawChildren($('#childSearch')?.value||'')},80)}
 function drawSnapshot(id){const fs=fups(id);if(fs.length<2){$('#dashSnapshot').innerHTML='<p class="muted">At least 2 follow-ups required.</p>';return}const a=fs[0],b=fs.at(-1);$('#dashSnapshot').innerHTML=`<div class="metricrow">${['Learning','Memory','Playing','School Performance'].map(k=>`<div class="metric"><span>${k}</span><b>${scoreLabel(b.scores?.[k])}</b>${trend(a.scores?.[k],b.scores?.[k])}</div>`).join('')}</div>`}
+
+
+
+let pcCursor=new Date();
+let pcSelectedIso=null;
+const RAIPUR={lat:21.211605,lon:81.659075,elevation:249,timezoneOffset:330};
+
+function pcFmtTime(v){
+  if(!v)return '—';
+  try{
+    if(v instanceof Date)return v.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});
+    if(typeof v==='string'||typeof v==='number'){
+      const d=new Date(v); if(!isNaN(d))return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});
+    }
+    if(v.start||v.end)return `${pcFmtTime(v.start)} – ${pcFmtTime(v.end)}`;
+  }catch(e){}
+  return String(v||'—');
+}
+function pcRange(v){ if(!v)return '—'; return v.start||v.end?`${pcFmtTime(v.start)} – ${pcFmtTime(v.end)}`:pcFmtTime(v); }
+function pcIso(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function pcIsPushya(p,lib){
+  try{
+    const scalar=lib.nakshatraNames?.[p.nakshatra]||p.nakshatras?.[0]?.name||'';
+    if(/pushya/i.test(String(scalar)))return true;
+    return (p.nakshatras||[]).some(n=>/pushya/i.test(String(n.name||'')));
+  }catch(e){return false}
+}
+function pcTithiName(p,lib){return lib.tithiNames?.[p.tithi]||p.tithis?.[0]?.name||String(p.tithi??'—');}
+function pcNakName(p,lib){return lib.nakshatraNames?.[p.nakshatra]||p.nakshatras?.[0]?.name||String(p.nakshatra??'—');}
+function pcYogaName(p,lib){return lib.yogaNames?.[p.yoga]||p.yogas?.[0]?.name||String(p.yoga??'—');}
+function pcKaranaName(p){return p.karanas?.[0]?.name||p.karanaName||String(p.karana??'—');}
+function pcVaraName(p,lib){return lib.dayNames?.[p.vara]||String(p.varaName||p.vara||'—');}
+function pcMasaName(p){return p.masa?.name||String(p.masa||'—');}
+function pcRashiName(idx,lib){return lib.rashiNames?.[idx]||String(idx??'—');}
+function pcTransitionEnd(arr){return arr?.[0]?.endTime?`until ${pcFmtTime(arr[0].endTime)}`:'';}
+
+async function getPcEngine(){
+  if(window.PanchangEngine?.ready)return window.PanchangEngine;
+  if(window.PanchangEngine?.loading) return await window.PanchangEngine.loading;
+  throw new Error('Panchang engine unavailable');
+}
+async function pcDay(date){
+  const eng=await getPcEngine();
+  const lib=eng.lib, observer=eng.observer;
+  const p=lib.getPanchangam(date,observer,{timezoneOffset:330,calendarType:'purnimanta'});
+  let festivals=[];
+  try{festivals=lib.getFestivals({date,observer,timezoneOffset:330})||[]}catch(e){}
+  return {p,festivals,lib};
+}
+
+async function renderHomePanchangPreview(){
+  const box=$('#homePanchangPreview'); if(!box)return;
+  const now=new Date(), y=now.getFullYear(),m=now.getMonth(), first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  box.innerHTML='<div class="panchang-loading">Loading current month Panchang…</div>';
+  try{
+    const cells=[]; for(let i=0;i<first;i++)cells.push('<span class="hp-day empty"></span>');
+    for(let d=1;d<=days;d++){
+      const iso=pcIso(y,m,d), dt=new Date(`${iso}T12:00:00+05:30`), data=await pcDay(dt), t=pcTithiName(data.p,data.lib),push=pcIsPushya(data.p,data.lib),sun=dt.getDay()===0;
+      const cls=['hp-day']; if(push)cls.push('pushya'); if(/Purnima/i.test(t))cls.push('purnima'); if(/Amavasya/i.test(t))cls.push('amavasya'); if(sun)cls.push('sunday');
+      cells.push(`<button class="${cls.join(' ')}" onclick="app.openPanchangDate('${iso}')"><b>${d}</b><small>${esc(t)}</small></button>`);
+    }
+    box.innerHTML=`<div class="hp-title">${new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(now)}</div><div class="hp-week"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div><div class="hp-grid">${cells.join('')}</div>`;
+  }catch(e){
+    box.innerHTML=`<div class="panchang-error"><b>Panchang engine could not load.</b><span>Use the Full Panchang tab and check internet once; clinical data remains unaffected.</span></div>`;
+  }
+}
+
+async function renderPanchang(){
+  const status=$('#pcEngineStatus'); if(status){status.className='panchang-engine-status loading';status.textContent='Loading accurate Panchang calculations for Raipur…';}
+  const now=new Date();
+  if(!pcCursor||isNaN(pcCursor))pcCursor=new Date(now.getFullYear(),now.getMonth(),1);
+  pcCursor=new Date(pcCursor.getFullYear(),pcCursor.getMonth(),1);
+  const y=pcCursor.getFullYear(),m=pcCursor.getMonth();
+  $('#pcMonthTitle').textContent=new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(pcCursor);
+  const grid=$('#pcMonthGrid'); grid.innerHTML='<div class="panchang-loading wide">Calculating Tithi and Nakshatra for this month…</div>';
+
+  try{
+    await getPcEngine();
+    if(status){status.className='panchang-engine-status ready';status.textContent='✓ Panchang engine ready • Raipur • IST • Sunrise-based Hindu calendar';}
+    const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),todayIso=new Date().toISOString().slice(0,10),cells=[];
+    for(let i=0;i<first;i++)cells.push('<div class="pc-day empty"></div>');
+    for(let d=1;d<=days;d++){
+      const iso=pcIso(y,m,d),dt=new Date(`${iso}T12:00:00+05:30`),data=await pcDay(dt);
+      const t=pcTithiName(data.p,data.lib),nak=pcNakName(data.p,data.lib),push=pcIsPushya(data.p,data.lib),sun=dt.getDay()===0;
+      const cls=['pc-day']; if(push)cls.push('pushya');if(/Purnima/i.test(t))cls.push('purnima');if(/Amavasya/i.test(t))cls.push('amavasya');if(sun)cls.push('sunday');if(iso===todayIso)cls.push('today');if(data.festivals.length)cls.push('festival');
+      cells.push(`<button class="${cls.join(' ')}" data-date="${iso}">
+        <span class="pc-num">${d}</span>
+        <span class="pc-tithi">${esc(t)}</span>
+        <span class="pc-nak">${esc(nak)}</span>
+        ${push?'<span class="pc-pushya-badge">PUSHYA</span>':''}
+        ${data.festivals[0]?`<span class="pc-fest">${esc(data.festivals[0].name)}</span>`:''}
+      </button>`);
+    }
+    grid.innerHTML=cells.join('');
+    $$('.pc-day[data-date]').forEach(b=>b.onclick=()=>selectPanchangDate(b.dataset.date));
+  }catch(e){
+    if(status){status.className='panchang-engine-status error';status.textContent='Panchang engine could not load. Check internet and reopen this tab.';}
+    grid.innerHTML='<div class="panchang-error wide"><b>Calendar calculation unavailable.</b><span>Your Swarnaprashan records and Firebase data are safe. This affects Panchang display only.</span></div>';
+  }
+
+  $('#pcPrevMonth').onclick=()=>{pcCursor=new Date(y,m-1,1);pcSelectedIso=null;renderPanchang()};
+  $('#pcNextMonth').onclick=()=>{pcCursor=new Date(y,m+1,1);pcSelectedIso=null;renderPanchang()};
+  $('#pcPrevYear').onclick=()=>{pcCursor=new Date(y-1,m,1);pcSelectedIso=null;renderPanchang()};
+  $('#pcNextYear').onclick=()=>{pcCursor=new Date(y+1,m,1);pcSelectedIso=null;renderPanchang()};
+  $('#pcTodayBtn').onclick=()=>{const n=new Date();pcCursor=new Date(n.getFullYear(),n.getMonth(),1);pcSelectedIso=n.toISOString().slice(0,10);renderPanchang().then(()=>selectPanchangDate(pcSelectedIso))};
+  $('#pcPrintBtn').onclick=()=>window.print();
+
+  const upcoming=(typeof SWARNAPRASHAN_YEAR_CALENDAR!=='undefined'?SWARNAPRASHAN_YEAR_CALENDAR:[]).filter(x=>x.clinicDate>=new Date().toISOString().slice(0,10));
+  $('#pcUpcomingPushya').innerHTML=upcoming.map(x=>`<button class="pc-pushya-chip" onclick="app.openPanchangDate('${x.clinicDate}')"><b>${fmt(x.clinicDate)}</b><span>${esc(x.weekday)} • ${esc(x.tithi)}</span><small>${esc(x.pushya)}</small></button>`).join('')||'<span class="muted">No future saved Pushya date.</span>';
+
+  const defaultIso=pcSelectedIso||((now.getFullYear()===y&&now.getMonth()===m)?now.toISOString().slice(0,10):pcIso(y,m,1));
+  setTimeout(()=>selectPanchangDate(defaultIso),30);
+}
+
+async function selectPanchangDate(iso){
+  pcSelectedIso=iso;
+  const dt=new Date(`${iso}T12:00:00+05:30`);
+  try{
+    const {p,festivals,lib}=await pcDay(dt);
+    const set=(id,v)=>{const el=$(id);if(el)el.textContent=v??'—'};
+    set('#pcSelectedWeek',new Intl.DateTimeFormat('hi-IN',{weekday:'long'}).format(dt));
+    set('#pcSelectedDate',new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'long',year:'numeric'}).format(dt));
+    set('#pcSelectedHinduMonth',`${pcMasaName(p)} • ${p.paksha||'—'} Paksha`);
+    set('#pcTithi',pcTithiName(p,lib)); set('#pcTithiTime',pcTransitionEnd(p.tithis));
+    set('#pcNakshatra',pcNakName(p,lib)); set('#pcNakshatraTime',pcTransitionEnd(p.nakshatras));
+    set('#pcYoga',pcYogaName(p,lib)); set('#pcYogaTime',pcTransitionEnd(p.yogas));
+    set('#pcKarana',pcKaranaName(p)); set('#pcKaranaTime',pcTransitionEnd(p.karanas));
+    set('#pcVara',pcVaraName(p,lib));
+    set('#pcPaksha',p.paksha||'—'); set('#pcMasa',pcMasaName(p)); set('#pcRitu',p.ritu||'—'); set('#pcAyana',p.ayana||'—'); set('#pcSamvat',p.samvat||'—'); set('#pcMoonRashi',pcRashiName(p.moonRashi,lib));
+    set('#pcSunrise',pcFmtTime(p.sunrise));set('#pcSunset',pcFmtTime(p.sunset));set('#pcMoonrise',pcFmtTime(p.moonrise));set('#pcMoonset',pcFmtTime(p.moonset));
+    set('#pcRahu',pcRange(p.rahuKalam));set('#pcYama',pcRange(p.yamaganda));set('#pcGulika',pcRange(p.gulika));
+    set('#pcAbhijit',pcRange(p.abhijitMuhurta||p.abhijit));set('#pcBrahma',pcRange(p.brahmaMuhurta||p.brahma));
+    const festBox=$('#pcFestivals');
+    festBox.innerHTML=festivals.length?festivals.map(f=>`<span class="festival-pill">${esc(f.name)}${f.category?` • ${esc(f.category)}`:''}</span>`).join(''):'<span class="muted">No major festival detected by Panchang engine.</span>';
+    const push=pcIsPushya(p,lib),clinic=$('#pcClinicPlanning');
+    clinic.innerHTML=push?`<div class="clinic-pushya"><b>★ Pushya Nakshatra detected</b><span>Suitable date to review Swarnaprashan clinic timing. Verify exact Pushya transition before public announcement.</span></div>`:`<div class="clinic-normal"><b>Regular Panchang day</b><span>Not marked as Pushya at sunrise for Raipur.</span></div>`;
+    $$('.pc-day.selected').forEach(x=>x.classList.remove('selected'));
+    document.querySelector(`.pc-day[data-date="${iso}"]`)?.classList.add('selected');
+  }catch(e){
+    $('#pcClinicPlanning').innerHTML='<div class="panchang-error"><b>Unable to calculate selected date.</b><span>Please check internet once and retry.</span></div>';
+  }
+}
+function openPanchangDate(iso){
+  const d=new Date(`${iso}T12:00:00+05:30`);
+  pcCursor=new Date(d.getFullYear(),d.getMonth(),1); pcSelectedIso=iso; showView('panchang');
+}
 
 
 // Direct in-browser camera capture using getUserMedia
@@ -1800,7 +2033,7 @@ function applyCloudSnapshot(incoming){
 }
 
 function init(){db.children=db.children.map(normalizeChild);save();openIDB().catch(()=>{});bindCameraModal();bindAuth();$$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));$('#topNewChild').onclick=()=>{showView('children');editChild()};$('#topNewCase').onclick=()=>startClinical();$('#globalSearch').oninput=e=>{const q=e.target.value.trim();if(!q)return;showView('children');if($('#childSearch'))$('#childSearch').value=q;drawChildren(q)};ensureAuthUI()}
-return{init,showView,openDayChildren,openCalendarDate,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
+return{init,showView,openDayChildren,openCalendarDate,openPanchangDate,startClinical,editChild,quickReport,openQuickUpload,openDoc,downloadDoc,removeDoc,generateCaseReport,shareCurrent,whatsappCurrent,printCaseReport,printParentReport,startDirectCamera,prefillUser,deleteUser,resetLoginAccess,openChildDetails,shareChildProfile,deleteChild,openChildrenStatus,openChildFromDashboard,openAlpha,recordPayment,setPaymentPreset,openPaymentReceipt,printPaymentReceipt,whatsappPaymentReceipt,sharePaymentReceipt,showView,openInventoryEditor,getCloudSnapshot,applyCloudSnapshot};
 })();
 window.app=app;
 document.addEventListener('DOMContentLoaded',app.init);
